@@ -65,12 +65,13 @@ def subscribe_kb(channel_username: str) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="✅ A'zo bo'ldim, tekshirish", callback_data="check_sub")],
     ])
 
-
 def main_menu_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💘 Tanishuvni boshlash", callback_data="start_search")],
         [InlineKeyboardButton(text="👤 Profilim", callback_data="my_profile")],
         [InlineKeyboardButton(text="🔄 Qaytadan ro'yxatdan o'tish", callback_data="restart_reg")],
     ])
+
 
 
 # ---------- Admin klaviaturalari ----------

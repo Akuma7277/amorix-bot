@@ -38,6 +38,23 @@ async def init_db():
                 value TEXT
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS likes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                from_user INTEGER NOT NULL,
+                to_user INTEGER NOT NULL,
+                created_at TEXT
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS matches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user1 INTEGER NOT NULL,
+                user2 INTEGER NOT NULL,
+                created_at TEXT
+            )
+        """)
         await db.commit()
 
 

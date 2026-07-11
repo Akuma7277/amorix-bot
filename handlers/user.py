@@ -351,6 +351,32 @@ async def cmd_profile(message: Message):
 # Zaxira handler: eskirgan yoki mos kelmagan tugma bosilganda
 # ---------------------------------------------------------------------------
 
+@router.message(Command("profile"))
+async def cmd_profile(message: Message):
+    if not await db.is_registration_complete(message.from_user.id):
+        await message.answer("Siz hali ro'yxatdan o'tmagansiz. /start ni bosing.")
+        return
+    await send_profile_card(message, message.from_user.id)
+
+
+@router.callback_query(F.data == "start_search")
+async def start_search(callback: CallbackQuery):
+    await callback.answer()
+
+    await callback.message.answer(
+        "🔍 <b>Qidiruv funksiyasi ishlab chiqilmoqda.</b>\n\n"
+        "Keyingi bosqichda sizga boshqa foydalanuvchilarning profillari chiqadi va siz ❤️ Like yoki ❌ Skip qilishingiz mumkin."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Zaxira handler: eskirgan yoki mos kelmagan tugma bosilganda
+# ---------------------------------------------------------------------------
+
+@router.callback_query()
+async def fallback_callback(callback: CallbackQuery):
+    await callback.answer("Bu tugma eskirgan. Iltimos /start ni bosing.", show_alert=True)
+
 @router.callback_query()
 async def fallback_callback(callback: CallbackQuery):
     await callback.answer("Bu tugma eskirgan. Iltimos /start ni bosing.", show_alert=True)
