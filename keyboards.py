@@ -161,7 +161,7 @@ def profile_kb(user_id):
             ]
         ]
     )
-    def likes_profile_kb(user_id):
+def likes_profile_kb(user_id):
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
