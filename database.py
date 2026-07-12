@@ -317,7 +317,7 @@ async def get_chat_partner(user_id: int):
 
         return row[0] if row else None
 
-       async def get_chat_partner(user_id: int):
+async def get_chat_partner(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
             """
@@ -331,7 +331,6 @@ async def get_chat_partner(user_id: int):
         row = await cur.fetchone()
 
         return row[0] if row else None
-
 
 async def get_photo_index(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
