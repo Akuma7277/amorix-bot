@@ -1,7 +1,7 @@
 from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, InputMediaPhoto
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InlineKeyboardButton, InlineKeyboardMarkup
 
 import config
 import database as db
@@ -113,10 +113,13 @@ async def cb_my_profile(callback: CallbackQuery):
 
 async def send_profile_card(message: Message, telegram_id: int):
     user = await db.get_user(telegram_id)
+
     if not user or not user["is_complete"]:
         await message.answer("Profil topilmadi.")
         return
+
     photos = await db.get_photos(telegram_id)
+
     caption = (
         f"👤 <b>{user['full_name']}</b>\n\n"
         f"🚻 Jinsi: <b>{user['gender']}</b>\n"
@@ -126,14 +129,19 @@ async def send_profile_card(message: Message, telegram_id: int):
         f"📍 Manzil: <b>{user['region']}, {user['district']}</b>\n\n"
         f"💬 <i>{user['bio']}</i>"
     )
-    if photos:
-        media = [InputMediaPhoto(media=photos[0], caption=caption)]
-        for p in photos[1:]:
-            media.append(InputMediaPhoto(media=p))
-        await message.answer_media_group(media)
-    else:
-        await message.answer(caption)
 
+    if photos:
+        await message.answer_photo(
+            photo=photos[0],
+            caption=caption,
+            reply_markup=kb.profile_kb(telegram_id)
+        )
+    else:
+        await message.answer(
+            caption,
+            reply_markup=kb.profile_kb(telegram_id)
+        )
+    
 
 # ---------------------------------------------------------------------------
 # Ro'yxatdan o'tish bosqichlari
@@ -347,6 +355,7 @@ async def cmd_profile(message: Message):
     await send_profile_card(message, message.from_user.id)
 
 
+
 # ---------------------------------------------------------------------------
 # Zaxira handler: eskirgan yoki mos kelmagan tugma bosilganda
 # ---------------------------------------------------------------------------
@@ -363,11 +372,115 @@ async def cmd_profile(message: Message):
 async def start_search(callback: CallbackQuery):
     await callback.answer()
 
-    await callback.message.answer(
-        "🔍 <b>Qidiruv funksiyasi ishlab chiqilmoqda.</b>\n\n"
-        "Keyingi bosqichda sizga boshqa foydalanuvchilarning profillari chiqadi va siz ❤️ Like yoki ❌ Skip qilishingiz mumkin."
+    profile = await db.get_random_profile(callback.from_user.id)
+
+    if not profile:
+        await callback.message.answer(
+            "😔 Hozircha sizga ko'rsatadigan foydalanuvchi topilmadi."
+        )
+        return
+
+    photos = await db.get_photos(profile["telegram_id"])
+
+    caption = (
+        f"👤 <b>{profile['full_name']}</b>\n\n"
+        f"🚻 {profile['gender']}\n"
+        f"🎂 {profile['age']} yosh\n"
+        f"📍 {profile['region']}, {profile['district']}\n\n"
+        f"💬 {profile['bio']}"
     )
 
+    if photos:
+        await callback.message.answer_photo(
+            photo=photos[0],
+            caption=caption,
+            reply_markup=kb.profile_kb(profile["telegram_id"])
+        )
+    else:
+        await callback.message.answer(
+            caption,
+            reply_markup=kb.profile_kb(profile["telegram_id"])
+        )
+
+
+@router.callback_query(F.data.startswith("like_"))
+async def like_profile(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[1])
+
+    await db.add_like(
+        from_user=callback.from_user.id,
+        to_user=user_id
+    )
+
+    is_match = await db.check_match(
+        callback.from_user.id,
+        user_id
+    )
+
+    if is_match:
+        await db.add_match(
+            callback.from_user.id,
+            user_id
+        )
+
+        await db.set_chat(
+            callback.from_user.id,
+            user_id
+        )
+
+        await db.set_chat(
+            user_id,
+            callback.from_user.id
+        )
+
+        my_kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="💬 Yozish",
+                        callback_data=f"chat_{user_id}"
+                    )
+                ]
+            ]
+        )
+
+        partner_kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="💬 Yozish",
+                        callback_data=f"chat_{callback.from_user.id}"
+                    )
+                ]
+            ]
+        )
+
+        await callback.message.answer(
+            "🎉 Tabriklaymiz! Sizlarda moslik topildi ❤️\n"
+            "Endi bir-biringizga yozishingiz mumkin.",
+            reply_markup=my_kb
+        )
+
+        await callback.bot.send_message(
+            user_id,
+            "🎉 Tabriklaymiz! Sizlarda moslik topildi ❤️\n"
+            "Endi bir-biringizga yozishingiz mumkin.",
+            reply_markup=partner_kb
+        )
+
+    else:
+        await callback.answer("❤️ Like yuborildi!")
+
+    await callback.message.answer(
+        f"❤️ Siz {user_id} profiliga like bosdingiz."
+    )
+
+
+@router.callback_query(F.data == "next_profile")
+async def next_profile(callback: CallbackQuery):
+    await callback.answer()
+
+    await start_search(callback)
 
 # ---------------------------------------------------------------------------
 # Zaxira handler: eskirgan yoki mos kelmagan tugma bosilganda
@@ -376,7 +489,42 @@ async def start_search(callback: CallbackQuery):
 @router.callback_query()
 async def fallback_callback(callback: CallbackQuery):
     await callback.answer("Bu tugma eskirgan. Iltimos /start ni bosing.", show_alert=True)
+@router.message(F.text)
 
-@router.callback_query()
-async def fallback_callback(callback: CallbackQuery):
-    await callback.answer("Bu tugma eskirgan. Iltimos /start ni bosing.", show_alert=True)
+async def relay_message(message: Message):
+
+    partner_id = await db.get_chat_partner(message.from_user.id)
+
+    if not partner_id:
+        return
+
+    await message.bot.send_message(
+        partner_id,
+        f"💬 {message.text}"
+    )
+
+@router.callback_query(F.data.startswith("chat_"))
+async def start_chat(callback: CallbackQuery):
+    partner_id = int(callback.data.split("_")[1])
+
+    await callback.answer()
+
+    await callback.message.answer(
+        "💬 Chat boshlandi.\n"
+        "Endi yozgan xabarlaringiz unga yuboriladi."
+    )
+
+@router.message(F.text)
+async def relay_message(message: Message):
+
+    partner_id = await db.get_chat_partner(
+        message.from_user.id
+    )
+
+    if not partner_id:
+        return
+
+    await message.bot.send_message(
+        partner_id,
+        f"💬 {message.text}"
+    )

@@ -55,6 +55,12 @@ async def init_db():
                 created_at TEXT
             )
         """)
+        await db.execute("""
+CREATE TABLE IF NOT EXISTS chats (
+    user_id INTEGER PRIMARY KEY,
+    partner_id INTEGER NOT NULL
+)
+""")
         await db.commit()
 
 
@@ -198,3 +204,95 @@ async def delete_setting(key: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM settings WHERE key = ?", (key,))
         await db.commit()
+
+async def get_random_profile(current_user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+
+        cur = await db.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE telegram_id != ?
+              AND is_complete = 1
+              AND is_banned = 0
+            ORDER BY RANDOM()
+            LIMIT 1
+            """,
+            (current_user_id,),
+        )
+
+        row = await cur.fetchone()
+        return dict(row) if row else None
+async def add_like(from_user: int, to_user: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT INTO likes (from_user, to_user, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (
+                from_user,
+                to_user,
+                datetime.now(timezone.utc).isoformat()
+            )
+        )
+        await db.commit()
+
+
+async def check_match(user1: int, user2: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            """
+            SELECT id FROM likes
+            WHERE from_user = ?
+            AND to_user = ?
+            """,
+            (user2, user1)
+        )
+
+        result = await cur.fetchone()
+
+        return result is not None
+
+
+async def add_like(from_user: int, to_user: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT INTO likes (from_user, to_user, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (
+                from_user,
+                to_user,
+                datetime.now(timezone.utc).isoformat()
+            )
+        )
+        await db.commit()
+async def set_chat(user_id: int, partner_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO chats (user_id, partner_id)
+            VALUES (?, ?)
+            """,
+            (user_id, partner_id)
+        )
+        await db.commit()
+
+
+async def get_chat_partner(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            """
+            SELECT partner_id
+            FROM chats
+            WHERE user_id = ?
+            """,
+            (user_id,)
+        )
+
+        row = await cur.fetchone()
+
+        return row[0] if row else None

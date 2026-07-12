@@ -119,3 +119,28 @@ def user_detail_kb(telegram_id: int, is_banned: bool) -> InlineKeyboardMarkup:
         [ban_btn],
         [InlineKeyboardButton(text="⬅️ Ro'yxatga qaytish", callback_data="adm:users:0")],
     ])
+
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+
+def profile_kb(user_id):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❤️ Like",
+                    callback_data=f"like_{user_id}"
+                ),
+                InlineKeyboardButton(
+                    text="💌 Xabar yuborish",
+                    callback_data=f"message_{user_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⏭ Keyingi",
+                    callback_data="next_profile"
+                )
+            ]
+        ]
+    )
