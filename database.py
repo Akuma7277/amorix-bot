@@ -55,7 +55,7 @@ async def init_db():
                 created_at TEXT
             )
         """)
-        
+
         await db.execute("""
             CREATE TABLE IF NOT EXISTS chats (
                 user_id INTEGER PRIMARY KEY,
@@ -317,6 +317,19 @@ async def get_chat_partner(user_id: int):
         row = await cur.fetchone()
 
         return row[0] if row else None
+
+
+async def set_message_target(user_id: int, target_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO chats(user_id, partner_id)
+            VALUES (?, ?)
+            """,
+            (user_id, target_id)
+        )
+
+        await db.commit()
 
 async def get_chat_partner(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:

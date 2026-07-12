@@ -401,7 +401,22 @@ async def start_search(callback: CallbackQuery):
             caption,
             reply_markup=kb.profile_kb(profile["telegram_id"])
         )
+        
+@router.callback_query(F.data.startswith("message_"))
+async def message_profile(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[1])
 
+    await callback.answer()
+
+    await callback.message.answer(
+        "💌 Xabaringizni yozing.\n"
+        "Ushbu xabar profil egasiga yuboriladi."
+    )
+
+    await db.set_chat(
+        callback.from_user.id,
+        user_id
+    )
 
 @router.callback_query(F.data.startswith("like_"))
 async def like_profile(callback: CallbackQuery):
@@ -476,6 +491,36 @@ async def like_profile(callback: CallbackQuery):
             f"❤️ Siz {user_id} profiliga like bosdingiz."
         )
 
+@router.callback_query(F.data.startswith("next_photo_"))
+async def next_photo(callback: CallbackQuery):
+    telegram_id = int(callback.data.split("_")[2])
+
+    photos = await db.get_photos(telegram_id)
+
+    if not photos:
+        await callback.answer("Rasm yo'q")
+        return
+
+    index = await db.get_photo_index(
+        callback.from_user.id
+    )
+
+    index += 1
+
+    if index >= len(photos):
+        index = 0
+
+    await db.set_photo_index(
+        callback.from_user.id,
+        index
+    )
+
+    await callback.message.answer_photo(
+        photo=photos[index],
+        reply_markup=kb.profile_kb(telegram_id)
+    )
+
+    await callback.answer()
 
 @router.callback_query(F.data.startswith("photos_"))
 async def show_photos(callback: CallbackQuery):
