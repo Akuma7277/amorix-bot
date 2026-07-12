@@ -477,11 +477,30 @@ async def like_profile(callback: CallbackQuery):
         )
 
 
-@router.callback_query(F.data == "next_profile")
-async def next_profile(callback: CallbackQuery):
-    await callback.answer()
-    await start_search(callback)
+@router.callback_query(F.data.startswith("photos_"))
+async def show_photos(callback: CallbackQuery):
+    telegram_id = int(callback.data.split("_")[1])
 
+    photos = await db.get_photos(telegram_id)
+
+    if not photos:
+        await callback.answer("Rasm topilmadi")
+        return
+
+    for photo in photos:
+        await callback.message.answer_photo(
+            photo=photo
+        )
+
+    await callback.answer()
+
+    await callback.message.answer_photo(
+        photo=photos[next_index],
+        caption=callback.message.caption,
+        reply_markup=kb.profile_kb(telegram_id)
+    )
+
+    await callback.answer()
 
 @router.callback_query(F.data.startswith("chat_"))
 async def start_chat(callback: CallbackQuery):
