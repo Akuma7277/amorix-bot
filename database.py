@@ -69,8 +69,7 @@ CREATE TABLE IF NOT EXISTS photo_views (
 )
 """)
 
-
-        await db.commit()
+await db.commit()
 
 
 
