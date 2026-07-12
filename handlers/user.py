@@ -571,7 +571,7 @@ async def relay_message(message: Message):
         f"💬 {message.text}"
     )
 
-    @router.callback_query(F.data == "filters")
+@router.callback_query(F.data == "filters")
 async def filters_menu(callback: CallbackQuery):
     await callback.answer()
 
