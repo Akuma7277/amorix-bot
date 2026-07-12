@@ -61,7 +61,17 @@ CREATE TABLE IF NOT EXISTS chats (
     partner_id INTEGER NOT NULL
 )
 """)
+
+await db.execute("""
+CREATE TABLE IF NOT EXISTS photo_views (
+    user_id INTEGER PRIMARY KEY,
+    photo_index INTEGER DEFAULT 0
+)
+""")
+
+
         await db.commit()
+
 
 
 # ---------- Foydalanuvchilar bilan ishlash ----------
@@ -307,3 +317,48 @@ async def get_chat_partner(user_id: int):
         row = await cur.fetchone()
 
         return row[0] if row else None
+
+       async def get_chat_partner(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            """
+            SELECT partner_id
+            FROM chats
+            WHERE user_id = ?
+            """,
+            (user_id,)
+        )
+
+        row = await cur.fetchone()
+
+        return row[0] if row else None
+
+
+async def get_photo_index(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            """
+            SELECT photo_index
+            FROM photo_views
+            WHERE user_id = ?
+            """,
+            (user_id,)
+        )
+
+        row = await cur.fetchone()
+
+        return row[0] if row else 0
+
+
+async def set_photo_index(user_id: int, index: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO photo_views
+            (user_id, photo_index)
+            VALUES (?, ?)
+            """,
+            (user_id, index)
+        )
+
+        await db.commit()
