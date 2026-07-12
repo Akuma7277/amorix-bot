@@ -421,7 +421,7 @@ async def like_profile(callback: CallbackQuery):
         user_id
     )
 
-    if is_match:
+        if is_match:
         await db.add_match(
             callback.from_user.id,
             user_id
@@ -437,16 +437,38 @@ async def like_profile(callback: CallbackQuery):
             callback.from_user.id
         )
 
-        await callback.message.answer(
-            "🎉 Tabriklaymiz! Sizlarda moslik topildi ❤️\n"
-            "Endi bir-biringizga yozishingiz mumkin."
+        match_text = (
+            "🎉 <b>Tabriklaymiz! Sizlarda moslik topildi ❤️</b>\n\n"
+            "Endi bir-biringiz bilan anonim chat qilishingiz mumkin 💬"
         )
 
-        await callback.bot.send_message(
-            user_id,
-            "🎉 Tabriklaymiz! Sizlarda moslik topildi ❤️\n"
-            "Endi bir-biringizga yozishingiz mumkin."
+        my_photos = await db.get_photos(user_id)
+
+        if my_photos:
+            await callback.message.answer_photo(
+                photo=my_photos[0],
+                caption=match_text
+            )
+        else:
+            await callback.message.answer(
+                match_text
+            )
+
+        partner_photos = await db.get_photos(
+            callback.from_user.id
         )
+
+        if partner_photos:
+            await callback.bot.send_photo(
+                user_id,
+                photo=partner_photos[0],
+                caption=match_text
+            )
+        else:
+            await callback.bot.send_message(
+                user_id,
+                match_text
+            )
 
     else:
         await callback.message.answer(
