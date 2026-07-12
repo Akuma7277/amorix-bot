@@ -66,11 +66,14 @@ def subscribe_kb(channel_username: str) -> InlineKeyboardMarkup:
     ])
 
 def main_menu_kb() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="💘 Tanishuvni boshlash", callback_data="start_search")],
-        [InlineKeyboardButton(text="👤 Profilim", callback_data="my_profile")],
-        [InlineKeyboardButton(text="🔄 Qaytadan ro'yxatdan o'tish", callback_data="restart_reg")],
-    ])
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="💘 Tanishuvni boshlash", callback_data="start_search")],
+            [InlineKeyboardButton(text="👤 Profilim", callback_data="my_profile")],
+            [InlineKeyboardButton(text="⚙️ Filtrlar", callback_data="filters")],
+            [InlineKeyboardButton(text="🔄 Qaytadan ro'yxatdan o'tish", callback_data="restart_reg")],
+        ]
+    )
 
 
 

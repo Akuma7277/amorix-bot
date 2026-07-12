@@ -401,7 +401,7 @@ async def start_search(callback: CallbackQuery):
             caption,
             reply_markup=kb.profile_kb(profile["telegram_id"])
         )
-        
+
 @router.callback_query(F.data.startswith("message_"))
 async def message_profile(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[1])
@@ -569,4 +569,50 @@ async def relay_message(message: Message):
     await message.bot.send_message(
         partner_id,
         f"💬 {message.text}"
+    )
+
+    @router.callback_query(F.data == "filters")
+async def filters_menu(callback: CallbackQuery):
+    await callback.answer()
+
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="👨 Yigitlar",
+                    callback_data="filter_male"
+                ),
+                InlineKeyboardButton(
+                    text="👩 Qizlar",
+                    callback_data="filter_female"
+                )
+            ]
+        ]
+    )
+
+    await callback.message.answer(
+        "Kimlarni qidirmoqchisiz?",
+        reply_markup=kb
+    )
+
+@router.callback_query(F.data.startswith("filter_"))
+async def save_filter(callback: CallbackQuery):
+    gender = callback.data.replace("filter_", "")
+
+    if gender == "male":
+        gender = "Erkak"
+    else:
+        gender = "Ayol"
+
+    await db.set_filter(
+        callback.from_user.id,
+        gender,
+        18,
+        99
+    )
+
+    await callback.answer("✅ Filtr saqlandi!")
+
+    await callback.message.answer(
+        "Endi qidiruv tanlagan filteringiz bo'yicha ishlaydi."
     )

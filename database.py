@@ -70,6 +70,15 @@ async def init_db():
             )
         """)
 
+        await db.execute("""
+CREATE TABLE IF NOT EXISTS filters (
+    user_id INTEGER PRIMARY KEY,
+    gender TEXT,
+    min_age INTEGER DEFAULT 18,
+    max_age INTEGER DEFAULT 99
+)
+""")
+
         await db.commit()
 
 
@@ -219,20 +228,44 @@ async def get_random_profile(current_user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
 
-        cur = await db.execute(
-            """
-            SELECT *
-            FROM users
-            WHERE telegram_id != ?
-              AND is_complete = 1
-              AND is_banned = 0
-            ORDER BY RANDOM()
-            LIMIT 1
-            """,
-            (current_user_id,),
-        )
+        filter_data = await get_filter(current_user_id)
+
+        if filter_data:
+            cur = await db.execute(
+                """
+                SELECT *
+                FROM users
+                WHERE telegram_id != ?
+                  AND is_complete = 1
+                  AND is_banned = 0
+                  AND gender = ?
+                  AND age BETWEEN ? AND ?
+                ORDER BY RANDOM()
+                LIMIT 1
+                """,
+                (
+                    current_user_id,
+                    filter_data["gender"],
+                    filter_data["min_age"],
+                    filter_data["max_age"],
+                ),
+            )
+        else:
+            cur = await db.execute(
+                """
+                SELECT *
+                FROM users
+                WHERE telegram_id != ?
+                  AND is_complete = 1
+                  AND is_banned = 0
+                ORDER BY RANDOM()
+                LIMIT 1
+                """,
+                (current_user_id,),
+            )
 
         row = await cur.fetchone()
+
         return dict(row) if row else None
 async def add_like(from_user: int, to_user: int):
     async with aiosqlite.connect(DB_PATH) as db:
@@ -374,3 +407,27 @@ async def set_photo_index(user_id: int, index: int):
         )
 
         await db.commit()
+async def set_filter(user_id: int, gender: str, min_age: int, max_age: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO filters
+            (user_id, gender, min_age, max_age)
+            VALUES (?, ?, ?, ?)
+            """,
+            (user_id, gender, min_age, max_age)
+        )
+        await db.commit()
+
+async def get_filter(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+
+        cur = await db.execute(
+            "SELECT * FROM filters WHERE user_id = ?",
+            (user_id,)
+        )
+
+        row = await cur.fetchone()
+
+        return dict(row) if row else None
