@@ -48,6 +48,14 @@ async def init_db():
         """)
 
         await db.execute("""
+            CREATE TABLE IF NOT EXISTS viewed_profiles (
+                viewer_id INTEGER NOT NULL,
+                viewed_id INTEGER NOT NULL,
+                PRIMARY KEY (viewer_id, viewed_id)
+            )
+        """)
+
+        await db.execute("""
             CREATE TABLE IF NOT EXISTS matches (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user1 INTEGER NOT NULL,
@@ -240,6 +248,11 @@ async def get_random_profile(current_user_id: int):
                   AND is_banned = 0
                   AND gender = ?
                   AND age BETWEEN ? AND ?
+                  AND telegram_id NOT IN (
+                      SELECT viewed_id
+                      FROM viewed_profiles
+                      WHERE viewer_id = ?
+                  )
                 ORDER BY RANDOM()
                 LIMIT 1
                 """,
@@ -248,6 +261,7 @@ async def get_random_profile(current_user_id: int):
                     filter_data["gender"],
                     filter_data["min_age"],
                     filter_data["max_age"],
+                    current_user_id,
                 ),
             )
         else:
@@ -258,15 +272,32 @@ async def get_random_profile(current_user_id: int):
                 WHERE telegram_id != ?
                   AND is_complete = 1
                   AND is_banned = 0
+                  AND telegram_id NOT IN (
+                      SELECT viewed_id
+                      FROM viewed_profiles
+                      WHERE viewer_id = ?
+                  )
                 ORDER BY RANDOM()
                 LIMIT 1
                 """,
-                (current_user_id,),
+                (
+                    current_user_id,
+                    current_user_id,
+                ),
             )
 
         row = await cur.fetchone()
 
-        return dict(row) if row else None
+        if row:
+            await add_viewed_profile(
+                current_user_id,
+                row["telegram_id"]
+            )
+            return dict(row)
+
+        await clear_viewed_profiles(current_user_id)
+
+        return await get_random_profile(current_user_id)
 async def add_like(from_user: int, to_user: int):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
@@ -431,3 +462,26 @@ async def get_filter(user_id: int):
         row = await cur.fetchone()
 
         return dict(row) if row else None
+        async def add_viewed_profile(viewer_id: int, viewed_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR IGNORE INTO viewed_profiles
+            (viewer_id, viewed_id)
+            VALUES (?, ?)
+            """,
+            (viewer_id, viewed_id)
+        )
+        await db.commit()
+
+
+        async def clear_viewed_profiles(viewer_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            DELETE FROM viewed_profiles
+            WHERE viewer_id = ?
+            """,
+            (viewer_id,)
+        )
+        await db.commit()
