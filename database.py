@@ -25,6 +25,14 @@ async def init_db():
                 created_at TEXT
             )
         """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS like_views (
+                user_id INTEGER PRIMARY KEY,
+                offset INTEGER DEFAULT 0
+            )
+        """)
+
         await db.execute("""
             CREATE TABLE IF NOT EXISTS user_photos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -529,3 +537,30 @@ async def get_last_like(user_id: int):
         row = await cur.fetchone()
 
         return dict(row) if row else None
+async def get_like_offset(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            """
+            SELECT offset
+            FROM like_views
+            WHERE user_id = ?
+            """,
+            (user_id,)
+        )
+
+        row = await cur.fetchone()
+
+        return row[0] if row else 0
+
+async def set_like_offset(user_id: int, offset: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO like_views
+            (user_id, offset)
+            VALUES (?, ?)
+            """,
+            (user_id, offset)
+        )
+
+        await db.commit()

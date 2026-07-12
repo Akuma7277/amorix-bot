@@ -572,19 +572,36 @@ async def relay_message(message: Message):
     )
 
 
-@router.callback_query(F.data == "likes_me")
-async def likes_me(callback: CallbackQuery):
+@router.callback_query(F.data == "likes_next")
+async def likes_next(callback: CallbackQuery):
     await callback.answer()
 
-    user = await db.get_last_like(
+    offset = await db.get_like_offset(
         callback.from_user.id
+    )
+
+    offset += 1
+
+    user = await db.get_next_like(
+        callback.from_user.id,
+        offset
     )
 
     if not user:
         await callback.message.answer(
-            "😔 Sizga hali hech kim like bosmagan."
+            "😔 Boshqa like yo'q."
+        )
+
+        await db.set_like_offset(
+            callback.from_user.id,
+            0
         )
         return
+
+    await db.set_like_offset(
+        callback.from_user.id,
+        offset
+    )
 
     photos = await db.get_photos(
         user["telegram_id"]
