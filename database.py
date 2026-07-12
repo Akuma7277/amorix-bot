@@ -506,3 +506,23 @@ async def get_likes_for_user(user_id: int):
         rows = await cur.fetchall()
 
         return [dict(row) for row in rows]
+        async def get_last_like(user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+
+        cur = await db.execute(
+            """
+            SELECT users.*
+            FROM likes
+            JOIN users
+                ON users.telegram_id = likes.from_user
+            WHERE likes.to_user = ?
+            ORDER BY likes.id DESC
+            LIMIT 1
+            """,
+            (user_id,)
+        )
+
+        row = await cur.fetchone()
+
+        return dict(row) if row else None

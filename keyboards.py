@@ -161,3 +161,24 @@ def profile_kb(user_id):
             ]
         ]
     )
+    def likes_profile_kb(user_id):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❤️ Like",
+                    callback_data=f"like_{user_id}"
+                ),
+                InlineKeyboardButton(
+                    text="💌 Xabar",
+                    callback_data=f"message_{user_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⏭ Keyingisi",
+                    callback_data="likes_next"
+                )
+            ]
+        ]
+    )
