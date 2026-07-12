@@ -451,7 +451,7 @@ async def like_profile(callback: CallbackQuery):
             ]
         )
 
-               photos = await db.get_photos(user_id)
+        photos = await db.get_photos(user_id)
 
         if photos:
             await callback.message.answer_photo(
