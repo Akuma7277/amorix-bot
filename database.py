@@ -239,7 +239,6 @@ async def add_like(from_user: int, to_user: int):
         )
         await db.commit()
 
-
 async def check_match(user1: int, user2: int):
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
@@ -254,6 +253,18 @@ async def check_match(user1: int, user2: int):
         result = await cur.fetchone()
 
         return result is not None
+
+
+async def add_match(user1: int, user2: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT INTO matches (user1, user2, created_at)
+            VALUES (?, ?, datetime('now'))
+            """,
+            (user1, user2)
+        )
+        await db.commit()
 
 
 async def add_like(from_user: int, to_user: int):
