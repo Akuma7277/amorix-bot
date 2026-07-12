@@ -69,8 +69,8 @@ def main_menu_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="💘 Tanishuvni boshlash", callback_data="start_search")],
+            [InlineKeyboardButton(text="❤️ Menga like bosganlar", callback_data="likes_me")],
             [InlineKeyboardButton(text="👤 Profilim", callback_data="my_profile")],
-            [InlineKeyboardButton(text="⚙️ Filtrlar", callback_data="filters")],
             [InlineKeyboardButton(text="🔄 Qaytadan ro'yxatdan o'tish", callback_data="restart_reg")],
         ]
     )
