@@ -55,21 +55,22 @@ async def init_db():
                 created_at TEXT
             )
         """)
+        
         await db.execute("""
-CREATE TABLE IF NOT EXISTS chats (
-    user_id INTEGER PRIMARY KEY,
-    partner_id INTEGER NOT NULL
-)
-""")
+            CREATE TABLE IF NOT EXISTS chats (
+                user_id INTEGER PRIMARY KEY,
+                partner_id INTEGER NOT NULL
+            )
+        """)
 
-await db.execute("""
-CREATE TABLE IF NOT EXISTS photo_views (
-    user_id INTEGER PRIMARY KEY,
-    photo_index INTEGER DEFAULT 0
-)
-""")
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS photo_views (
+                user_id INTEGER PRIMARY KEY,
+                photo_index INTEGER DEFAULT 0
+            )
+        """)
 
-await db.commit()
+        await db.commit()
 
 
 
