@@ -14,6 +14,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 async def main():
+    print("BOT_TOKEN:", repr(config.BOT_TOKEN))
+
     if not config.BOT_TOKEN:
         raise RuntimeError(
             "BOT_TOKEN topilmadi. .env faylini yarating va BOT_TOKEN=... deb yozing "
