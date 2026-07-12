@@ -128,6 +128,20 @@ def profile_kb(user_id):
         inline_keyboard=[
             [
                 InlineKeyboardButton(
+                    text="⬅️",
+                    callback_data=f"prev_photo_{user_id}"
+                ),
+                InlineKeyboardButton(
+                    text="📸 Rasmlar",
+                    callback_data=f"photos_{user_id}"
+                ),
+                InlineKeyboardButton(
+                    text="➡️",
+                    callback_data=f"next_photo_{user_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
                     text="❤️ Like",
                     callback_data=f"like_{user_id}"
                 ),
@@ -138,14 +152,8 @@ def profile_kb(user_id):
             ],
             [
                 InlineKeyboardButton(
-                    text="📸 Rasmlar",
-                    callback_data=f"photos_{user_id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
                     text="⏭ Keyingi",
-                    callback_data="next_profile"
+                    callback_data="start_search"
                 )
             ]
         ]
