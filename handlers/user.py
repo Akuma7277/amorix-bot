@@ -407,11 +407,15 @@ async def start_search(callback: CallbackQuery):
 async def like_profile(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[1])
 
+    await callback.answer("❤️ Like yuborildi!")
+
+    # Like saqlash
     await db.add_like(
         from_user=callback.from_user.id,
         to_user=user_id
     )
 
+    # O'zaro like tekshirish
     is_match = await db.check_match(
         callback.from_user.id,
         user_id
@@ -433,80 +437,31 @@ async def like_profile(callback: CallbackQuery):
             callback.from_user.id
         )
 
-        my_kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="💬 Yozish",
-                        callback_data=f"chat_{user_id}"
-                    )
-                ]
-            ]
-        )
-
-        partner_kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="💬 Yozish",
-                        callback_data=f"chat_{callback.from_user.id}"
-                    )
-                ]
-            ]
-        )
-
         await callback.message.answer(
             "🎉 Tabriklaymiz! Sizlarda moslik topildi ❤️\n"
-            "Endi bir-biringizga yozishingiz mumkin.",
-            reply_markup=my_kb
+            "Endi bir-biringizga yozishingiz mumkin."
         )
 
         await callback.bot.send_message(
             user_id,
             "🎉 Tabriklaymiz! Sizlarda moslik topildi ❤️\n"
-            "Endi bir-biringizga yozishingiz mumkin.",
-            reply_markup=partner_kb
+            "Endi bir-biringizga yozishingiz mumkin."
         )
 
     else:
-        await callback.answer("❤️ Like yuborildi!")
-
-    await callback.message.answer(
-        f"❤️ Siz {user_id} profiliga like bosdingiz."
-    )
+        await callback.message.answer(
+            f"❤️ Siz {user_id} profiliga like bosdingiz."
+        )
 
 
 @router.callback_query(F.data == "next_profile")
 async def next_profile(callback: CallbackQuery):
     await callback.answer()
-
     await start_search(callback)
 
-# ---------------------------------------------------------------------------
-# Zaxira handler: eskirgan yoki mos kelmagan tugma bosilganda
-# ---------------------------------------------------------------------------
-
-@router.callback_query()
-async def fallback_callback(callback: CallbackQuery):
-    await callback.answer("Bu tugma eskirgan. Iltimos /start ni bosing.", show_alert=True)
-@router.message(F.text)
-
-async def relay_message(message: Message):
-
-    partner_id = await db.get_chat_partner(message.from_user.id)
-
-    if not partner_id:
-        return
-
-    await message.bot.send_message(
-        partner_id,
-        f"💬 {message.text}"
-    )
 
 @router.callback_query(F.data.startswith("chat_"))
 async def start_chat(callback: CallbackQuery):
-    partner_id = int(callback.data.split("_")[1])
-
     await callback.answer()
 
     await callback.message.answer(
@@ -514,9 +469,9 @@ async def start_chat(callback: CallbackQuery):
         "Endi yozgan xabarlaringiz unga yuboriladi."
     )
 
+
 @router.message(F.text)
 async def relay_message(message: Message):
-
     partner_id = await db.get_chat_partner(
         message.from_user.id
     )
