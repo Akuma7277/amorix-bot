@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 bot_database.db
+__pycache__/
+*.pyc
