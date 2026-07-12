@@ -459,9 +459,9 @@ async def get_filter(user_id: int):
             (user_id,)
         )
 
-       row = await cur.fetchone()
+        row = await cur.fetchone()
 
-return dict(row) if row else None
+        return dict(row) if row else None
 
 
 async def add_viewed_profile(viewer_id: int, viewed_id: int):
