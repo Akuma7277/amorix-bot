@@ -440,19 +440,35 @@ async def like_profile(callback: CallbackQuery):
             "Endi bir-biringiz bilan anonim chat qilishingiz mumkin 💬"
         )
 
-        photos = await db.get_photos(user_id)
+        chat_kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="💬 Anonim chat",
+                        callback_data=f"chat_{user_id}"
+                    )
+                ]
+            ]
+        )
+
+               photos = await db.get_photos(user_id)
 
         if photos:
             await callback.message.answer_photo(
                 photo=photos[0],
-                caption=match_text
+                caption=match_text,
+                reply_markup=chat_kb
             )
         else:
-            await callback.message.answer(match_text)
+            await callback.message.answer(
+                match_text,
+                reply_markup=chat_kb
+            )
 
         await callback.bot.send_message(
             user_id,
-            match_text
+            match_text,
+            reply_markup=chat_kb
         )
 
     else:
