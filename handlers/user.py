@@ -627,6 +627,45 @@ async def likes_next(callback: CallbackQuery):
             reply_markup=kb.likes_profile_kb(user["telegram_id"])
         )
 
+
+@router.callback_query(F.data == "likes_me")
+async def likes_me(callback: CallbackQuery):
+    await callback.answer()
+
+    user = await db.get_last_like(
+        callback.from_user.id
+    )
+
+    if not user:
+        await callback.message.answer(
+            "😔 Sizga hali hech kim like bosmagan."
+        )
+        return
+
+    photos = await db.get_photos(
+        user["telegram_id"]
+    )
+
+    caption = (
+        f"❤️ Sizga like bosgan!\n\n"
+        f"👤 {user['full_name']}\n"
+        f"🎂 {user['age']} yosh\n"
+        f"📍 {user['region']}, {user['district']}\n\n"
+        f"{user['bio']}"
+    )
+
+    if photos:
+        await callback.message.answer_photo(
+            photo=photos[0],
+            caption=caption,
+            reply_markup=kb.likes_profile_kb(user["telegram_id"])
+        )
+    else:
+        await callback.message.answer(
+            caption,
+            reply_markup=kb.likes_profile_kb(user["telegram_id"])
+        )
+
 @router.callback_query(F.data == "filters")
 async def filters_menu(callback: CallbackQuery):
     await callback.answer()
