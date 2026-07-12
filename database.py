@@ -459,10 +459,12 @@ async def get_filter(user_id: int):
             (user_id,)
         )
 
-        row = await cur.fetchone()
+       row = await cur.fetchone()
 
-        return dict(row) if row else None
-        async def add_viewed_profile(viewer_id: int, viewed_id: int):
+return dict(row) if row else None
+
+
+async def add_viewed_profile(viewer_id: int, viewed_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """
@@ -475,7 +477,7 @@ async def get_filter(user_id: int):
         await db.commit()
 
 
-        async def clear_viewed_profiles(viewer_id: int):
+async def clear_viewed_profiles(viewer_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """
