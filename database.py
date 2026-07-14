@@ -25,7 +25,15 @@ async def init_db():
                 created_at TEXT
             )
         """)
-
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS reports (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               from_user INTEGER NOT NULL,
+               to_user INTEGER NOT NULL,
+               reason TEXT,
+               created_at TEXT
+            )
+        """)        
         await db.execute("""
             CREATE TABLE IF NOT EXISTS like_views (
                 user_id INTEGER PRIMARY KEY,
@@ -563,4 +571,20 @@ async def set_like_offset(user_id: int, offset: int):
             (user_id, offset)
         )
 
+        await db.commit()
+        async def add_report(from_user: int, to_user: int, reason: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT INTO reports
+            (from_user, to_user, reason, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                from_user,
+                to_user,
+                reason,
+                datetime.now(timezone.utc).isoformat()
+            )
+        )
         await db.commit()

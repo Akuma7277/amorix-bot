@@ -718,7 +718,7 @@ async def save_filter(callback: CallbackQuery):
     await callback.message.answer(
         "Endi qidiruv tanlagan filteringiz bo'yicha ishlaydi."
     )
-    
+
 @router.callback_query(F.data.startswith("skip_"))
 async def skip_profile(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[1])
@@ -731,3 +731,17 @@ async def skip_profile(callback: CallbackQuery):
     await callback.answer("❌ Profil o'tkazib yuborildi.")
 
     await start_search(callback)
+    @router.callback_query(F.data.startswith("report_"))
+async def report_user(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[1])
+
+    await db.add_report(
+        callback.from_user.id,
+        user_id,
+        "Foydalanuvchi ustidan shikoyat"
+    )
+
+    await callback.answer(
+        "✅ Shikoyatingiz qabul qilindi.",
+        show_alert=True
+    )

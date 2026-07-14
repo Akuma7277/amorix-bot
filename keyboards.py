@@ -131,6 +131,22 @@ def profile_kb(user_id):
         inline_keyboard=[
             [
                 InlineKeyboardButton(
+                    text="❤️ Like",
+                    callback_data=f"like_{user_id}"
+                ),
+                InlineKeyboardButton(
+                    text="❌ O'tkazib yuborish",
+                    callback_data=f"skip_{user_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💌 Xabar",
+                    callback_data=f"message_{user_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
                     text="⬅️",
                     callback_data=f"prev_photo_{user_id}"
                 ),
@@ -145,12 +161,8 @@ def profile_kb(user_id):
             ],
             [
                 InlineKeyboardButton(
-                    text="❤️ Like",
-                    callback_data=f"like_{user_id}"
-                ),
-                InlineKeyboardButton(
-                    text="💌 Xabar yuborish",
-                    callback_data=f"message_{user_id}"
+                    text="🚫 Shikoyat",
+                    callback_data=f"report_{user_id}"
                 )
             ],
             [
