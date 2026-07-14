@@ -572,7 +572,8 @@ async def set_like_offset(user_id: int, offset: int):
         )
 
         await db.commit()
-        async def add_report(from_user: int, to_user: int, reason: str):
+
+async def add_report(from_user: int, to_user: int, reason: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """
