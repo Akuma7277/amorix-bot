@@ -429,6 +429,16 @@ async def like_profile(callback: CallbackQuery):
         to_user=user_id
     )
 
+    try:
+        await callback.bot.send_message(
+            user_id,
+            "❤️ Sizga yangi like keldi!\n\n"
+            "👉 '❤️ Menga like bosganlar' tugmasini bosib ko'rishingiz mumkin.",
+            reply_markup=kb.main_menu_kb()
+        )
+    except Exception:
+        pass
+
     is_match = await db.check_match(
         callback.from_user.id,
         user_id
@@ -440,21 +450,18 @@ async def like_profile(callback: CallbackQuery):
             user_id
         )
 
-        await db.set_chat(
+        await db.set_chat(callback.from_user.id, user_id)
+        await db.set_chat(user_id, callback.from_user.id)
+
+        await callback.bot.send_message(
             callback.from_user.id,
-            user_id
+            "🎉 Tabriklaymiz! Sizda MATCH bo'ldi!"
         )
 
-        await db.set_chat(
+        await callback.bot.send_message(
             user_id,
-            callback.from_user.id
+            "🎉 Tabriklaymiz! Sizda MATCH bo'ldi!"
         )
-
-        match_text = (
-            "🎉 <b>Tabriklaymiz! Sizlarda moslik topildi ❤️</b>\n\n"
-            "Endi bir-biringiz bilan anonim chat qilishingiz mumkin 💬"
-        )
-
         chat_kb = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
@@ -711,3 +718,16 @@ async def save_filter(callback: CallbackQuery):
     await callback.message.answer(
         "Endi qidiruv tanlagan filteringiz bo'yicha ishlaydi."
     )
+    
+@router.callback_query(F.data.startswith("skip_"))
+async def skip_profile(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[1])
+
+    await db.add_viewed_profile(
+        callback.from_user.id,
+        user_id
+    )
+
+    await callback.answer("❌ Profil o'tkazib yuborildi.")
+
+    await start_search(callback)
