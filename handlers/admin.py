@@ -224,3 +224,38 @@ async def adm_channel_remove(callback: CallbackQuery):
     await db.delete_setting("required_channel")
     await callback.answer("🗑 O'chirildi.")
     await callback.message.edit_text("Majburiy kanal talabi bekor qilindi.", reply_markup=kb.admin_back_kb())
+
+@router.callback_query(F.data == "adm:reports")
+async def adm_reports(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        return await callback.answer()
+
+    reports = await db.get_reports()
+
+    await callback.answer()
+
+    if not reports:
+        await callback.message.edit_text(
+            "✅ Hozircha shikoyatlar yo'q.",
+            reply_markup=kb.admin_back_kb()
+        )
+        return
+
+    text = "🚫 <b>Shikoyatlar ro'yxati</b>\n\n"
+
+    for r in reports[:10]:
+        text += (
+            f"🆔 Report ID: {r['id']}\n"
+            f"👤 Kim: <code>{r['from_user']}</code> "
+            f"({r['from_name'] or 'Nomaʼlum'})\n"
+            f"🚨 Kim haqida: <code>{r['to_user']}</code> "
+            f"({r['to_name'] or 'Nomaʼlum'})\n"
+            f"📝 Sabab: {r['reason']}\n"
+            f"📅 {r['created_at']}\n"
+            f"────────────\n"
+        )
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=kb.admin_back_kb()
+    )

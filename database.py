@@ -588,4 +588,31 @@ async def add_report(from_user: int, to_user: int, reason: str):
                 datetime.now(timezone.utc).isoformat()
             )
         )
+        
         await db.commit()
+
+
+async def get_reports():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+
+        cur = await db.execute("""
+            SELECT
+                reports.id,
+                reports.from_user,
+                reports.to_user,
+                reports.reason,
+                reports.created_at,
+                u1.full_name AS from_name,
+                u2.full_name AS to_name
+            FROM reports
+            LEFT JOIN users u1
+                ON u1.telegram_id = reports.from_user
+            LEFT JOIN users u2
+                ON u2.telegram_id = reports.to_user
+            ORDER BY reports.id DESC
+        """)
+
+        rows = await cur.fetchall()
+
+        return [dict(row) for row in rows]
