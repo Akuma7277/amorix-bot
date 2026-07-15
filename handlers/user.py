@@ -682,41 +682,98 @@ async def filters_menu(callback: CallbackQuery):
             [
                 InlineKeyboardButton(
                     text="👨 Yigitlar",
-                    callback_data="filter_male"
+                    callback_data="filter_gender_male"
                 ),
                 InlineKeyboardButton(
                     text="👩 Qizlar",
-                    callback_data="filter_female"
+                    callback_data="filter_gender_female"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎂 18-25 yosh",
+                    callback_data="filter_age_18_25"
+                ),
+                InlineKeyboardButton(
+                    text="🎂 25-35 yosh",
+                    callback_data="filter_age_25_35"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎂 35+ yosh",
+                    callback_data="filter_age_35_99"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📍 Viloyat tanlash",
+                    callback_data="filter_region"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🏙 Tuman tanlash",
+                    callback_data="filter_district"
                 )
             ]
-        ]
-    )
+            ]
+        )
 
     await callback.message.answer(
-        "Kimlarni qidirmoqchisiz?",
+        "🔍 Qidiruv filtrini tanlang:",
         reply_markup=kb
     )
 
+
 @router.callback_query(F.data.startswith("filter_"))
 async def save_filter(callback: CallbackQuery):
-    gender = callback.data.replace("filter_", "")
 
-    if gender == "male":
+    data = callback.data
+
+    gender = None
+    min_age = 18
+    max_age = 99
+
+    # Jins
+    if data == "filter_gender_male":
         gender = "Erkak"
-    else:
+
+    elif data == "filter_gender_female":
         gender = "Ayol"
+
+    # Yosh
+    elif data == "filter_age_18_25":
+        min_age = 18
+        max_age = 25
+
+    elif data == "filter_age_25_35":
+        min_age = 25
+        max_age = 35
+
+    elif data == "filter_age_35_99":
+        min_age = 35
+        max_age = 99
+
+    old_filter = await db.get_filter(callback.from_user.id)
+
+    if old_filter:
+        if not gender:
+            gender = old_filter["gender"]
 
     await db.set_filter(
         callback.from_user.id,
         gender,
-        18,
-        99
+        min_age,
+        max_age,
+        old_filter.get("region") if old_filter else None,
+        old_filter.get("district") if old_filter else None
     )
 
-    await callback.answer("✅ Filtr saqlandi!")
+    await callback.answer("✅ Filtr yangilandi!")
 
     await callback.message.answer(
-        "Endi qidiruv tanlagan filteringiz bo'yicha ishlaydi."
+        "🔍 Qidiruv filtri saqlandi."
     )
 
 @router.callback_query(F.data.startswith("skip_"))
@@ -746,4 +803,55 @@ async def report_user(callback: CallbackQuery):
     await callback.answer(
         "✅ Shikoyatingiz qabul qilindi.",
         show_alert=True
+    )
+@router.callback_query(F.data == "filter_region")
+async def filter_region(callback: CallbackQuery):
+    await callback.answer()
+
+    await callback.message.answer(
+        "📍 Viloyatni tanlang:",
+        reply_markup=kb.region_kb()
+    )
+@router.callback_query(F.data.startswith("region:"))
+async def save_filter_region(callback: CallbackQuery):
+    region = callback.data.replace("region:", "")
+
+    old_filter = await db.get_filter(callback.from_user.id)
+
+    await db.set_filter(
+        callback.from_user.id,
+        old_filter["gender"] if old_filter else None,
+        old_filter["min_age"] if old_filter else 18,
+        old_filter["max_age"] if old_filter else 99,
+        region,
+        None
+    )
+
+    await callback.answer("✅ Viloyat saqlandi")
+
+    await callback.message.answer(
+        f"📍 {region} tanlandi.\n"
+        "Endi tumanni tanlang:",
+        reply_markup=kb.district_kb(region)
+    )
+@router.callback_query(F.data.startswith("district:"))
+async def save_filter_district(callback: CallbackQuery):
+    district = callback.data.replace("district:", "")
+
+    old_filter = await db.get_filter(callback.from_user.id)
+
+    await db.set_filter(
+        callback.from_user.id,
+        old_filter["gender"] if old_filter else None,
+        old_filter["min_age"] if old_filter else 18,
+        old_filter["max_age"] if old_filter else 99,
+        old_filter["region"] if old_filter else None,
+        district
+    )
+
+    await callback.answer("✅ Tuman saqlandi")
+
+    await callback.message.answer(
+        f"🏙 {district} tanlandi.\n\n"
+        "🔍 Qidiruv filtri tayyor."
     )

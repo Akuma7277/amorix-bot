@@ -103,8 +103,23 @@ CREATE TABLE IF NOT EXISTS filters (
 )
 """)
 
-        await db.commit()
+        try:
+            await db.execute("""
+                ALTER TABLE filters
+                ADD COLUMN region TEXT
+            """)
+        except:
+            pass
 
+        try:
+            await db.execute("""
+                ALTER TABLE filters
+                ADD COLUMN district TEXT
+            """)
+        except:
+            pass
+
+        await db.commit()
 
 
 # ---------- Foydalanuvchilar bilan ishlash ----------
@@ -264,6 +279,8 @@ async def get_random_profile(current_user_id: int):
                   AND is_banned = 0
                   AND gender = ?
                   AND age BETWEEN ? AND ?
+                  AND (? IS NULL OR region = ?)
+                  AND (? IS NULL OR district = ?)
                   AND telegram_id NOT IN (
                       SELECT viewed_id
                       FROM viewed_profiles
@@ -273,11 +290,15 @@ async def get_random_profile(current_user_id: int):
                 LIMIT 1
                 """,
                 (
-                    current_user_id,
-                    filter_data["gender"],
-                    filter_data["min_age"],
-                    filter_data["max_age"],
-                    current_user_id,
+                   current_user_id,
+                   filter_data["gender"],
+                   filter_data["min_age"],
+                   filter_data["max_age"],
+                   filter_data.get("region"),
+                   filter_data.get("region"),
+                   filter_data.get("district"),
+                   filter_data.get("district"),
+                   current_user_id,
                 ),
             )
         else:
@@ -454,18 +475,52 @@ async def set_photo_index(user_id: int, index: int):
         )
 
         await db.commit()
-async def set_filter(user_id: int, gender: str, min_age: int, max_age: int):
+
+
+async def set_filter(
+    user_id: int,
+    gender: str,
+    min_age: int,
+    max_age: int,
+    region: str = None,
+    district: str = None
+):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """
             INSERT OR REPLACE INTO filters
-            (user_id, gender, min_age, max_age)
-            VALUES (?, ?, ?, ?)
+            (user_id, gender, min_age, max_age, region, district)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (user_id, gender, min_age, max_age)
+            (
+                user_id,
+                gender,
+                min_age,
+                max_age,
+                region,
+                district
+            )
         )
-        await db.commit()
 
+        await db.commit()
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO filters
+            (user_id, gender, min_age, max_age, region, district)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                gender,
+                min_age,
+                max_age,
+                region,
+                district
+            )
+        )
+
+        await db.commit()
 async def get_filter(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
