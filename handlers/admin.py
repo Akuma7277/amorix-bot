@@ -241,21 +241,25 @@ async def adm_reports(callback: CallbackQuery):
         )
         return
 
-    text = "🚫 <b>Shikoyatlar ro'yxati</b>\n\n"
-
     for r in reports[:10]:
-        text += (
-            f"🆔 Report ID: {r['id']}\n"
-            f"👤 Kim: <code>{r['from_user']}</code> "
-            f"({r['from_name'] or 'Nomaʼlum'})\n"
-            f"🚨 Kim haqida: <code>{r['to_user']}</code> "
-            f"({r['to_name'] or 'Nomaʼlum'})\n"
+        text = (
+            f"🚫 <b>Shikoyat</b>\n\n"
+            f"🆔 ID: {r['id']}\n"
+            f"👤 Kim yubordi: <code>{r['from_user']}</code>\n"
+            f"🚨 Kim haqida: <code>{r['to_user']}</code>\n"
             f"📝 Sabab: {r['reason']}\n"
-            f"📅 {r['created_at']}\n"
-            f"────────────\n"
+            f"📅 Sana: {r['created_at']}"
         )
 
-    await callback.message.edit_text(
-        text,
+        await callback.message.answer(
+            text,
+            reply_markup=kb.user_detail_kb(
+                r["to_user"],
+                False
+            )
+        )
+
+    await callback.message.answer(
+        "⬅️ Orqaga",
         reply_markup=kb.admin_back_kb()
     )

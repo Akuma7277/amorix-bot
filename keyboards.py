@@ -201,3 +201,20 @@ def likes_profile_kb(user_id):
         ]
     ]
 )
+def report_kb(user_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🚫 Bloklash",
+                    callback_data=f"adm:ban:{user_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⬅️ Admin panel",
+                    callback_data="adm:back"
+                )
+            ]
+        ]
+    )
