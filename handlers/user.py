@@ -110,6 +110,43 @@ async def cb_my_profile(callback: CallbackQuery):
     await callback.answer()
     await send_profile_card(callback.message, callback.from_user.id)
 
+@router.callback_query(F.data == "edit_profile")
+async def edit_profile(callback: CallbackQuery):
+    await callback.answer()
+
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📝 Bio o'zgartirish",
+                    callback_data="edit_bio"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎂 Yoshni o'zgartirish",
+                    callback_data="edit_age"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📍 Manzilni o'zgartirish",
+                    callback_data="edit_location"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📸 Rasmni o'zgartirish",
+                    callback_data="edit_photo"
+                )
+            ]
+        ]
+    )
+
+    await callback.message.answer(
+        "✏️ Qaysi ma'lumotni o'zgartirmoqchisiz?",
+        reply_markup=kb
+    )
 
 async def send_profile_card(message: Message, telegram_id: int):
     user = await db.get_user(telegram_id)
@@ -855,3 +892,26 @@ async def save_filter_district(callback: CallbackQuery):
         f"🏙 {district} tanlandi.\n\n"
         "🔍 Qidiruv filtri tayyor."
     )
+@router.callback_query(F.data == "premium")
+async def premium_menu(callback: CallbackQuery):
+    await callback.answer()
+
+    user = await db.get_user(callback.from_user.id)
+
+    premium_type = user.get("premium_type", "FREE")
+    premium_until = user.get("premium_until") or "Faol emas"
+
+    text = (
+        "💎 <b>AMORIX Premium</b>\n\n"
+        f"⭐ Tarif: <b>{premium_type}</b>\n"
+        f"📅 Amal qilish muddati: <b>{premium_until}</b>\n\n"
+        "Premium imkoniyatlari:\n"
+        "🚀 Profil qidiruvda yuqoriroq chiqadi\n"
+        "💎 VIP belgi\n"
+        "🔥 Maxsus imkoniyatlar (tez orada)\n"
+    )
+
+    await callback.message.answer(
+    text,
+    reply_markup=kb.premium_kb()
+)

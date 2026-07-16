@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 import config
 from database import init_db
-from handlers import user, admin
+from handlers import user, admin, premium
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -27,6 +27,7 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
 
     dp.include_router(admin.router)
+    dp.include_router(premium.router)
     dp.include_router(user.router)
 
     await bot.delete_webhook(drop_pending_updates=True)

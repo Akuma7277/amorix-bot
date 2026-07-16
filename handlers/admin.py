@@ -263,3 +263,90 @@ async def adm_reports(callback: CallbackQuery):
         "⬅️ Orqaga",
         reply_markup=kb.admin_back_kb()
     )
+
+@router.callback_query(F.data == "adm:payments")
+async def adm_payments(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        return await callback.answer()
+
+    payments = await db.get_pending_payments()
+
+    if not payments:
+        await callback.answer("Yangi to'lovlar yo'q.")
+        return
+
+    await callback.answer()
+
+    for payment in payments:
+        text = (
+            "💎 <b>Yangi Premium to'lov</b>\n\n"
+            f"🆔 ID: <code>{payment['payment_id']}</code>\n"
+            f"👤 User: <code>{payment['user_id']}</code>\n"
+            f"📦 Tarif: <b>{payment['tariff']}</b>\n"
+            f"💰 Summa: <b>{payment['amount']:,} so'm</b>\n"
+            f"📅 Sana: {payment['created_at']}\n"
+        )
+
+        if payment["receipt_file"]:
+            await callback.message.answer_photo(
+                photo=payment["receipt_file"],
+                caption=text,
+                reply_markup=kb.payment_action_kb(payment["payment_id"])
+            )
+        else:
+            await callback.message.answer(
+                text,
+                reply_markup=kb.payment_action_kb(payment["payment_id"])
+            )
+
+@router.callback_query(F.data.startswith("approve_payment:"))
+async def approve_payment(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        return await callback.answer()
+
+    payment_id = callback.data.split(":")[1]
+
+    payment = await db.get_payment(payment_id)
+
+    if not payment:
+        await callback.answer("To'lov topilmadi.", show_alert=True)
+        return
+
+    await db.update_payment_status(payment_id, "approved")
+
+    days = 30
+
+    await db.activate_premium(
+        user_id=payment["user_id"],
+        premium_type=payment["tariff"],
+        days=days
+    )
+
+    await callback.bot.send_message(
+        payment["user_id"],
+        f"""
+🎉 <b>Premium faollashtirildi!</b>
+
+💎 Tarif: <b>{payment['tariff']}</b>
+⏳ Muddat: <b>{days} kun</b>
+
+Amorix Premium xizmatlaridan foydalanishingiz mumkin.
+"""
+    )
+
+    await callback.answer("✅ Premium berildi")
+
+
+@router.callback_query(F.data.startswith("reject_payment:"))
+async def reject_payment(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        return await callback.answer()
+
+    payment_id = callback.data.split(":")[1]
+
+    await db.update_payment_status(
+        payment_id,
+        "rejected"
+    )
+
+    await callback.answer("❌ To'lov rad qilindi")

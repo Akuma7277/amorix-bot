@@ -22,18 +22,83 @@ async def init_db():
                 bio TEXT,
                 is_banned INTEGER DEFAULT 0,
                 is_complete INTEGER DEFAULT 0,
-                created_at TEXT
+                created_at TEXT,
+                premium_type TEXT DEFAULT 'FREE',
+                premium_until TEXT,
+                boost_count INTEGER DEFAULT 0
             )
         """)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS reports (
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                from_user INTEGER NOT NULL,
-               to_user INTEGER NOT NULL,
-               reason TEXT,
-               created_at TEXT
+         """)
+
+        try:
+            await db.execute("""
+                ALTER TABLE users
+                ADD COLUMN premium_type TEXT DEFAULT 'FREE'
+            """)
+        except:
+            pass
+
+        try:
+            await db.execute("""
+                ALTER TABLE users
+                ADD COLUMN premium_until TEXT
+            """)
+        except:
+            pass
+
+        try:
+            await db.execute("""
+                ALTER TABLE users
+                ADD COLUMN boost_count INTEGER DEFAULT 0
+            """)
+        except:
+            pass
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                from_user INTEGER NOT NULL,
+                to_user INTEGER NOT NULL,
+                reason TEXT,
+                created_at TEXT
             )
-        """)        
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS like_views (
+                user_id INTEGER PRIMARY KEY,
+                offset INTEGER DEFAULT 0
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS user_photos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telegram_id INTEGER NOT NULL,
+                file_id TEXT NOT NULL
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS likes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                from_user INTEGER NOT NULL,
+                to_user INTEGER NOT NULL,
+                created_at TEXT
+            )
+        """)    
+  
         await db.execute("""
             CREATE TABLE IF NOT EXISTS like_views (
                 user_id INTEGER PRIMARY KEY,
@@ -77,6 +142,22 @@ async def init_db():
                 user1 INTEGER NOT NULL,
                 user2 INTEGER NOT NULL,
                 created_at TEXT
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                payment_id TEXT UNIQUE,
+                user_id INTEGER NOT NULL,
+                tariff TEXT NOT NULL,
+                amount INTEGER NOT NULL,
+                status TEXT DEFAULT 'pending',
+                receipt_file TEXT,
+                ai_score REAL DEFAULT 0,
+                ai_result TEXT,
+                created_at TEXT,
+                approved_at TEXT
             )
         """)
 
@@ -671,3 +752,119 @@ async def get_reports():
         rows = await cur.fetchall()
 
         return [dict(row) for row in rows]
+from datetime import datetime, timedelta
+import aiosqlite
+
+async def set_premium(user_id: int, premium_type: str, days: int):
+    premium_until = (
+        datetime.utcnow() + timedelta(days=days)
+    ).strftime("%Y-%m-%d %H:%M:%S")
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            UPDATE users
+            SET premium_type = ?, premium_until = ?
+            WHERE telegram_id = ?
+            """,
+            (premium_type, premium_until, user_id),
+        )
+        await db.commit()
+import random
+import string
+from datetime import datetime, timezone
+
+
+def generate_payment_id():
+    return "AMX-" + "".join(random.choices(string.digits, k=6))
+
+
+async def create_payment(user_id: int, tariff: str, amount: int):
+    payment_id = generate_payment_id()
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT INTO payments
+            (payment_id, user_id, tariff, amount, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                payment_id,
+                user_id,
+                tariff,
+                amount,
+                datetime.now(timezone.utc).isoformat()
+            )
+        )
+
+        await db.commit()
+
+    return payment_id
+
+
+async def get_payment(payment_id: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+
+        cur = await db.execute(
+            "SELECT * FROM payments WHERE payment_id = ?",
+            (payment_id,)
+        )
+
+        return await cur.fetchone()
+
+
+async def activate_premium(user_id: int, premium_type: str, days: int):
+    from datetime import datetime, timedelta, timezone
+
+    until = (
+        datetime.now(timezone.utc) + timedelta(days=days)
+    ).isoformat()
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            UPDATE users
+            SET premium_type = ?,
+                premium_until = ?
+            WHERE telegram_id = ?
+            """,
+            (
+                premium_type,
+                until,
+                user_id
+            )
+        )
+
+        await db.commit()
+async def get_pending_payments():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+
+        cur = await db.execute(
+            """
+            SELECT *
+            FROM payments
+            WHERE status = 'pending'
+            ORDER BY id DESC
+            """
+        )
+
+        return await cur.fetchall()
+
+async def update_payment_status(payment_id: str, status: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            UPDATE payments
+            SET status = ?
+            WHERE payment_id = ?
+            """,
+            (
+                status,
+                payment_id
+            )
+        )
+
+        await db.commit()

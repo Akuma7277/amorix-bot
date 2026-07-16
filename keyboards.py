@@ -71,6 +71,7 @@ def main_menu_kb() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="💘 Tanishuvni boshlash", callback_data="start_search")],
             [InlineKeyboardButton(text="❤️ Menga like bosganlar", callback_data="likes_me")],
             [InlineKeyboardButton(text="👤 Profilim", callback_data="my_profile")],
+            [InlineKeyboardButton(text="💎 Premium", callback_data="premium")],
             [InlineKeyboardButton(text="🔄 Qaytadan ro'yxatdan o'tish", callback_data="restart_reg")],
         ]
     )
@@ -87,6 +88,7 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="📢 Xabar yuborish (broadcast)", callback_data="adm:broadcast")],
         [InlineKeyboardButton(text="📺 Majburiy kanal sozlash", callback_data="adm:channel")],
         [InlineKeyboardButton(text="🗑 Majburiy kanalni o'chirish", callback_data="adm:channel_remove")],
+        [InlineKeyboardButton(text="💎 Premium to'lovlar", callback_data="adm:payments")],
     ])
 
 
@@ -115,19 +117,55 @@ def users_page_kb(users: list, offset: int, has_more: bool) -> InlineKeyboardMar
 
 def user_detail_kb(telegram_id: int, is_banned: bool) -> InlineKeyboardMarkup:
     ban_btn = (
-        InlineKeyboardButton(text="✅ Blokdan chiqarish", callback_data=f"adm:unban:{telegram_id}")
-        if is_banned else
-        InlineKeyboardButton(text="🚫 Bloklash", callback_data=f"adm:ban:{telegram_id}")
+        InlineKeyboardButton(
+            text="✅ Blokdan chiqarish",
+            callback_data=f"adm:unban:{telegram_id}"
+        )
+        if is_banned
+        else InlineKeyboardButton(
+            text="🚫 Bloklash",
+            callback_data=f"adm:ban:{telegram_id}"
+        )
     )
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [ban_btn],
-        [InlineKeyboardButton(text="⬅️ Ro'yxatga qaytish", callback_data="adm:users:0")],
-    ])
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [ban_btn],
+            [
+                InlineKeyboardButton(
+                    text="💎 Premium berish",
+                    callback_data=f"adm:premium:{telegram_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⬅️ Ro'yxatga qaytish",
+                    callback_data="adm:users:0"
+                )
+            ]
+        ]
+    )
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-def profile_kb(user_id):
+def my_profile_kb():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✏️ Profilni tahrirlash",
+                    callback_data="edit_profile"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔍 Tanishuvni boshlash",
+                    callback_data="start_search"
+                )
+            ]
+        ]
+    )
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -214,6 +252,82 @@ def report_kb(user_id: int):
                 InlineKeyboardButton(
                     text="⬅️ Admin panel",
                     callback_data="adm:back"
+                )
+            ]
+        ]
+    )
+
+def premium_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🥈 Silver",
+                    callback_data="buy_silver"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🥇 Gold",
+                    callback_data="buy_gold"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💎 Diamond",
+                    callback_data="buy_diamond"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🚀 Boost profil",
+                    callback_data="buy_boost"
+                )
+            ]
+        ]
+    )
+
+def premium_kb():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🥈 Silver — 29 000 so'm",
+                    callback_data="buy_silver"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🥇 Gold — 59 000 so'm",
+                    callback_data="buy_gold"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💎 Diamond — 99 000 so'm",
+                    callback_data="buy_diamond"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⬅️ Orqaga",
+                    callback_data="back_menu"
+                )
+            ]
+        ]
+    )
+
+def payment_action_kb(payment_id: str):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Tasdiqlash",
+                    callback_data=f"approve_payment:{payment_id}"
+                ),
+                InlineKeyboardButton(
+                    text="❌ Rad qilish",
+                    callback_data=f"reject_payment:{payment_id}"
                 )
             ]
         ]

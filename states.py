@@ -17,3 +17,7 @@ class AdminStates(StatesGroup):
     waiting_broadcast = State()
     waiting_channel = State()
     waiting_user_search = State()
+
+    
+class PremiumStates(StatesGroup):
+    waiting_receipt = State()
