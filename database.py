@@ -561,24 +561,7 @@ async def set_filter(
     region: str = None,
     district: str = None
 ):
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            """
-            INSERT OR REPLACE INTO filters
-            (user_id, gender, min_age, max_age, region, district)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                user_id,
-                gender,
-                min_age,
-                max_age,
-                region,
-                district
-            )
-        )
 
-        await db.commit()
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """
