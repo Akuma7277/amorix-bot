@@ -28,11 +28,16 @@ async def init_db():
                 boost_count INTEGER DEFAULT 0
             )
         """)
-        await db.execute("""
+
+               await db.execute("""
             CREATE TABLE IF NOT EXISTS reports (
-               id INTEGER PRIMARY KEY AUTOINCREMENT,
-               from_user INTEGER NOT NULL,
-         """)
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                from_user INTEGER NOT NULL,
+                to_user INTEGER NOT NULL,
+                reason TEXT,
+                created_at TEXT
+            )
+        """)
 
         try:
             await db.execute("""
