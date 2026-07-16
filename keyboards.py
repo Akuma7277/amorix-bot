@@ -332,3 +332,27 @@ def payment_action_kb(payment_id: str):
             ]
         ]
     )
+
+def profile_kb(user_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❤️ Like",
+                    callback_data=f"like_{user_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💌 Xabar yuborish",
+                    callback_data=f"message_{user_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⏭ Keyingi",
+                    callback_data="start_search"
+                )
+            ]
+        ]
+    )
