@@ -29,7 +29,7 @@ async def init_db():
             )
         """)
 
-               await db.execute("""
+        await db.execute("""
             CREATE TABLE IF NOT EXISTS reports (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 from_user INTEGER NOT NULL,
