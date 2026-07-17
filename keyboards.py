@@ -146,52 +146,6 @@ def user_detail_kb(telegram_id: int, is_banned: bool) -> InlineKeyboardMarkup:
         ]
     )
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-            [
-                InlineKeyboardButton(
-                    text="❤️ Like",
-                    callback_data=f"like_{user_id}"
-                ),
-                InlineKeyboardButton(
-                    text="❌ O'tkazib yuborish",
-                    callback_data=f"skip_{user_id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="💌 Xabar",
-                    callback_data=f"message_{user_id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="⬅️",
-                    callback_data=f"prev_photo_{user_id}"
-                ),
-                InlineKeyboardButton(
-                    text="📸 Rasmlar",
-                    callback_data=f"photos_{user_id}"
-                ),
-                InlineKeyboardButton(
-                    text="➡️",
-                    callback_data=f"next_photo_{user_id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🚫 Shikoyat",
-                    callback_data=f"report_{user_id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="⏭ Keyingi",
-                    callback_data="start_search"
-                )
-            ]
-        ]
-    )
 def likes_profile_kb(user_id):
     return InlineKeyboardMarkup(
     inline_keyboard=[
