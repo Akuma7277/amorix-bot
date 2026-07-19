@@ -104,15 +104,14 @@ async def cb_restart(callback: CallbackQuery, state: FSMContext, bot: Bot):
         full_name=callback.from_user.full_name or "",
     )
 
-
 @router.callback_query(F.data == "my_profile")
 async def cb_my_profile(callback: CallbackQuery):
     await callback.answer()
-  await send_profile_card(
-    callback.message,
-    callback.from_user.id,
-    own=True
-)
+    await send_profile_card(
+        callback.message,
+        callback.from_user.id,
+        own=True
+    )
 
 @router.callback_query(F.data == "edit_profile")
 async def edit_profile(callback: CallbackQuery):
