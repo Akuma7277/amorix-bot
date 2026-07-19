@@ -108,7 +108,11 @@ async def cb_restart(callback: CallbackQuery, state: FSMContext, bot: Bot):
 @router.callback_query(F.data == "my_profile")
 async def cb_my_profile(callback: CallbackQuery):
     await callback.answer()
-    await send_profile_card(callback.message, callback.from_user.id)
+  await send_profile_card(
+    callback.message,
+    callback.from_user.id,
+    own=True
+)
 
 @router.callback_query(F.data == "edit_profile")
 async def edit_profile(callback: CallbackQuery):
@@ -148,7 +152,7 @@ async def edit_profile(callback: CallbackQuery):
         reply_markup=kb
     )
 
-async def send_profile_card(message: Message, telegram_id: int):
+async def send_profile_card(message: Message, telegram_id: int, own=False):
     user = await db.get_user(telegram_id)
 
     if not user or not user["is_complete"]:
@@ -171,7 +175,7 @@ async def send_profile_card(message: Message, telegram_id: int):
         await message.answer_photo(
             photo=photos[0],
             caption=caption,
-            reply_markup=kb.profile_kb(telegram_id)
+            reply_markup=kb.my_profile_kb() if own else kb.profile_kb(telegram_id)
         )
     else:
         await message.answer(
