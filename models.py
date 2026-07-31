@@ -147,6 +147,14 @@ class AdminLog(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class BlockedUser(Base):
+    __tablename__ = "blocked_users"
+    id = Column(Integer, primary_key=True)
+    blocker_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    blocked_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+
 class Subscription(Base):
     __tablename__ = "subscriptions"
     id = Column(Integer, primary_key=True)
