@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, or_, exists, func, delete, cast, Date
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 from sqlalchemy.orm import selectinload
 from models import (
     User,
@@ -545,3 +545,14 @@ async def get_admin_logs(
         result = await session.execute(logs_query)
         logs = result.scalars().all()
         return logs, total_count
+
+
+async def update_user_language(user_id: int, new_language: str):
+    """Updates a user's language in the database."""
+    async with async_session_maker() as session:
+        await session.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(language=new_language)
+        )
+        await session.commit()
