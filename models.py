@@ -88,6 +88,7 @@ class User(Base):
     premium_expires_at = Column(DateTime)
     registered_at = Column(DateTime, server_default=func.now())
     last_activity = Column(DateTime, onupdate=func.now())
+    referred_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
 class Photo(Base):
     __tablename__ = "photos"

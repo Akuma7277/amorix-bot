@@ -613,3 +613,12 @@ async def update_user_language(user_id: int, new_language: str):
             .values(language=new_language)
         )
         await session.commit()
+
+
+async def get_user_referrals(user_id: int) -> list[User]:
+    """Fetches all users referred by a specific user."""
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(User).where(User.referred_by_id == user_id)
+        )
+        return result.scalars().all()
