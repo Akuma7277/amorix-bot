@@ -161,6 +161,52 @@ async def get_profiles_for_user(current_user: User, limit: int = 20) -> list[Use
         return result.scalars().all()
 
 
+async def get_users_who_liked_me(user_id: int) -> list[User]:
+    """
+    Fetches users who have liked the given user and with whom there is no active match yet.
+    """
+    async with async_session_maker() as session:
+        # Get IDs of users who liked the current user
+        liker_ids_query = select(Like.from_user_id).where(Like.to_user_id == user_id)
+        liker_ids_result = await session.execute(liker_ids_query)
+        liker_ids = liker_ids_result.scalars().all()
+
+        if not liker_ids:
+            return []
+
+        # Get IDs of users with whom the current user already has an active match
+        matched_user1_ids_query = select(Match.user1_id).where(
+            Match.user2_id == user_id, Match.is_active == True
+        )
+        matched_user1_ids_result = await session.execute(matched_user1_ids_query)
+        matched_user1_ids = matched_user1_ids_result.scalars().all()
+
+        matched_user2_ids_query = select(Match.user2_id).where(
+            Match.user1_id == user_id, Match.is_active == True
+        )
+        matched_user2_ids_result = await session.execute(matched_user2_ids_query)
+        matched_user2_ids = matched_user2_ids_result.scalars().all()
+
+        matched_user_ids = set(matched_user1_ids + matched_user2_ids)
+
+        # Filter out users who are already matched
+        unmatched_liker_ids = [uid for uid in liker_ids if uid not in matched_user_ids]
+
+        if not unmatched_liker_ids:
+            return []
+
+        # Fetch the user objects for the remaining likers
+        users_query = (
+            select(User)
+            .where(User.id.in_(unmatched_liker_ids))
+             # Ensure they have photos and are active
+            .where(User.status == UserStatus.active)
+            .where(exists().where(and_(Photo.user_id == User.id, Photo.is_approved == True)))
+        )
+        users_result = await session.execute(users_query)
+        return users_result.scalars().all()
+
+
 async def add_like_and_check_match(from_user_id: int, to_user_id: int) -> Match | None:
     """
     Adds a like from one user to another and checks for a match.

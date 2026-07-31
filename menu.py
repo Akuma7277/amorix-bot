@@ -32,7 +32,7 @@ from inline import (
     get_profile_view_keyboard, get_edit_profile_keyboard,
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
     get_premium_plans_keyboard, get_likes_keyboard, get_confirm_block_keyboard, get_help_keyboard, get_payment_confirmation_keyboard
-) # get_premium_plans_keyboard is defined multiple times in inline.py
+)
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan # Import UserStatus
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT # Import common texts
 
@@ -46,6 +46,24 @@ router = Router()
 all_menu_buttons = []
 for lang_buttons in MAIN_MENU_BUTTONS.values():
     all_menu_buttons.extend(lang_buttons.values())
+
+HELP_MAIN_TEXT = {
+    "uz": "Yordam bo'limi. Savollaringiz bormi?",
+    "ru": "Раздел помощи. Есть вопросы?",
+    "en": "Help section. Do you have any questions?",
+}
+
+FAQ_TEXT = {
+    "uz": "Bu yerda tez-tez so'raladigan savollar bo'ladi.",
+    "ru": "Здесь будут часто задаваемые вопросы.",
+    "en": "Frequently asked questions will be here.",
+}
+
+CONTACT_SUPPORT_TEXT = {
+    "uz": "Qo'llab-quvvatlash bilan bog'lanish uchun @admin ga yozing.",
+    "ru": "Для связи с поддержкой пишите @admin.",
+    "en": "To contact support, write to @admin.",
+}
 
 SEARCH_PROFILE_TEXTS = {
     "uz": (

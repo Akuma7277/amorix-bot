@@ -150,6 +150,25 @@ def get_search_keyboard(language: str = "uz", target_user_id: int = 0):
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
+LIKES_BUTTON_TEXTS = {
+    "uz": {"like_back": "❤️ Javoban yoqdi", "skip": "➡️ O'tkazib yuborish", "report": "❗️ Shikoyat"},
+    "ru": {"like_back": "❤️ Нравится в ответ", "skip": "➡️ Пропустить", "report": "❗️ Жалоба"},
+    "en": {"like_back": "❤️ Like back", "skip": "➡️ Skip", "report": "❗️ Report"},
+}
+
+
+def get_likes_keyboard(language: str = "uz", target_user_id: int = 0):
+    texts = LIKES_BUTTON_TEXTS.get(language, LIKES_BUTTON_TEXTS["uz"])
+    buttons = [
+        [
+            InlineKeyboardButton(text=texts["like_back"], callback_data=f"like_back_{target_user_id}"),
+            InlineKeyboardButton(text=texts["skip"], callback_data="skip_liked_profile"),
+        ],
+        [InlineKeyboardButton(text=texts["report"], callback_data=f"report_{target_user_id}")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
 CHAT_BUTTON_TEXTS = {
     "uz": "💬 Suhbatni boshlash",
     "ru": "💬 Начать чат",
