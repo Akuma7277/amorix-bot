@@ -1,0 +1,73 @@
+from aiogram.fsm.state import State, StatesGroup
+
+
+class RegistrationStates(StatesGroup):
+    choosing_language = State()
+    accepting_terms = State()
+    entering_name = State()
+    entering_age = State()
+    choosing_gender = State()
+    choosing_looking_for = State()
+    entering_city = State()
+    entering_district = State()
+    choosing_interests = State()
+    entering_bio = State()
+    uploading_photos = State()
+    reviewing_profile = State()
+    # Keyingi bosqichlar shu yerga qo'shiladi
+
+
+class MenuStates(StatesGroup):
+    searching = State()
+    in_chat = State()
+    viewing_help = State() # Added for help section
+    viewing_referrals = State() # Added for referral system
+    confirm_block = State() # Added for user blocking
+    viewing_likes = State()
+
+class EditingStates(StatesGroup):
+    choosing_field = State()
+    editing_name = State()
+    editing_bio = State()
+    editing_city = State()
+    editing_district = State()
+    editing_interests = State()
+    editing_photos = State()
+
+
+class AdminStates(StatesGroup):
+    main_menu = State()
+    statistics = State()
+    verification_moderation = State()
+    photo_moderation = State()
+    user_management = State()
+    waiting_for_user_id = State()
+    viewing_user = State()
+    report_moderation = State()
+    waiting_for_broadcast_message = State()
+    choosing_broadcast_target = State()
+    confirming_broadcast = State()
+    tariffs_payments = State()
+    payment_moderation = State()
+
+
+class SettingsStates(StatesGroup):
+    main_menu = State()
+    confirm_hide_profile = State()
+    confirm_delete_account = State()
+    choosing_language = State()
+
+class VerificationStates(StatesGroup):
+    uploading_document = State()
+    confirming_submission = State()
+
+class PremiumStates(StatesGroup):
+    main_menu = State()
+    choosing_plan = State()
+    confirming_payment = State()
+
+
+
+class ReportingStates(StatesGroup):
+    choosing_category = State()
+    entering_description = State()
