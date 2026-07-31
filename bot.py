@@ -7,11 +7,11 @@ from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio.client import Redis
 
 from config import BOT_TOKEN, REDIS_HOST, REDIS_PORT
-import common
-import registration
-import menu
-import editing
-import admin
+from common import router as common_router
+from registration import router as registration_router
+from menu import router as menu_router
+from editing import router as editing_router
+from admin import router as admin_router
 
 from engine import engine
 from models import Base
@@ -34,11 +34,11 @@ async def main() -> None:
     dp = Dispatcher(storage=storage)
 
     # Routerlarni ulash
-    dp.include_router(common.router)
-    dp.include_router(registration.router)
-    dp.include_router(menu.router)
-    dp.include_router(editing.router)
-    dp.include_router(admin.router)
+    dp.include_router(common_router)
+    dp.include_router(registration_router)
+    dp.include_router(menu_router)
+    dp.include_router(editing_router)
+    dp.include_router(admin_router)
 
     # Ma'lumotlar bazasi jadvallarini yaratish
     async with engine.begin() as conn:
