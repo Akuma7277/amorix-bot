@@ -30,10 +30,7 @@ from inline import ALL_INTERESTS # Qiziqishlar nomlarini olish uchun
 from inline import (
     get_search_keyboard, get_match_keyboard, get_chats_keyboard,
     get_profile_view_keyboard, get_edit_profile_keyboard,
-    get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
-    get_premium_plans_keyboard, get_likes_keyboard, get_confirm_block_keyboard, get_help_keyboard, get_payment_confirmation_keyboard
-    get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard, get_premium_plans_keyboard,
-    get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard
+    get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard, get_premium_plans_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan # Import UserStatus
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT # Import common texts
