@@ -218,7 +218,7 @@ DISTRICT_INVALID_TEXTS = {
 }
 
 
-@router.message(Command("cancel"), RegistrationStates.any())
+@router.message(Command("cancel"), RegistrationStates())
 async def cancel_registration(message: Message, state: FSMContext):
     """Ro'yxatdan o'tish jarayonini bekor qiladi."""
     current_state = await state.get_state()
