@@ -300,6 +300,44 @@ async def create_report(reporter_id: int, reported_id: int, category: ReportCate
         return new_report
 
 
+async def get_unapproved_photo() -> Photo | None:
+    """Fetches a single unapproved photo with its user."""
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(Photo)
+            .where(Photo.is_approved == False)
+            .options(selectinload(Photo.user))
+            .order_by(Photo.uploaded_at)
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+
+async def get_photo_by_id(photo_id: int) -> Photo | None:
+    """Fetches a photo by its ID."""
+    async with async_session_maker() as session:
+        return await session.get(Photo, photo_id, options=[selectinload(Photo.user)])
+
+
+async def approve_photo(photo_id: int) -> bool:
+    """Approves a photo."""
+    async with async_session_maker() as session:
+        photo = await session.get(Photo, photo_id)
+        if photo:
+            photo.is_approved = True
+            await session.commit()
+            return True
+        return False
+
+
+async def reject_photo(photo_id: int) -> bool:
+    """Rejects (deletes) a photo."""
+    async with async_session_maker() as session:
+        await session.execute(delete(Photo).where(Photo.id == photo_id))
+        await session.commit()
+        return True
+
+
 async def get_pending_report() -> Report | None:
     """Fetches a single pending report with its related users."""
     async with async_session_maker() as session:
@@ -314,6 +352,12 @@ async def get_pending_report() -> Report | None:
             .limit(1)
         )
         return result.scalar_one_or_none()
+
+
+async def get_report_by_id(report_id: int) -> Report | None:
+    """Fetches a report by its ID with related users."""
+    async with async_session_maker() as session:
+        return await session.get(Report, report_id, options=[selectinload(Report.reporter), selectinload(Report.reported)])
 
 
 async def update_report_status(report_id: int, status: ReportStatus) -> bool:
@@ -398,6 +442,13 @@ async def get_bot_statistics() -> dict:
             "premium_users": premium_users,
         }
 
+async def get_all_active_user_telegram_ids() -> list[int]:
+    """Fetches all telegram IDs of active users for broadcasting."""
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(User.telegram_id).where(User.status == UserStatus.active)
+        )
+        return result.scalars().all()
 
 # Placeholder for delete_user_data, assuming it will be implemented to remove all user-related data
 async def delete_user_data(user_id: int) -> bool:

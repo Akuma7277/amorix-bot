@@ -13,12 +13,12 @@ from inline import get_moderation_keyboard, get_user_management_keyboard, get_re
 from states import AdminStates
 from crud import (
     get_bot_statistics, get_user_by_telegram_id, get_unapproved_photo, get_all_active_user_telegram_ids, get_payment_statistics,
-    approve_photo, reject_photo, find_user_by_id_or_telegram_id, set_user_status,
+    find_user_by_id_or_telegram_id, set_user_status,
     get_user_photos, get_pending_report, update_report_status, get_photo_by_id, get_user_by_id,
     get_pending_payment, update_payment_status,
     get_pending_verification_request,
     update_verification_request_status,
-    create_admin_log,
+    create_admin_log, approve_photo, reject_photo,
     get_report_by_id,
     get_admin_logs,
 )
