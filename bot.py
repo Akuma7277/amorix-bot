@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 
 from aiogram import Bot, Dispatcher
@@ -19,34 +20,36 @@ from models import Base
 
 async def main() -> None:
     """Botni ishga tushirish."""
-    # Token mavjudligini tekshirish
     if not BOT_TOKEN or BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
         logging.error("Xatolik: Telegram bot tokeni topilmadi yoki o'rnatilmagan.")
         logging.error("Iltimos, .env fayliga o'z tokeningizni kiriting.")
         return
 
-    # FSM uchun Redis storage'ni ishga tushirish
-    redis = Redis(host=REDIS_HOST, port=REDIS_PORT)
+    redis_url = os.getenv("REDIS_URL")
+    if redis_url:
+        redis = Redis.from_url(redis_url)
+    else:
+        redis = Redis(host=REDIS_HOST, port=REDIS_PORT)
     storage = RedisStorage(redis=redis)
 
-    # Bot va Dispatcher obyektlarini yaratish
     bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
     dp = Dispatcher(storage=storage)
 
-    # Routerlarni ulash
     dp.include_router(common_router)
     dp.include_router(registration_router)
     dp.include_router(menu_router)
     dp.include_router(editing_router)
     dp.include_router(admin_router)
 
-    # Ma'lumotlar bazasi jadvallarini yaratish
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as exc:
+        logging.warning(f"Database setup warning: {exc}")
 
-    # Botni ishga tushirish
     logging.info("Bot ishga tushmoqda...")
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)

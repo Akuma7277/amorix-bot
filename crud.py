@@ -257,7 +257,7 @@ async def create_chat_message(match_id: int, sender_id: int, text: str) -> ChatM
         return new_message
 
 
-async def update_user_profile_field(user_id: int, field: str, value: any):
+async def update_user_profile_field(user_id: int, field: str, value: any) -> bool:
     """Updates a specific field for a user."""
     async with async_session_maker() as session:
         user = await session.get(User, user_id)
@@ -266,6 +266,21 @@ async def update_user_profile_field(user_id: int, field: str, value: any):
             await session.commit()
             return True
         return False
+
+
+async def create_admin_log(admin_id: int, action: ActionType, target_user_id: int | None = None, comment: str | None = None) -> AdminLog:
+    """Admin harakatlarini jurnalga yozadi."""
+    async with async_session_maker() as session:
+        log_entry = AdminLog(
+            admin_id=admin_id,
+            action_type=action,
+            target_user_id=target_user_id,
+            comment=comment,
+        )
+        session.add(log_entry)
+        await session.commit()
+        await session.refresh(log_entry)
+        return log_entry
 
 
 async def update_user_photos(user_id: int, new_photo_file_ids: list[str]):

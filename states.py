@@ -49,6 +49,10 @@ class AdminStates(StatesGroup):
     confirming_broadcast = State()
     tariffs_payments = State()
     payment_moderation = State()
+    viewing_logs = State()
+    choosing_log_filter = State()
+    choosing_log_action = State()
+    entering_log_date = State()
 
 
 class SettingsStates(StatesGroup):
