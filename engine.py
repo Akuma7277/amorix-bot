@@ -58,30 +58,48 @@ class _FallbackSession:
         return False
 
     def add(self, instance):
+        if self._available and self._real_session is not None:
+            return self._real_session.add(instance)
         return None
 
     async def flush(self):
+        if self._available and self._real_session is not None:
+            return await self._real_session.flush()
         return None
 
     async def commit(self):
+        if self._available and self._real_session is not None:
+            return await self._real_session.commit()
         return None
 
     async def rollback(self):
+        if self._available and self._real_session is not None:
+            return await self._real_session.rollback()
         return None
 
     async def refresh(self, instance):
+        if self._available and self._real_session is not None:
+            return await self._real_session.refresh(instance)
         return None
 
     async def execute(self, statement):
+        if self._available and self._real_session is not None:
+            return await self._real_session.execute(statement)
         return _EmptyResult()
 
     async def scalar(self, statement):
+        if self._available and self._real_session is not None:
+            return await self._real_session.scalar(statement)
         return None
 
     def scalars(self):
+        if self._available and self._real_session is not None:
+            return self._real_session.scalars()
         return _EmptyScalars()
 
     async def get(self, entity_type, ident, options=None):
+        if self._available and self._real_session is not None:
+            return await self._real_session.get(entity_type, ident, options=options)
         return None
 
 

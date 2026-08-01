@@ -22,6 +22,38 @@ class CrudFallbackTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(user)
 
+    async def test_engine_fallback_session_delegates_to_real_session_when_available(self):
+        class FakeSession:
+            def __init__(self):
+                self.added = []
+                self.committed = False
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, exc_type, exc, tb):
+                return False
+
+            def add(self, instance):
+                self.added.append(instance)
+
+            async def commit(self):
+                self.committed = True
+
+        class FakeSessionMaker:
+            def __call__(self):
+                return FakeSession()
+
+        from engine import _FallbackSession
+
+        session = _FallbackSession(FakeSessionMaker()())
+        await session.__aenter__()
+        session.add("x")
+        await session.commit()
+
+        self.assertEqual(session._real_session.added, ["x"])
+        self.assertTrue(session._real_session.committed)
+
 
 if __name__ == "__main__":
     unittest.main()
