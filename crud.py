@@ -237,7 +237,7 @@ async def get_users_who_liked_me(user_id: int) -> list[User]:
         return users_result.scalars().all()
 
 
-async def add_like_and_check_match(from_user_id: int, to_user_id: int) -> Match | None:
+async def add_like_and_check_match(from_user_id: int, to_user_id: int, is_super_like: bool = False) -> Match | None:
     """
     Adds a like from one user to another and checks for a match.
     Returns the Match object if a match occurred, None otherwise.
@@ -256,6 +256,9 @@ async def add_like_and_check_match(from_user_id: int, to_user_id: int) -> Match 
 
         new_like = Like(from_user_id=from_user_id, to_user_id=to_user_id)
         session.add(new_like)
+
+        if is_super_like:
+            await session.flush()
 
         # Check if the other user has already liked the current user
         reverse_like_exists = await session.scalar(

@@ -181,6 +181,24 @@ MATCH_NOTIFICATION_TEXTS = {
     "en": "🎉 <b>It's a Match!</b>\n\nYou and <b>{name}</b> liked each other. You can start chatting now!",
 }
 
+SUPER_LIKE_TEXTS = {
+    "uz": "✨ Super like yuborildi! Bu sizning qiziqishingizni ko'rsatadi.",
+    "ru": "✨ Супер-лайк отправлен! Это ярко показывает ваш интерес.",
+    "en": "✨ Super like sent! This clearly shows your interest.",
+}
+
+SUPER_LIKE_NOTIFY_TEXTS = {
+    "uz": "✨ {name} sizni super like bilan tanladi!",
+    "ru": "✨ {name} отправил(а) вам супер-лайк!",
+    "en": "✨ {name} sent you a super like!",
+}
+
+BLOCKED_USER_TEXTS = {
+    "uz": "🚫 Foydalanuvchi bloklandi. U endi siz uchun ko'rinmaydi.",
+    "ru": "🚫 Пользователь заблокирован. Он больше не будет отображаться для вас.",
+    "en": "🚫 User blocked. They will no longer appear to you.",
+}
+
 PROFILE_VIEW_TEXTS = {
     "uz": (
         "<b>👤 Mening profilim:</b>\n\n"
@@ -233,9 +251,15 @@ PREMIUM_REQUIRED_TEXTS = {
 }
 
 LIKES_VIEW_TEXTS = {
-    "uz": "Sizni yoqtirgan foydalanuvchilar:",
-    "ru": "Пользователи, которым вы понравились:",
-    "en": "Users who liked you:",
+    "uz": "❤️ Sizni yoqtirgan foydalanuvchilar:",
+    "ru": "❤️ Пользователи, которым вы понравились:",
+    "en": "❤️ Users who liked you:",
+}
+
+LIKES_EMPTY_TEXTS = {
+    "uz": "Hozircha sizni hech kim yoqtirmagan. Qidiruvda faol bo'ling!",
+    "ru": "Пока вас никто не лайкнул. Будьте активнее в поиске!",
+    "en": "Nobody has liked you yet. Be more active in the search!",
 }
 
 REFERRAL_TEXTS = {
@@ -260,9 +284,30 @@ REFERRAL_TEXTS = {
 }
 
 PREMIUM_MAIN_TEXT = {
-    "uz": "⭐️ KAIRYX Premium imkoniyatlari bilan tanishing va o'zingizga mos tarifni tanlang:",
-    "ru": "⭐️ Ознакомьтесь с возможностями KAIRYX Premium и выберите подходящий тариф:",
-    "en": "⭐️ Explore the features of KAIRYX Premium and choose a suitable plan:",
+    "uz": "⭐️ KAIRYX Premium imkoniyatlari bilan tanishing. Quyidagi tariflardan birini tanlang:",
+    "ru": "⭐️ Ознакомьтесь с возможностями KAIRYX Premium. Выберите один из тарифов:",
+    "en": "⭐️ Explore KAIRYX Premium features. Choose one of the plans below:",
+}
+
+PREMIUM_BENEFITS_TEXT = {
+    "uz": (
+        "Premium bilan siz:\n"
+        "• ko'proq profil ko'rasiz\n"
+        "• ko'proq like olish imkoniyatiga ega bo'lasiz\n"
+        "• profilingiz ustun ko'rinadi"
+    ),
+    "ru": (
+        "С Premium вы:\n"
+        "• видите больше профилей\n"
+        "• получаете больше лайков\n"
+        "• ваш профиль выглядит заметнее"
+    ),
+    "en": (
+        "With Premium you can:\n"
+        "• see more profiles\n"
+        "• receive more likes\n"
+        "• stand out better in the app"
+    ),
 }
 
 PAYMENT_INSTRUCTIONS_TEXT = {
@@ -293,9 +338,9 @@ PAYMENT_INSTRUCTIONS_TEXT = {
 }
 
 PAYMENT_CONFIRMED_TEXT = {
-    "uz": "✅ To'lovingiz qabul qilindi va ko'rib chiqilmoqda. Tasdiqlangandan so'ng sizga xabar beriladi. Asosiy menyuga qaytishingiz mumkin.",
-    "ru": "✅ Ваш платеж принят и находится на рассмотрении. Вы будете уведомлены после подтверждения. Можете вернуться в главное меню.",
-    "en": "✅ Your payment has been received and is under review. You will be notified upon confirmation. You can return to the main menu.",
+    "uz": "✅ To'lovingiz qabul qilindi. Premium obuna aktivlashtirish jarayoni boshlanmoqda. Tez orada sizga xabar beriladi.",
+    "ru": "✅ Ваш платеж принят. Процесс активации премиум-подписки начат. Скоро вы получите уведомление.",
+    "en": "✅ Your payment was received. The premium activation process has started. You will be notified shortly.",
 }
 
 PREMIUM_ALREADY_ACTIVE_TEXT = {
@@ -471,13 +516,9 @@ async def show_who_liked_me(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     language = user.language or "uz"
 
-    if user.premium_plan == PremiumPlan.basic:
-        await message.answer(PREMIUM_REQUIRED_TEXTS.get(language, PREMIUM_REQUIRED_TEXTS["uz"]))
-        return
-
     liked_users = await get_users_who_liked_me(user.id)
     if not liked_users:
-        await message.answer(NO_LIKES_TEXTS.get(language, NO_LIKES_TEXTS["uz"]))
+        await message.answer(LIKES_EMPTY_TEXTS.get(language, LIKES_EMPTY_TEXTS["uz"]))
         return
 
     liked_user_ids = [u.id for u in liked_users]
@@ -552,16 +593,12 @@ async def like_profile_handler(callback: CallbackQuery, state: FSMContext):
 
     match = await add_like_and_check_match(from_user_id=current_user.id, to_user_id=target_user_id)
 
-    await callback.answer()  # Callback so'roviga darhol javob berish
-
-    # Joriy anketani o'chirish va keyingisini ko'rsatish
+    await callback.answer()
     await callback.message.delete()
     await show_next_profile(callback.message, state)
 
     if match:
         target_user = await get_user_by_id(target_user_id)
-
-        # Joriy foydalanuvchiga bildirishnoma yuborish
         current_user_lang = current_user.language or "uz"
         text_for_current = MATCH_NOTIFICATION_TEXTS.get(current_user_lang, MATCH_NOTIFICATION_TEXTS["uz"]).format(name=target_user.name)
         await callback.bot.send_message(
@@ -570,7 +607,6 @@ async def like_profile_handler(callback: CallbackQuery, state: FSMContext):
             reply_markup=get_match_keyboard(current_user_lang, match.id)
         )
 
-        # Ikkinchi foydalanuvchiga bildirishnoma yuborish
         target_user_lang = target_user.language or "uz"
         text_for_target = MATCH_NOTIFICATION_TEXTS.get(target_user_lang, MATCH_NOTIFICATION_TEXTS["uz"]).format(name=current_user.name)
         await callback.bot.send_message(
@@ -578,6 +614,40 @@ async def like_profile_handler(callback: CallbackQuery, state: FSMContext):
             text=text_for_target,
             reply_markup=get_match_keyboard(target_user_lang, match.id)
         )
+
+
+@router.callback_query(MenuStates.searching, F.data.startswith("super_like_"))
+async def super_like_profile_handler(callback: CallbackQuery, state: FSMContext):
+    target_user_id = int(callback.data.split("_")[2])
+    current_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = current_user.language or "uz"
+
+    match = await add_like_and_check_match(from_user_id=current_user.id, to_user_id=target_user_id, is_super_like=True)
+    await callback.answer(SUPER_LIKE_TEXTS.get(language, SUPER_LIKE_TEXTS["uz"]))
+    await callback.message.delete()
+    await show_next_profile(callback.message, state)
+
+    target_user = await get_user_by_id(target_user_id)
+    if target_user:
+        try:
+            await callback.bot.send_message(
+                chat_id=target_user.telegram_id,
+                text=SUPER_LIKE_NOTIFY_TEXTS.get(language, SUPER_LIKE_NOTIFY_TEXTS["uz"]).format(name=current_user.name or "Foydalanuvchi"),
+            )
+        except Exception as exc:
+            logging.warning(f"Could not notify user about super-like: {exc}")
+
+
+@router.callback_query(MenuStates.searching, F.data.startswith("block_"))
+async def block_user_handler(callback: CallbackQuery, state: FSMContext):
+    target_user_id = int(callback.data.split("_")[1])
+    current_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = current_user.language or "uz"
+
+    await block_user(blocker_id=current_user.id, blocked_id=target_user_id)
+    await callback.answer(BLOCKED_USER_TEXTS.get(language, BLOCKED_USER_TEXTS["uz"]))
+    await callback.message.delete()
+    await show_next_profile(callback.message, state)
 
 
 @router.callback_query(MenuStates.searching, F.data.startswith("report_"))
@@ -950,7 +1020,7 @@ async def premium_main_menu(message: Message, state: FSMContext):
 
     await state.set_state(PremiumStates.choosing_plan)
     await message.answer(
-        PREMIUM_MAIN_TEXT.get(language, PREMIUM_MAIN_TEXT["uz"]),
+        f"{PREMIUM_MAIN_TEXT.get(language, PREMIUM_MAIN_TEXT['uz'])}\n\n{PREMIUM_BENEFITS_TEXT.get(language, PREMIUM_BENEFITS_TEXT['uz'])}",
         reply_markup=get_premium_plans_keyboard(language)
     )
 
@@ -993,10 +1063,6 @@ async def confirm_payment(callback: CallbackQuery, state: FSMContext):
         return
 
     await create_payment_record(user_id=user.id, amount=plan_details["price"], plan_name=plan_details["name"])
-    
-    new_expiry_date = datetime.now() + timedelta(days=plan_details["duration_days"])
-    await update_user_profile_field(user.id, "premium_plan", PremiumPlan[plan])
-    await update_user_profile_field(user.id, "premium_expires_at", new_expiry_date)
 
     await callback.message.edit_text(PAYMENT_CONFIRMED_TEXT.get(language, PAYMENT_CONFIRMED_TEXT["uz"]))
     await state.clear()

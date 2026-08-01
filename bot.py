@@ -2,6 +2,8 @@ import asyncio
 import logging
 import os
 import sys
+import tempfile
+import time
 import uuid
 
 from aiogram import Bot, Dispatcher
@@ -21,31 +23,106 @@ from engine import engine
 from models import Base
 
 
-async def acquire_polling_lock(redis_client: Redis | None, lock_key: str) -> tuple[bool, str | None]:
-    """Return True if this instance successfully acquired the polling lock."""
-    if redis_client is None:
-        return True, None
+_FILE_LOCK_HANDLES: dict[str, str] = {}
+
+
+def _acquire_file_lock(lock_path: str) -> tuple[bool, str | None, str | None]:
+    """Acquire a filesystem-based lock for this process."""
+    lock_dir = os.path.dirname(lock_path) or "."
+    os.makedirs(lock_dir, exist_ok=True)
 
     token = str(uuid.uuid4())
     try:
-        acquired = await redis_client.set(lock_key, token, nx=True, ex=300)
-        return bool(acquired), token if acquired else None
-    except Exception as exc:
-        logging.warning(f"Polling lock unavailable: {exc}")
-        return True, None
+        fd = os.open(lock_path, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        try:
+            if time.time() - os.path.getmtime(lock_path) > 300:
+                os.remove(lock_path)
+                fd = os.open(lock_path, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o600)
+            else:
+                return False, None, None
+        except FileNotFoundError:
+            fd = os.open(lock_path, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o600)
+        except OSError as exc:
+            logging.warning(f"Unable to acquire polling lock file: {exc}")
+            return False, None, None
+    except OSError as exc:
+        logging.warning(f"Unable to open polling lock file: {exc}")
+        return False, None, None
+
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(token)
+            handle.flush()
+    except OSError as exc:
+        logging.warning(f"Unable to write polling lock file: {exc}")
+        return False, None, None
+
+    return True, token, lock_path
 
 
-async def release_polling_lock(redis_client: Redis | None, lock_key: str, token: str | None) -> None:
-    """Release the polling lock if this instance still owns it."""
-    if not token or redis_client is None:
+def _release_file_lock(token: str | None) -> None:
+    """Release a filesystem lock for the provided token."""
+    if not token:
+        return
+
+    lock_path = _FILE_LOCK_HANDLES.pop(token, None)
+    if not lock_path:
         return
 
     try:
-        current_token = await redis_client.get(lock_key)
-        if current_token and current_token.decode() == token:
-            await redis_client.delete(lock_key)
-    except Exception as exc:
+        os.remove(lock_path)
+    except FileNotFoundError:
+        return
+    except OSError as exc:
         logging.warning(f"Polling lock cleanup warning: {exc}")
+
+
+async def acquire_polling_lock(
+    redis_client: Redis | None,
+    lock_key: str,
+    lock_path: str | None = None,
+) -> tuple[bool, str | None]:
+    """Return True if this instance successfully acquired the polling lock."""
+    if redis_client is not None:
+        token = str(uuid.uuid4())
+        try:
+            acquired = await redis_client.set(lock_key, token, nx=True, ex=300)
+            return bool(acquired), token if acquired else None
+        except Exception as exc:
+            logging.warning(f"Polling lock unavailable: {exc}")
+
+    file_lock_path = lock_path or os.getenv(
+        "BOT_POLLING_LOCK_FILE",
+        os.path.join(tempfile.gettempdir(), "kairyx-bot.lock"),
+    )
+    acquired, token, handle = await asyncio.to_thread(_acquire_file_lock, file_lock_path)
+    if acquired and token:
+        _FILE_LOCK_HANDLES[token] = file_lock_path
+        return True, token
+    return False, None
+
+
+async def release_polling_lock(
+    redis_client: Redis | None,
+    lock_key: str,
+    token: str | None,
+    lock_path: str | None = None,
+) -> None:
+    """Release the polling lock if this instance still owns it."""
+    if not token:
+        return
+
+    if redis_client is not None:
+        try:
+            current_token = await redis_client.get(lock_key)
+            if current_token and current_token.decode() == token:
+                await redis_client.delete(lock_key)
+        except Exception as exc:
+            logging.warning(f"Polling lock cleanup warning: {exc}")
+        return
+
+    await asyncio.to_thread(_release_file_lock, token)
 
 
 async def main() -> None:
@@ -104,7 +181,10 @@ async def main() -> None:
     try:
         lock_acquired, polling_lock_token = await acquire_polling_lock(redis_client, lock_key)
         if not lock_acquired:
-            logging.warning("Another bot instance is already polling. This instance will exit.")
+            logging.warning(
+                "Another bot instance is already polling or the local lock is busy. "
+                "This instance will exit to prevent Telegram conflicts."
+            )
             return
 
         logging.info("Bot ishga tushmoqda...")

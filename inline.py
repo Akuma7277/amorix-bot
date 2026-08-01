@@ -206,9 +206,9 @@ def get_review_keyboard(language: str = "uz"):
 
 
 SEARCH_BUTTON_TEXTS = {
-    "uz": {"like": "❤️ Yoqdi", "skip": "➡️ O'tkazib yuborish", "report": "❗️ Shikoyat"},
-    "ru": {"like": "❤️ Нравится", "skip": "➡️ Пропустить", "report": "❗️ Жалоба"},
-    "en": {"like": "❤️ Like", "skip": "➡️ Skip", "report": "❗️ Report"},
+    "uz": {"like": "❤️ Yoqdi", "super_like": "✨ Super like", "skip": "➡️ O'tkazib yuborish", "report": "❗️ Shikoyat", "block": "🚫 Bloklash"},
+    "ru": {"like": "❤️ Нравится", "super_like": "✨ Супер-лайк", "skip": "➡️ Пропустить", "report": "❗️ Жалоба", "block": "🚫 Заблокировать"},
+    "en": {"like": "❤️ Like", "super_like": "✨ Super like", "skip": "➡️ Skip", "report": "❗️ Report", "block": "🚫 Block"},
 }
 
 
@@ -217,7 +217,11 @@ def get_search_keyboard(language: str = "uz", target_user_id: int = 0):
     buttons = [
         [
             InlineKeyboardButton(text=texts["like"], callback_data=f"like_{target_user_id}"),
+            InlineKeyboardButton(text=texts["super_like"], callback_data=f"super_like_{target_user_id}"),
+        ],
+        [
             InlineKeyboardButton(text=texts["skip"], callback_data="skip_profile"),
+            InlineKeyboardButton(text=texts["block"], callback_data=f"block_{target_user_id}"),
         ],
         [InlineKeyboardButton(text=texts["report"], callback_data=f"report_{target_user_id}")],
     ]
@@ -254,6 +258,43 @@ def get_match_keyboard(language: str = "uz", match_id: int = 0):
     text = CHAT_BUTTON_TEXTS.get(language, CHAT_BUTTON_TEXTS["uz"])
     buttons = [
         [InlineKeyboardButton(text=text, callback_data=f"start_chat_{match_id}")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+ADMIN_DASHBOARD_BUTTON_TEXTS = {
+    "uz": {
+        "stats": "📊 Statistika",
+        "users": "👥 Foydalanuvchilar",
+        "payments": "💳 To'lovlar",
+        "broadcast": "📢 Broadcast",
+    },
+    "ru": {
+        "stats": "📊 Статистика",
+        "users": "👥 Пользователи",
+        "payments": "💳 Платежи",
+        "broadcast": "📢 Рассылка",
+    },
+    "en": {
+        "stats": "📊 Statistics",
+        "users": "👥 Users",
+        "payments": "💳 Payments",
+        "broadcast": "📢 Broadcast",
+    },
+}
+
+
+def get_admin_dashboard_keyboard(language: str = "uz"):
+    texts = ADMIN_DASHBOARD_BUTTON_TEXTS.get(language, ADMIN_DASHBOARD_BUTTON_TEXTS["uz"])
+    buttons = [
+        [
+            InlineKeyboardButton(text=texts["stats"], callback_data="admin_stats"),
+            InlineKeyboardButton(text=texts["users"], callback_data="admin_users"),
+        ],
+        [
+            InlineKeyboardButton(text=texts["payments"], callback_data="admin_payments"),
+            InlineKeyboardButton(text=texts["broadcast"], callback_data="admin_broadcast"),
+        ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

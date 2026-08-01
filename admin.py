@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from aiogram import F, Router, Bot
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton # Added for broadcast
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN_IDS
 from reply import (
     get_admin_main_menu_keyboard, ADMIN_MENU_BUTTONS, get_main_menu_keyboard
@@ -21,9 +21,10 @@ from crud import (
     create_admin_log, approve_photo, reject_photo,
     get_report_by_id,
     get_admin_logs,
+    update_user_profile_field,
 )
 from models import UserStatus, ReportStatus, ActionType, VerificationStatus, PremiumPlan
-from menu import PROFILE_VIEW_TEXTS
+from menu import PROFILE_VIEW_TEXTS, PREMIUM_MAIN_TEXT
 from registration import ALL_INTERESTS
 
 router = Router()
@@ -103,7 +104,7 @@ USER_NOT_FOUND_TEXT = {
     "en": "User with this ID was not found.",
 }
 
-USER_BANNED_TEXT = "🚫 Foydalanuvchi bloklandi."
+USER_BANNED_TEXT = "🚫 Foydalanuvchi bloklandi va endi botda ko'rinmaydi."
 USER_UNBANNED_TEXT = "✅ Foydalanuvchi blokdan chiqarildi."
 
 REPORT_DETAILS_TEXT = {
@@ -330,7 +331,7 @@ async def cmd_admin(message: Message, state: FSMContext):
     language = user.language if user else "uz"
 
     await message.answer(
-        "Admin paneliga xush kelibsiz!",
+        "🛡️ Admin paneliga xush kelibsiz. Bu yerda foydalanuvchilar, to'lovlar, moderatorlik va broadcastlarni boshqarishingiz mumkin.",
         reply_markup=get_admin_main_menu_keyboard(language)
     )
     await state.set_state(AdminStates.main_menu)
@@ -839,19 +840,36 @@ async def start_payment_moderation(message: Message, state: FSMContext):
 @router.callback_query(AdminStates.payment_moderation, F.data.startswith("payment_approve_"))
 async def approve_payment_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
     payment_id = int(callback.data.split("_")[-1])
-    
+
     payment = await update_payment_status(payment_id, "completed")
     await callback.answer(PAYMENT_APPROVED_TEXT)
-    
+
     if payment:
+        plan_name = payment.description or "Gold"
+        plan_key = "gold" if "Gold" in plan_name else "platinum"
+        duration_days = 30 if plan_key == "gold" else 90
+        new_expiry_date = datetime.now() + timedelta(days=duration_days)
+
+        await update_user_profile_field(payment.user_id, "premium_plan", PremiumPlan[plan_key])
+        await update_user_profile_field(payment.user_id, "premium_expires_at", new_expiry_date)
+
         await create_admin_log(
             admin_id=callback.from_user.id,
             action=ActionType.confirm_payment,
             target_user_id=payment.user_id,
             comment=f"Payment ID: {payment_id}, Amount: {payment.amount}"
         )
-        # The user already got premium status in menu.py, so we just log and move on.
-        # Optionally, send a confirmation message.
+
+        user = await get_user_by_id(payment.user_id)
+        if user:
+            user_lang = user.language or "uz"
+            try:
+                await bot.send_message(
+                    chat_id=user.telegram_id,
+                    text=PAYMENT_APPROVED_TEXT + f"\n\n{PREMIUM_MAIN_TEXT.get(user_lang, PREMIUM_MAIN_TEXT['uz'])}",
+                )
+            except Exception as exc:
+                logging.warning(f"Could not notify user {user.telegram_id} about premium activation: {exc}")
 
     await callback.message.delete()
     await show_payment_for_moderation(callback.message, state)
