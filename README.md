@@ -1,4 +1,4 @@
-# Amorix Bot
+# KAIRYX Bot
 
 ## Railway deploy
 

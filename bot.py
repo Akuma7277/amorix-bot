@@ -98,7 +98,7 @@ async def main() -> None:
     except Exception as exc:
         logging.warning(f"Database setup warning: {exc}")
 
-    lock_key = os.getenv("BOT_POLLING_LOCK_KEY", "amorix-bot:polling_lock")
+    lock_key = os.getenv("BOT_POLLING_LOCK_KEY", "kairyx-bot:polling_lock")
     polling_lock_token = None
 
     try:

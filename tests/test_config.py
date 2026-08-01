@@ -15,11 +15,11 @@ class ConfigHelpersTests(unittest.TestCase):
         os.environ["POSTGRES_PASSWORD"] = "secret"
         os.environ["POSTGRES_HOST"] = "db.internal"
         os.environ["POSTGRES_PORT"] = "5433"
-        os.environ["POSTGRES_DB"] = "amorix"
+        os.environ["POSTGRES_DB"] = "kairyx"
 
         self.assertEqual(
             build_database_url(),
-            "postgresql+asyncpg://postgres:secret@db.internal:5433/amorix",
+            "postgresql+asyncpg://postgres:secret@db.internal:5433/kairyx",
         )
 
     def test_parse_admin_ids(self):

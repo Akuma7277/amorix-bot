@@ -15,7 +15,7 @@ def build_database_url() -> str:
     postgres_password = os.getenv("POSTGRES_PASSWORD", "postgres")
     postgres_host = os.getenv("POSTGRES_HOST", "localhost")
     postgres_port = os.getenv("POSTGRES_PORT", "5432")
-    postgres_db = os.getenv("POSTGRES_DB", "amorix_db")
+    postgres_db = os.getenv("POSTGRES_DB", "kairyx_db")
     return f"postgresql+asyncpg://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
 
 

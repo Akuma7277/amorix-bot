@@ -243,9 +243,9 @@ REFERRAL_TEXTS = {
 }
 
 PREMIUM_MAIN_TEXT = {
-    "uz": "⭐️ Amorix Premium imkoniyatlari bilan tanishing va o'zingizga mos tarifni tanlang:",
-    "ru": "⭐️ Ознакомьтесь с возможностями Amorix Premium и выберите подходящий тариф:",
-    "en": "⭐️ Explore the features of Amorix Premium and choose a suitable plan:",
+    "uz": "⭐️ KAIRYX Premium imkoniyatlari bilan tanishing va o'zingizga mos tarifni tanlang:",
+    "ru": "⭐️ Ознакомьтесь с возможностями KAIRYX Premium и выберите подходящий тариф:",
+    "en": "⭐️ Explore the features of KAIRYX Premium and choose a suitable plan:",
 }
 
 PAYMENT_INSTRUCTIONS_TEXT = {
