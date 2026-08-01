@@ -27,89 +27,119 @@ from models import (
 from engine import async_session_maker
  
 
-async def create_user_profile(telegram_id: int, user_data: dict) -> User:
+async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
     """
     Foydalanuvchi ma'lumotlarini va rasmlarini ma'lumotlar bazasiga saqlaydi.
     """
-    async with async_session_maker() as session:
-        # User obyektini yaratish
-        new_user = User(
-            telegram_id=telegram_id,
-            name=user_data.get("name"),
-            age=user_data.get("age"),
-            gender=UserGender[user_data["gender"]],  # Enumga o'tkazish
-            looking_for=LookingForGender[user_data["looking_for"]],  # Enumga o'tkazish
-            city=user_data.get("city"),
-            district=user_data.get("district"),
-            bio=user_data.get("bio"),
-            interests=",".join(user_data.get("interests", [])),
-            language=user_data.get("language"),
-            # Boshqa maydonlar default qiymatlar bilan to'ldiriladi
-        )
-        session.add(new_user)
-        await session.flush()  # new_user.id ni olish uchun
-
-        # Rasmlarni saqlash
-        photos = user_data.get("photos", [])
-        for i, file_id in enumerate(photos):
-            new_photo = Photo(
-                user_id=new_user.id,
-                file_id=file_id,
-                order=i + 1,
-                is_approved=False,  # Moderatsiya uchun dastlab tasdiqlanmagan
+    try:
+        async with async_session_maker() as session:
+            # User obyektini yaratish
+            new_user = User(
+                telegram_id=telegram_id,
+                name=user_data.get("name"),
+                age=user_data.get("age"),
+                gender=UserGender[user_data["gender"]],  # Enumga o'tkazish
+                looking_for=LookingForGender[user_data["looking_for"]],  # Enumga o'tkazish
+                city=user_data.get("city"),
+                district=user_data.get("district"),
+                bio=user_data.get("bio"),
+                interests=",".join(user_data.get("interests", [])),
+                language=user_data.get("language"),
+                # Boshqa maydonlar default qiymatlar bilan to'ldiriladi
             )
-            session.add(new_photo)
+            session.add(new_user)
+            await session.flush()  # new_user.id ni olish uchun
 
-        await session.commit()
-        await session.refresh(new_user)
+            # Rasmlarni saqlash
+            photos = user_data.get("photos", [])
+            for i, file_id in enumerate(photos):
+                new_photo = Photo(
+                    user_id=new_user.id,
+                    file_id=file_id,
+                    order=i + 1,
+                    is_approved=False,  # Moderatsiya uchun dastlab tasdiqlanmagan
+                )
+                session.add(new_photo)
 
-        return new_user
+            await session.commit()
+            await session.refresh(new_user)
+
+            return new_user
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while creating user profile: {exc}")
+        return None
 
 
 async def get_user_by_telegram_id(telegram_id: int) -> User | None:
     """Foydalanuvchini telegram ID orqali topadi."""
-    async with async_session_maker() as session:
-        result = await session.execute(
-            select(User).where(User.telegram_id == telegram_id)
-        )
-        return result.scalar_one_or_none()
+    try:
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            return result.scalar_one_or_none()
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while fetching user: {exc}")
+        return None
 
 
 async def get_user_photos(user_id: int) -> list[Photo]:
     """Foydalanuvchining rasmlarini user_id orqali topadi."""
-    async with async_session_maker() as session:
-        result = await session.execute(
-            select(Photo).where(Photo.user_id == user_id).order_by(Photo.order)
-        )
-        return result.scalars().all()
+    try:
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(Photo).where(Photo.user_id == user_id).order_by(Photo.order)
+            )
+            return result.scalars().all()
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while fetching user photos: {exc}")
+        return []
 
 
 async def get_user_matches(user_id: int) -> list[Match]:
     """
     Fetches all active matches for a user.
     """
-    async with async_session_maker() as session:
-        result = await session.execute(
-            select(Match).where(
-                or_(Match.user1_id == user_id, Match.user2_id == user_id),
-                Match.is_active == True
-            ).order_by(Match.created_at.desc())
-        )
-        return result.scalars().all()
+    try:
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(Match).where(
+                    or_(Match.user1_id == user_id, Match.user2_id == user_id),
+                    Match.is_active == True
+                ).order_by(Match.created_at.desc())
+            )
+            return result.scalars().all()
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while fetching matches: {exc}")
+        return []
 
 
 async def get_user_by_id(user_id: int) -> User | None:
     """Finds a user by their primary key ID."""
-    async with async_session_maker() as session:
-        result = await session.execute(select(User).where(User.id == user_id))
-        return result.scalar_one_or_none()
+    try:
+        async with async_session_maker() as session:
+            result = await session.execute(select(User).where(User.id == user_id))
+            return result.scalar_one_or_none()
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while fetching user by id: {exc}")
+        return None
 
 
 async def get_match_by_id(match_id: int) -> Match | None:
     """Finds a match by its primary key ID."""
-    async with async_session_maker() as session:
-        result = await session.execute(select(Match).where(Match.id == match_id))
-        return result.scalar_one_or_none()
+    try:
+        async with async_session_maker() as session:
+            result = await session.execute(select(Match).where(Match.id == match_id))
+            return result.scalar_one_or_none()
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while fetching match: {exc}")
+        return None
 
 
 async def get_profiles_for_user(current_user: User, limit: int = 20) -> list[User]:
