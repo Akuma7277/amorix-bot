@@ -2,6 +2,28 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from models import UserStatus, ReportCategory, VerificationStatus, PremiumPlan, ActionType
 
 
+UZBEK_REGIONS = {
+    "Andijon": ["Andijon", "Asaka", "Baliqchi", "Bo'z", "Izboskan", "Jalaquduq", "Marhamat", "Oltinko'l", "Paxtaobod", "Shahrixon", "Xonobod", "Qo'rg'ontepa"],
+    "Buxoro": ["Buxoro", "G'ijduvon", "Jondor", "Kogon", "Qorako'l", "Qorovulbozor", "Peshku", "Romitan", "Shofirkon", "Vobkent", "Olot"],
+    "Farg'ona": ["Farg'ona", "Beshariq", "Bog'dod", "Dang'ara", "Furqat", "Qo'shtepa", "Rishton", "So'x", "Toshloq", "Uchko'prik", "Yozyovon", "Quva"],
+    "Jizzax": ["Jizzax", "Arnasoy", "Baxmal", "G'allakor", "Mirzacho'l", "Paxtakor", "Yangiobod", "Zomin", "Forish", "Do'stlik"],
+    "Namangan": ["Namangan", "Chortoq", "Chust", "Kosonsoy", "Mingbuloq", "Naryn", "Pop", "Turakurgan", "Uchqo'rg'on", "Yangikurgan"],
+    "Navoiy": ["Navoiy", "Karmana", "Konimex", "Qiziltepa", "Tomdi", "Uchkuduq", "Xatirchi", "Zarafshon", "Navbahor"],
+    "Qashqadaryo": ["Qarshi", "Chiroqchi", "Dehqonobod", "G'uzor", "Kasbi", "Kitob", "Koson", "Mirishkor", "Muborak", "Nishon", "Shahrisabz", "Yakkabog'", "Kamashi"],
+    "Qoraqalpog'iston": ["Nukus", "Amudaryo", "Beruniy", "Bo'zatov", "Chimboy", "Ellikqal'a", "Kegeyli", "Mo'ynoq", "Qonliko'l", "Qo'ng'irot", "Shumanay", "Taxtako'pir", "To'rtko'l", "Xo'jayli"],
+    "Samarqand": ["Samarqand", "Bulung'ur", "Ishtixon", "Jomboy", "Kattaqo'rg'on", "Koshrabot", "Narpay", "Nurobod", "Oqdaryo", "Paxtachi", "Payariq", "Toyloq", "Urgut", "Chetsy"],
+    "Sirdaryo": ["Guliston", "Boyovut", "Hazorasp", "Mirzaobod", "Sayxun", "Sardoba", "Shirin", "Yangiyer", "Yovon", "Baxt"],
+    "Surxondaryo": ["Termiz", "Angor", "Bandixon", "Boysun", "Denov", "Jarqo'rg'on", "Muzrabot", "Qiziriq", "Sariosiyo", "Sherobod", "Sho'rchi", "Uzun", "Oltinsoy"],
+    "Toshkent viloyati": ["Bekobod", "Bo'stonliq", "Chinoz", "Qibray", "Ohangaron", "Oqqo'rg'on", "Parkent", "Piskent", "Toshkent", "Yangiyo'l", "Yuqorichirchiq", "Zangiota", "Boka"],
+    "Toshkent shahri": ["Yunusobod", "Mirobod", "Chilonzor", "Mirzo Ulug'bek", "Olmazor", "Shayxontohur", "Yakkasaroy", "Bektemir", "Yashnobod", "Sergeli", "Maksim Gorkiy", "Yangihayot", "Beshyog'och"],
+    "Xorazm": ["Urganch", "Bog'ot", "Gurlan", "Hazorasp", "Khiva", "Qoshkopir", "Shovot", "Yangibozor", "Yangiariq", "Xonqa"],
+}
+
+
+def _slugify(value: str) -> str:
+    return value.lower().replace("'", "").replace(" ", "_")
+
+
 def get_language_keyboard():
     buttons = [
         [InlineKeyboardButton(text="🇺🇿 O'zbekcha", callback_data="lang_uz")],
@@ -58,6 +80,33 @@ def get_looking_for_keyboard(language: str = "uz"):
         ],
         [InlineKeyboardButton(text=texts["any"], callback_data="looking_for_any")],
     ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_region_keyboard(language: str = "uz"):
+    buttons = []
+    for region_name in UZBEK_REGIONS.keys():
+        buttons.append([InlineKeyboardButton(text=region_name, callback_data=f"region_{_slugify(region_name)}")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_district_keyboard(region_name: str, language: str = "uz"):
+    districts = UZBEK_REGIONS.get(region_name, [])
+    buttons = []
+    for district_name in districts:
+        buttons.append([InlineKeyboardButton(text=district_name, callback_data=f"district_{_slugify(district_name)}")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_age_keyboard(language: str = "uz"):
+    buttons = []
+    ages = list(range(18, 61))
+    for index in range(0, len(ages), 4):
+        row = []
+        for age in ages[index:index + 4]:
+            row.append(InlineKeyboardButton(text=str(age), callback_data=f"age_{age}"))
+        buttons.append(row)
+    buttons.append([InlineKeyboardButton(text="✅ Tanlash", callback_data="age_done")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 

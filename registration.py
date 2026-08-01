@@ -6,11 +6,14 @@ from aiogram.filters import Command
 
 from inline import (
     get_accept_terms_keyboard,
+    get_age_keyboard,
+    get_district_keyboard,
     get_gender_keyboard,
     get_looking_for_keyboard,
     get_interests_keyboard,
     ALL_INTERESTS,
     get_photo_upload_done_keyboard,
+    get_region_keyboard,
     get_review_keyboard,
     get_edit_profile_keyboard,
 )
@@ -56,9 +59,9 @@ NEXT_STEP_TEXTS = {
 }
 
 AGE_REQUEST_TEXTS = {
-    "uz": "Ajoyib! Endi yoshingizni kiriting (faqat raqamlarda).",
-    "ru": "Отлично! Теперь введите ваш возраст (только цифрами).",
-    "en": "Great! Now, enter your age (numbers only).",
+    "uz": "Ajoyib! Endi yoshingizni tanlang. Bu sizni mos foydalanuvchilar bilan bog'lash uchun kerak.",
+    "ru": "Отлично! Теперь выберите свой возраст. Это нужно для поиска подходящих пользователей.",
+    "en": "Great! Now choose your age. This helps us find better matches for you.",
 }
 
 AGE_INVALID_TEXTS = {
@@ -86,27 +89,27 @@ LOOKING_FOR_REQUEST_TEXTS = {
 }
 
 CITY_REQUEST_TEXTS = {
-    "uz": "Ajoyib! Endi shahringizni kiriting.",
-    "ru": "Отлично! Теперь введите ваш город.",
-    "en": "Great! Now, please enter your city.",
+    "uz": "Ajoyib! Endi viloyatingizni tanlang.",
+    "ru": "Отлично! Теперь выберите ваш регион.",
+    "en": "Great! Now choose your region.",
 }
 
 DISTRICT_REQUEST_TEXTS = {
-    "uz": "Yaxshi. Endi tumaningizni kiriting.",
-    "ru": "Хорошо. Теперь введите ваш район.",
-    "en": "Good. Now, please enter your district.",
+    "uz": "Yaxshi. Endi tumaningizni tanlang.",
+    "ru": "Хорошо. Теперь выберите ваш район.",
+    "en": "Good. Now choose your district.",
 }
 
 INTERESTS_REQUEST_TEXTS = {
-    "uz": "Deyarli tayyor! O'zingizni qiziqtirgan bir nechta mashg'ulotlarni tanlang (keyinroq o'zgartirish mumkin).",
-    "ru": "Почти готово! Выберите несколько интересующих вас занятий (можно будет изменить позже).",
-    "en": "Almost there! Choose a few interests (you can change them later).",
+    "uz": "Deyarli tayyor! O'zingizni qiziqtirgan bir nechta mashg'ulotlarni tanlang.",
+    "ru": "Почти готово! Выберите несколько интересующих вас занятий.",
+    "en": "Almost there! Choose a few interests that fit you.",
 }
 
 BIO_REQUEST_TEXTS = {
-    "uz": "Ajoyib! Endi o'zingiz haqingizda qisqacha ma'lumot (bio) kiriting. Bu sizni boshqalarga tanitishga yordam beradi.",
-    "ru": "Отлично! Теперь введите краткую информацию о себе (био). Это поможет другим узнать вас.",
-    "en": "Great! Now, enter a short bio about yourself. This will help others get to know you.",
+    "uz": "Ajoyib! Endi o'zingiz haqingizda qisqacha bio yozing. Bu boshqalarga sizni tanishtirishga yordam beradi.",
+    "ru": "Отлично! Теперь напишите короткое био о себе. Это поможет другим узнать вас.",
+    "en": "Great! Write a short bio about yourself. This helps others get to know you.",
 }
 
 INTERESTS_MIN_ERROR_TEXTS = {
@@ -299,6 +302,34 @@ async def age_entered(message: Message, state: FSMContext):
     await state.set_state(RegistrationStates.choosing_gender)
 
 
+@router.callback_query(RegistrationStates.entering_age, F.data.startswith("age_"))
+async def age_selected(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    age_text = callback.data.split("_", 1)[1]
+
+    if age_text == "done":
+        await callback.answer()
+        return
+
+    if not age_text.isdigit():
+        await callback.answer(AGE_INVALID_TEXTS.get(language, AGE_INVALID_TEXTS["uz"]), show_alert=True)
+        return
+
+    age = int(age_text)
+    if age < 18:
+        await callback.answer(AGE_TOO_YOUNG_TEXTS.get(language, AGE_TOO_YOUNG_TEXTS["uz"]), show_alert=True)
+        return
+
+    await state.update_data(age=age)
+    await callback.message.edit_text(
+        text=GENDER_REQUEST_TEXTS.get(language, GENDER_REQUEST_TEXTS["uz"]),
+        reply_markup=get_gender_keyboard(language),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_gender)
+
+
 @router.callback_query(RegistrationStates.choosing_gender, F.data.startswith("gender_"))
 async def gender_chosen(callback: CallbackQuery, state: FSMContext):
     gender = callback.data.split("_")[1]
@@ -326,10 +357,26 @@ async def looking_for_chosen(callback: CallbackQuery, state: FSMContext):
     language = data.get("language", "uz")
 
     await callback.message.edit_text(
-        text=CITY_REQUEST_TEXTS.get(language, CITY_REQUEST_TEXTS["uz"])
+        text=CITY_REQUEST_TEXTS.get(language, CITY_REQUEST_TEXTS["uz"]),
+        reply_markup=get_region_keyboard(language),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.entering_city)
+
+
+@router.callback_query(RegistrationStates.entering_city, F.data.startswith("region_"))
+async def region_selected(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    region_name = callback.data.split("_", 1)[1].replace("_", " ").title()
+
+    await state.update_data(city=region_name)
+    await callback.message.edit_text(
+        text=DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"]),
+        reply_markup=get_district_keyboard(region_name, language),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_district)
 
 
 @router.message(RegistrationStates.entering_city, F.text)
@@ -346,6 +393,21 @@ async def city_entered(message: Message, state: FSMContext):
 
     await message.answer(DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"])) # DISTRICT_REQUEST_TEXTS was missing
     await state.set_state(RegistrationStates.entering_district)
+
+
+@router.callback_query(RegistrationStates.entering_district, F.data.startswith("district_"))
+async def district_selected(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    district = callback.data.split("_", 1)[1].replace("_", " ").title()
+
+    await state.update_data(district=district)
+    await callback.message.edit_text(
+        text=INTERESTS_REQUEST_TEXTS.get(language, INTERESTS_REQUEST_TEXTS["uz"]),
+        reply_markup=get_interests_keyboard(language),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_interests)
 
 
 @router.message(RegistrationStates.entering_district, F.text)
@@ -417,7 +479,8 @@ async def bio_entered(message: Message, state: FSMContext):
     await state.update_data(bio=message.text)
 
     await message.answer(
-        PHOTO_REQUEST_TEXTS.get(language, PHOTO_REQUEST_TEXTS["uz"])
+        PHOTO_REQUEST_TEXTS.get(language, PHOTO_REQUEST_TEXTS["uz"]),
+        reply_markup=get_photo_upload_done_keyboard(language),
     )
     await state.set_state(RegistrationStates.uploading_photos)
 
