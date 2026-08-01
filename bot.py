@@ -6,6 +6,7 @@ import uuid
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio.client import Redis
 
@@ -20,16 +21,23 @@ from engine import engine
 from models import Base
 
 
-async def acquire_polling_lock(redis_client: Redis, lock_key: str) -> tuple[bool, str | None]:
+async def acquire_polling_lock(redis_client: Redis | None, lock_key: str) -> tuple[bool, str | None]:
     """Return True if this instance successfully acquired the polling lock."""
+    if redis_client is None:
+        return True, None
+
     token = str(uuid.uuid4())
-    acquired = await redis_client.set(lock_key, token, nx=True, ex=300)
-    return bool(acquired), token if acquired else None
+    try:
+        acquired = await redis_client.set(lock_key, token, nx=True, ex=300)
+        return bool(acquired), token if acquired else None
+    except Exception as exc:
+        logging.warning(f"Polling lock unavailable: {exc}")
+        return True, None
 
 
-async def release_polling_lock(redis_client: Redis, lock_key: str, token: str | None) -> None:
+async def release_polling_lock(redis_client: Redis | None, lock_key: str, token: str | None) -> None:
     """Release the polling lock if this instance still owns it."""
-    if not token:
+    if not token or redis_client is None:
         return
 
     try:
@@ -47,12 +55,30 @@ async def main() -> None:
         logging.error("Iltimos, .env fayliga o'z tokeningizni kiriting.")
         return
 
+    redis_client: Redis | None = None
+    storage = MemoryStorage()
+
     redis_url = os.getenv("REDIS_URL")
     if redis_url:
-        redis = Redis.from_url(redis_url)
+        redis_client = Redis.from_url(redis_url)
+        try:
+            await redis_client.ping()
+            storage = RedisStorage(redis=redis_client)
+            logging.info("Redis storage connected.")
+        except Exception as exc:
+            logging.warning(f"Redis unavailable, falling back to MemoryStorage: {exc}")
+            redis_client = None
+            storage = MemoryStorage()
     else:
-        redis = Redis(host=REDIS_HOST, port=REDIS_PORT)
-    storage = RedisStorage(redis=redis)
+        try:
+            redis_client = Redis(host=REDIS_HOST, port=REDIS_PORT)
+            await redis_client.ping()
+            storage = RedisStorage(redis=redis_client)
+            logging.info("Redis storage connected.")
+        except Exception as exc:
+            logging.warning(f"Redis unavailable, falling back to MemoryStorage: {exc}")
+            redis_client = None
+            storage = MemoryStorage()
 
     bot = Bot(
         token=BOT_TOKEN,
@@ -76,7 +102,7 @@ async def main() -> None:
     polling_lock_token = None
 
     try:
-        lock_acquired, polling_lock_token = await acquire_polling_lock(redis, lock_key)
+        lock_acquired, polling_lock_token = await acquire_polling_lock(redis_client, lock_key)
         if not lock_acquired:
             logging.warning("Another bot instance is already polling. This instance will exit.")
             return
@@ -85,7 +111,7 @@ async def main() -> None:
         await dp.start_polling(bot)
     finally:
         if polling_lock_token:
-            await release_polling_lock(redis, lock_key, polling_lock_token)
+            await release_polling_lock(redis_client, lock_key, polling_lock_token)
 
 
 if __name__ == "__main__":
