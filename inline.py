@@ -19,6 +19,23 @@ UZBEK_REGIONS = {
     "Xorazm": ["Urganch", "Bog'ot", "Gurlan", "Hazorasp", "Khiva", "Qoshkopir", "Shovot", "Yangibozor", "Yangiariq", "Xonqa"],
 }
 
+UZBEK_CITIES = {
+    "Andijon": ["Andijon", "Asaka", "Shahrixon", "Xonobod"],
+    "Buxoro": ["Buxoro", "Kogon", "Qorovulbozor", "Olot"],
+    "Farg'ona": ["Farg'ona", "Qo'shtepa", "Quva", "Rishton"],
+    "Jizzax": ["Jizzax", "Zomin", "Forish", "Yangiobod"],
+    "Namangan": ["Namangan", "Chortoq", "Chust", "Kosonsoy"],
+    "Navoiy": ["Navoiy", "Zarafshon", "Karmana", "Qiziltepa"],
+    "Qashqadaryo": ["Qarshi", "Shahrisabz", "Kitob", "Koson"],
+    "Qoraqalpog'iston": ["Nukus", "Xo'jayli", "Qo'ng'irot", "To'rtko'l"],
+    "Samarqand": ["Samarqand", "Urgut", "Kattaqo'rg'on", "Bulung'ur"],
+    "Sirdaryo": ["Guliston", "Yangiyer", "Shirin", "Boyovut"],
+    "Surxondaryo": ["Termiz", "Sherobod", "Denov", "Boysun"],
+    "Toshkent viloyati": ["Toshkent", "Bekobod", "Yangiyo'l", "Parkent"],
+    "Toshkent shahri": ["Toshkent", "Yunusobod", "Olmazor", "Chilonzor"],
+    "Xorazm": ["Urganch", "Khiva", "Xonqa", "Shovot"],
+}
+
 
 def _slugify(value: str) -> str:
     return value.lower().replace("'", "").replace(" ", "_")
@@ -87,6 +104,14 @@ def get_region_keyboard(language: str = "uz"):
     buttons = []
     for region_name in UZBEK_REGIONS.keys():
         buttons.append([InlineKeyboardButton(text=region_name, callback_data=f"region_{_slugify(region_name)}")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_city_keyboard(region_name: str, language: str = "uz"):
+    cities = UZBEK_CITIES.get(region_name, [])
+    buttons = []
+    for city_name in cities:
+        buttons.append([InlineKeyboardButton(text=city_name, callback_data=f"city_{_slugify(city_name)}")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 

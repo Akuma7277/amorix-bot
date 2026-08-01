@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from inline import (
     get_accept_terms_keyboard,
     get_age_keyboard,
+    get_city_keyboard,
     get_district_keyboard,
     get_gender_keyboard,
     get_looking_for_keyboard,
@@ -92,6 +93,12 @@ CITY_REQUEST_TEXTS = {
     "uz": "Ajoyib! Endi viloyatingizni tanlang.",
     "ru": "Отлично! Теперь выберите ваш регион.",
     "en": "Great! Now choose your region.",
+}
+
+CITY_SELECTION_TEXTS = {
+    "uz": "Yaxshi. Endi shaharingizni tanlang.",
+    "ru": "Хорошо. Теперь выберите ваш город.",
+    "en": "Good. Now choose your city.",
 }
 
 DISTRICT_REQUEST_TEXTS = {
@@ -370,10 +377,26 @@ async def region_selected(callback: CallbackQuery, state: FSMContext):
     language = data.get("language", "uz")
     region_name = callback.data.split("_", 1)[1].replace("_", " ").title()
 
-    await state.update_data(city=region_name)
+    await state.update_data(region=region_name)
+    await callback.message.edit_text(
+        text=CITY_SELECTION_TEXTS.get(language, CITY_SELECTION_TEXTS["uz"]),
+        reply_markup=get_city_keyboard(region_name, language),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_city)
+
+
+@router.callback_query(RegistrationStates.choosing_city, F.data.startswith("city_"))
+async def city_selected(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    city_name = callback.data.split("_", 1)[1].replace("_", " ").title()
+    region_name = data.get("region")
+
+    await state.update_data(city=city_name)
     await callback.message.edit_text(
         text=DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"]),
-        reply_markup=get_district_keyboard(region_name, language),
+        reply_markup=get_district_keyboard(region_name or city_name, language),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.entering_district)

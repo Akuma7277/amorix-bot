@@ -9,6 +9,7 @@ class RegistrationStates(StatesGroup):
     choosing_gender = State()
     choosing_looking_for = State()
     entering_city = State()
+    choosing_city = State()
     entering_district = State()
     choosing_interests = State()
     entering_bio = State()
