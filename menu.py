@@ -656,7 +656,7 @@ async def show_referral_info(message: Message, state: FSMContext, bot: Bot):
     referral_text = REFERRAL_TEXTS.get(language, REFERRAL_TEXTS["uz"]).format(
         bot_username=bot_username, user_id=user.id, referral_count=referral_count
     )
-    await message.answer(referral_text, parse_mode="HTML")
+    await message.answer(referral_text)
     await state.set_state(MenuStates.viewing_referrals)
 
 

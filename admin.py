@@ -371,7 +371,6 @@ async def show_photo_for_moderation(message: Message, state: FSMContext):
     await message.answer_photo(
         photo=photo_to_moderate.file_id,
         caption=caption,
-        parse_mode="Markdown", # for telegram_id code block
         reply_markup=get_moderation_keyboard(
             language=language,
             photo_id=photo_to_moderate.id,
@@ -736,7 +735,6 @@ async def show_verification_for_moderation(message: Message, state: FSMContext):
     await message.answer_photo(
         photo=request.file_id,
         caption=caption,
-        parse_mode="Markdown",
         reply_markup=get_verification_moderation_keyboard(
             language=language,
             request_id=request.id

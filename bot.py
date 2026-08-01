@@ -4,6 +4,7 @@ import os
 import sys
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio.client import Redis
 
@@ -32,7 +33,10 @@ async def main() -> None:
         redis = Redis(host=REDIS_HOST, port=REDIS_PORT)
     storage = RedisStorage(redis=redis)
 
-    bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
+    bot = Bot(
+        token=BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode="HTML"),
+    )
     dp = Dispatcher(storage=storage)
 
     dp.include_router(common_router)
