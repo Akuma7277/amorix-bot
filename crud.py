@@ -1,6 +1,6 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import and_, or_, exists, func, delete, cast, Date
+from sqlalchemy import and_, or_, exists, func, delete, cast, Date, case
 from sqlalchemy import select, text, update
 from sqlalchemy.orm import selectinload
 from models import (
@@ -25,7 +25,84 @@ from models import (
     Payment,
 )
 from engine import async_session_maker
- 
+
+
+# Premium tier daily quotas. None means unlimited.
+DAILY_LIKE_LIMITS = {
+    PremiumPlan.basic: 20,
+    PremiumPlan.gold: 100,
+    PremiumPlan.platinum: None,
+}
+DAILY_SUPER_LIKE_LIMITS = {
+    PremiumPlan.basic: 0,
+    PremiumPlan.gold: 3,
+    PremiumPlan.platinum: 10,
+}
+BOOST_DURATION_MINUTES = 30
+
+
+async def check_and_consume_like_quota(user_id: int, is_super_like: bool = False) -> tuple[bool, int | None]:
+    """
+    Checks the user's daily like/super-like quota, resetting it if a new day has started,
+    and consumes one unit if allowed. Returns (allowed, remaining) where remaining is None
+    when the plan has an unlimited quota.
+    """
+    try:
+        async with async_session_maker() as session:
+            user = await session.get(User, user_id)
+            if not user:
+                return False, 0
+
+            now = datetime.now()
+            if not user.daily_quota_reset_at or user.daily_quota_reset_at.date() < now.date():
+                user.daily_likes_used = 0
+                user.daily_super_likes_used = 0
+                user.daily_quota_reset_at = now
+
+            plan = user.premium_plan or PremiumPlan.basic
+            if is_super_like:
+                limit = DAILY_SUPER_LIKE_LIMITS.get(plan, 0)
+                used = user.daily_super_likes_used
+            else:
+                limit = DAILY_LIKE_LIMITS.get(plan)
+                used = user.daily_likes_used
+
+            if limit is not None and used >= limit:
+                await session.commit()
+                return False, 0
+
+            if is_super_like:
+                user.daily_super_likes_used += 1
+                remaining = None if limit is None else limit - user.daily_super_likes_used
+            else:
+                user.daily_likes_used += 1
+                remaining = None if limit is None else limit - user.daily_likes_used
+
+            await session.commit()
+            return True, remaining
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while checking like quota: {exc}")
+        return True, None
+
+
+async def activate_profile_boost(user_id: int) -> datetime | None:
+    """Activates a temporary profile boost for premium users. Returns the expiry timestamp."""
+    try:
+        async with async_session_maker() as session:
+            user = await session.get(User, user_id)
+            if not user:
+                return None
+
+            expires_at = datetime.now() + timedelta(minutes=BOOST_DURATION_MINUTES)
+            user.boost_active_until = expires_at
+            await session.commit()
+            return expires_at
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while activating boost: {exc}")
+        return None
+
 
 async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
     """
@@ -184,8 +261,10 @@ async def get_profiles_for_user(current_user: User, limit: int = 20) -> list[Use
         # Ensure the user has at least one approved photo
         query = query.where(exists().where(and_(Photo.user_id == User.id, Photo.is_approved == True)))
 
-        # Add limit and random order
-        query = query.order_by(func.random()).limit(limit)
+        # Boosted profiles (active boost) are shown first, then random order
+        now = datetime.now()
+        is_boosted = case((and_(User.boost_active_until.isnot(None), User.boost_active_until > now), 1), else_=0)
+        query = query.order_by(is_boosted.desc(), func.random()).limit(limit)
 
         result = await session.execute(query)
         return result.scalars().all()
@@ -254,7 +333,7 @@ async def add_like_and_check_match(from_user_id: int, to_user_id: int, is_super_
         if existing:
             return None
 
-        new_like = Like(from_user_id=from_user_id, to_user_id=to_user_id)
+        new_like = Like(from_user_id=from_user_id, to_user_id=to_user_id, is_super_like=is_super_like)
         session.add(new_like)
 
         if is_super_like:

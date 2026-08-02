@@ -17,6 +17,8 @@ from inline import (
     get_region_keyboard,
     get_review_keyboard,
     get_edit_profile_keyboard,
+    resolve_region_name,
+    is_tashkent_city_region,
 )
 from reply import get_main_menu_keyboard
 from crud import create_user_profile
@@ -375,9 +377,18 @@ async def looking_for_chosen(callback: CallbackQuery, state: FSMContext):
 async def region_selected(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     language = data.get("language", "uz")
-    region_name = callback.data.split("_", 1)[1].replace("_", " ").title()
+    region_name = resolve_region_name(callback.data.split("_", 1)[1])
 
     await state.update_data(region=region_name)
+    if is_tashkent_city_region(region_name):
+        await callback.message.edit_text(
+            text=DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"]),
+            reply_markup=get_district_keyboard(region_name, language),
+        )
+        await callback.answer()
+        await state.set_state(RegistrationStates.entering_district)
+        return
+
     await callback.message.edit_text(
         text=CITY_SELECTION_TEXTS.get(language, CITY_SELECTION_TEXTS["uz"]),
         reply_markup=get_city_keyboard(region_name, language),

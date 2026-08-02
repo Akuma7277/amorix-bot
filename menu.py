@@ -24,13 +24,18 @@ from crud import (
     create_verification_request,
     create_payment_record,
     get_users_who_liked_me, block_user, get_user_referrals, # Added for "Who Liked Me", User Blocking and Referral feature
+    check_and_consume_like_quota,
+    activate_profile_boost,
+    DAILY_LIKE_LIMITS,
+    DAILY_SUPER_LIKE_LIMITS,
+    BOOST_DURATION_MINUTES,
 )
 from states import MenuStates, EditingStates, ReportingStates, SettingsStates, VerificationStates, PremiumStates
 from inline import ALL_INTERESTS # Qiziqishlar nomlarini olish uchun
 from inline import (
     get_search_keyboard, get_match_keyboard, get_chats_keyboard,
     get_profile_view_keyboard, get_edit_profile_keyboard,
-    get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard, get_premium_plans_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard
+    get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard, get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan # Import UserStatus
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT # Import common texts
@@ -40,6 +45,16 @@ from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMIT
 from registration import EDIT_PROFILE_TEXTS # Import text from registration
 
 router = Router()
+
+
+def has_active_premium(user) -> bool:
+    """Returns True if the user has a non-basic plan that has not expired yet."""
+    return bool(
+        user
+        and user.premium_plan != PremiumPlan.basic
+        and user.premium_expires_at
+        and user.premium_expires_at > datetime.now()
+    )
 
 # Barcha menyu tugmalari matnlarini bitta ro'yxatga yig'ish
 all_menu_buttons = []
@@ -248,6 +263,36 @@ PREMIUM_REQUIRED_TEXTS = {
     "uz": "Bu funksiya faqat premium foydalanuvchilar uchun mavjud. Premium obuna sotib olish uchun '⭐️ Premium' tugmasini bosing.",
     "ru": "Эта функция доступна только для премиум-пользователей. Нажмите '⭐️ Премиум', чтобы приобрести премиум-подписку.",
     "en": "This feature is only available for premium users. Click '⭐️ Premium' to purchase a premium subscription.",
+}
+
+LIKE_LIMIT_REACHED_TEXTS = {
+    "uz": "❌ Bugungi kunlik layk limitingiz tugadi. Ko'proq layk uchun Premium sotib oling.",
+    "ru": "❌ Ваш дневной лимит лайков исчерпан. Приобретите Premium для большего количества лайков.",
+    "en": "❌ Your daily like limit is used up. Get Premium for more likes.",
+}
+
+SUPER_LIKE_LIMIT_REACHED_TEXTS = {
+    "uz": "❌ Bugungi super like limitingiz tugadi (yoki bu funksiya Premium uchun). Premium sotib oling.",
+    "ru": "❌ Ваш лимит супер-лайков на сегодня исчерпан (или это премиум-функция). Приобретите Premium.",
+    "en": "❌ Your super like limit for today is used up (or this is a Premium feature). Get Premium.",
+}
+
+LIKES_LOCKED_TEXTS = {
+    "uz": "🔒 {count} kishi sizni yoqtirdi! Ularni ko'rish uchun Premium obuna kerak.",
+    "ru": "🔒 Вы понравились {count} пользователям! Чтобы увидеть их, нужна Premium-подписка.",
+    "en": "🔒 {count} people liked you! Get Premium to see who they are.",
+}
+
+BOOST_ACTIVATED_TEXTS = {
+    "uz": "🚀 Boost faollashtirildi! Profilingiz {minutes} daqiqa davomida qidiruvda birinchi bo'lib ko'rsatiladi.",
+    "ru": "🚀 Буст активирован! Ваш профиль будет показываться первым в поиске в течение {minutes} минут.",
+    "en": "🚀 Boost activated! Your profile will be shown first in search for {minutes} minutes.",
+}
+
+PREMIUM_DASHBOARD_TEXTS = {
+    "uz": "⭐️ Sizda faol <b>{plan}</b> obuna bor.\nAmal qilish muddati: {expires_at}\n\nKunlik layklar: {like_limit}\nKunlik super-layklar: {super_like_limit}",
+    "ru": "⭐️ У вас активна подписка <b>{plan}</b>.\nДействует до: {expires_at}\n\nЛайков в день: {like_limit}\nСупер-лайков в день: {super_like_limit}",
+    "en": "⭐️ You have an active <b>{plan}</b> subscription.\nExpires at: {expires_at}\n\nDaily likes: {like_limit}\nDaily super likes: {super_like_limit}",
 }
 
 LIKES_VIEW_TEXTS = {
@@ -521,6 +566,13 @@ async def show_who_liked_me(message: Message, state: FSMContext):
         await message.answer(LIKES_EMPTY_TEXTS.get(language, LIKES_EMPTY_TEXTS["uz"]))
         return
 
+    if not has_active_premium(user):
+        await message.answer(
+            LIKES_LOCKED_TEXTS.get(language, LIKES_LOCKED_TEXTS["uz"]).format(count=len(liked_users)),
+            reply_markup=get_premium_plans_keyboard(language),
+        )
+        return
+
     liked_user_ids = [u.id for u in liked_users]
     await state.set_state(MenuStates.viewing_likes)
     await state.update_data(liked_profiles=liked_user_ids, user_language=language)
@@ -590,6 +642,12 @@ async def skip_profile_handler(callback: CallbackQuery, state: FSMContext):
 async def like_profile_handler(callback: CallbackQuery, state: FSMContext):
     target_user_id = int(callback.data.split("_")[1])
     current_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = current_user.language or "uz"
+
+    allowed, _ = await check_and_consume_like_quota(current_user.id, is_super_like=False)
+    if not allowed:
+        await callback.answer(LIKE_LIMIT_REACHED_TEXTS.get(language, LIKE_LIMIT_REACHED_TEXTS["uz"]), show_alert=True)
+        return
 
     match = await add_like_and_check_match(from_user_id=current_user.id, to_user_id=target_user_id)
 
@@ -621,6 +679,11 @@ async def super_like_profile_handler(callback: CallbackQuery, state: FSMContext)
     target_user_id = int(callback.data.split("_")[2])
     current_user = await get_user_by_telegram_id(callback.from_user.id)
     language = current_user.language or "uz"
+
+    allowed, _ = await check_and_consume_like_quota(current_user.id, is_super_like=True)
+    if not allowed:
+        await callback.answer(SUPER_LIKE_LIMIT_REACHED_TEXTS.get(language, SUPER_LIKE_LIMIT_REACHED_TEXTS["uz"]), show_alert=True)
+        return
 
     match = await add_like_and_check_match(from_user_id=current_user.id, to_user_id=target_user_id, is_super_like=True)
     await callback.answer(SUPER_LIKE_TEXTS.get(language, SUPER_LIKE_TEXTS["uz"]))
@@ -1014,8 +1077,18 @@ async def premium_main_menu(message: Message, state: FSMContext):
     language = user.language or "uz"
 
     # Check if user already has an active premium plan
-    if user.premium_plan != PremiumPlan.basic and user.premium_expires_at and user.premium_expires_at > datetime.now():
-        await message.answer(PREMIUM_ALREADY_ACTIVE_TEXT.get(language, PREMIUM_ALREADY_ACTIVE_TEXT["uz"]))
+    if has_active_premium(user):
+        like_limit = DAILY_LIKE_LIMITS.get(user.premium_plan)
+        super_like_limit = DAILY_SUPER_LIKE_LIMITS.get(user.premium_plan)
+        await message.answer(
+            PREMIUM_DASHBOARD_TEXTS.get(language, PREMIUM_DASHBOARD_TEXTS["uz"]).format(
+                plan=user.premium_plan.value,
+                expires_at=user.premium_expires_at.strftime("%Y-%m-%d"),
+                like_limit="♾️" if like_limit is None else like_limit,
+                super_like_limit="♾️" if super_like_limit is None else super_like_limit,
+            ),
+            reply_markup=get_premium_dashboard_keyboard(language),
+        )
         return
 
     await state.set_state(PremiumStates.choosing_plan)
@@ -1023,6 +1096,25 @@ async def premium_main_menu(message: Message, state: FSMContext):
         f"{PREMIUM_MAIN_TEXT.get(language, PREMIUM_MAIN_TEXT['uz'])}\n\n{PREMIUM_BENEFITS_TEXT.get(language, PREMIUM_BENEFITS_TEXT['uz'])}",
         reply_markup=get_premium_plans_keyboard(language)
     )
+
+
+@router.callback_query(F.data == "activate_boost")
+async def activate_boost_handler(callback: CallbackQuery):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+
+    if not has_active_premium(user):
+        await callback.answer(PREMIUM_REQUIRED_TEXTS.get(language, PREMIUM_REQUIRED_TEXTS["uz"]), show_alert=True)
+        return
+
+    expires_at = await activate_profile_boost(user.id)
+    if expires_at:
+        await callback.answer()
+        await callback.message.answer(
+            BOOST_ACTIVATED_TEXTS.get(language, BOOST_ACTIVATED_TEXTS["uz"]).format(minutes=BOOST_DURATION_MINUTES)
+        )
+    else:
+        await callback.answer("Xatolik yuz berdi.", show_alert=True)
 
 
 @router.callback_query(PremiumStates.choosing_plan, F.data.startswith("premium_plan_"))

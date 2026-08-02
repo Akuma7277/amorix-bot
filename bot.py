@@ -12,6 +12,7 @@ from aiogram.exceptions import TelegramConflictError
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio.client import Redis
+from sqlalchemy import inspect as sa_inspect, text
 
 from config import BOT_TOKEN, REDIS_HOST, REDIS_PORT
 from common import router as common_router
@@ -22,6 +23,61 @@ from admin import router as admin_router
 
 from engine import engine
 from models import Base
+
+
+def _describe_column_default(column) -> str:
+    """Builds a ' DEFAULT ...' SQL clause from a column's Python-side default, if any."""
+    if column.default is None or not getattr(column.default, "is_scalar", False):
+        return ""
+
+    value = column.default.arg
+    if isinstance(value, bool):
+        return f" DEFAULT {str(value).upper()}"
+    if isinstance(value, (int, float)):
+        return f" DEFAULT {value}"
+    if isinstance(value, str):
+        return f" DEFAULT '{value.replace(chr(39), chr(39) * 2)}'"
+    return ""
+
+
+def _build_add_column_ddl(table_name: str, column, dialect) -> str:
+    column_type = column.type.compile(dialect=dialect)
+    default_clause = _describe_column_default(column)
+    return f'ALTER TABLE "{table_name}" ADD COLUMN "{column.name}" {column_type}{default_clause}'
+
+
+async def run_lightweight_migrations() -> None:
+    """
+    Adds columns declared on the models but missing from the database tables.
+    This project has no migration tool (e.g. Alembic), so this keeps deployed
+    databases in sync with model changes such as the premium quota/boost columns.
+    """
+    if engine is None:
+        return
+
+    try:
+        async with engine.begin() as conn:
+            def _inspect_columns(sync_conn):
+                inspector = sa_inspect(sync_conn)
+                return {
+                    table_name: {col["name"] for col in inspector.get_columns(table_name)}
+                    for table_name in inspector.get_table_names()
+                }
+
+            existing_columns = await conn.run_sync(_inspect_columns)
+
+            for table in Base.metadata.sorted_tables:
+                table_columns = existing_columns.get(table.name)
+                if table_columns is None:
+                    continue
+                for column in table.columns:
+                    if column.name in table_columns:
+                        continue
+                    ddl = _build_add_column_ddl(table.name, column, engine.dialect)
+                    logging.info(f"Applying lightweight migration: {ddl}")
+                    await conn.execute(text(ddl))
+    except Exception as exc:
+        logging.warning(f"Lightweight migration warning: {exc}")
 
 
 _FILE_LOCK_HANDLES: dict[str, str] = {}
@@ -178,6 +234,8 @@ async def main() -> None:
             await conn.run_sync(Base.metadata.create_all)
     except Exception as exc:
         logging.warning(f"Database setup warning: {exc}")
+
+    await run_lightweight_migrations()
 
     lock_key = os.getenv("BOT_POLLING_LOCK_KEY", "kairyx-bot:polling_lock")
     polling_lock_token = None

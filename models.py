@@ -86,6 +86,10 @@ class User(Base):
     verification_status = Column(Enum(VerificationStatus), default=VerificationStatus.not_verified)
     premium_plan = Column(Enum(PremiumPlan), default=PremiumPlan.basic)
     premium_expires_at = Column(DateTime)
+    daily_likes_used = Column(Integer, default=0)
+    daily_super_likes_used = Column(Integer, default=0)
+    daily_quota_reset_at = Column(DateTime, nullable=True)
+    boost_active_until = Column(DateTime, nullable=True)
     registered_at = Column(DateTime, server_default=func.now())
     last_activity = Column(DateTime, onupdate=func.now())
     referred_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -106,6 +110,7 @@ class Like(Base):
     id = Column(Integer, primary_key=True)
     from_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     to_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    is_super_like = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now())
 
 class Match(Base):

@@ -41,6 +41,19 @@ def _slugify(value: str) -> str:
     return value.lower().replace("'", "").replace(" ", "_")
 
 
+def resolve_region_name(value: str) -> str:
+    if not value:
+        return ""
+
+    normalized = value.strip().replace("_", " ").replace("-", " ")
+    region_lookup = {region_name.casefold(): region_name for region_name in UZBEK_REGIONS.keys()}
+    return region_lookup.get(normalized.casefold(), value.strip())
+
+
+def is_tashkent_city_region(region_name: str) -> bool:
+    return resolve_region_name(region_name).casefold() == "toshkent shahri"
+
+
 def get_language_keyboard():
     buttons = [
         [InlineKeyboardButton(text="🇺🇿 O'zbekcha", callback_data="lang_uz")],
@@ -596,6 +609,21 @@ def get_premium_plans_keyboard(language: str = "uz"):
         [InlineKeyboardButton(text=texts["gold"], callback_data="premium_plan_gold")],
         [InlineKeyboardButton(text=texts["platinum"], callback_data="premium_plan_platinum")],
         [InlineKeyboardButton(text=texts["back"], callback_data="premium_back_to_main_menu")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+PREMIUM_DASHBOARD_BUTTON_TEXTS = {
+    "uz": {"boost": "🚀 Profilni Boost qilish (30 daq.)"},
+    "ru": {"boost": "🚀 Буст профиля (30 мин.)"},
+    "en": {"boost": "🚀 Boost profile (30 min.)"},
+}
+
+
+def get_premium_dashboard_keyboard(language: str = "uz"):
+    texts = PREMIUM_DASHBOARD_BUTTON_TEXTS.get(language, PREMIUM_DASHBOARD_BUTTON_TEXTS["uz"])
+    buttons = [
+        [InlineKeyboardButton(text=texts["boost"], callback_data="activate_boost")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
