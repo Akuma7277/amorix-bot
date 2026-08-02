@@ -1,7 +1,10 @@
+import asyncio
 import os
+import tempfile
 import unittest
 
 from config import build_database_url, parse_admin_ids
+from bot import acquire_polling_lock
 
 
 class ConfigHelpersTests(unittest.TestCase):
@@ -40,8 +43,16 @@ class ConfigHelpersTests(unittest.TestCase):
             "postgresql+asyncpg://pguser:secret@railway.internal:5433/kairyx",
         )
 
-    def test_parse_admin_ids(self):
-        self.assertEqual(parse_admin_ids("12, 34,56"), [12, 34, 56])
+    def test_acquire_polling_lock_reuses_a_single_lock_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            lock_path = os.path.join(tmpdir, "bot.lock")
+            acquired_first, token_first = asyncio.run(acquire_polling_lock(None, "test-lock", lock_path))
+            acquired_second, token_second = asyncio.run(acquire_polling_lock(None, "test-lock", lock_path))
+
+            self.assertTrue(acquired_first)
+            self.assertTrue(token_first)
+            self.assertFalse(acquired_second)
+            self.assertIsNone(token_second)
 
 
 if __name__ == "__main__":

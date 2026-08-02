@@ -8,6 +8,7 @@ import uuid
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.exceptions import TelegramConflictError
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio.client import Redis
@@ -191,7 +192,12 @@ async def main() -> None:
             return
 
         logging.info("Bot ishga tushmoqda...")
-        await dp.start_polling(bot)
+        try:
+            await dp.start_polling(bot)
+        except TelegramConflictError as exc:
+            logging.error("Telegram polling conflict detected: %s", exc)
+            logging.error("This usually means another bot instance is already polling. Exiting this instance cleanly.")
+            return
     finally:
         if polling_lock_token:
             await release_polling_lock(redis_client, lock_key, polling_lock_token)
