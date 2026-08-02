@@ -869,7 +869,11 @@ async def help_back_to_main_menu_handler(callback: CallbackQuery, state: FSMCont
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.clear()
-    await callback.message.edit_text(MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]), reply_markup=get_main_menu_keyboard(language))
+    await callback.message.delete()
+    await callback.message.answer(
+        MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]),
+        reply_markup=get_main_menu_keyboard(language)
+    )
     await callback.answer()
 
 MESSAGE_ADMIN_PROMPT_TEXTS = {
@@ -1032,7 +1036,11 @@ async def settings_back_to_main_menu_handler(callback: CallbackQuery, state: FSM
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language if user else "uz"
     await state.clear()
-    await callback.message.edit_text(MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]), reply_markup=get_main_menu_keyboard(language))
+    await callback.message.delete()
+    await callback.message.answer(
+        MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]),
+        reply_markup=get_main_menu_keyboard(language)
+    )
     await callback.answer()
 
 
