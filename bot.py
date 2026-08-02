@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import time
+import urllib.parse
 import uuid
 
 from aiogram import Bot, Dispatcher
@@ -21,7 +22,7 @@ from menu import router as menu_router
 from editing import router as editing_router
 from admin import router as admin_router
 
-from engine import engine
+import engine as engine_module
 from models import Base
 
 
@@ -52,11 +53,11 @@ async def run_lightweight_migrations() -> None:
     This project has no migration tool (e.g. Alembic), so this keeps deployed
     databases in sync with model changes such as the premium quota/boost columns.
     """
-    if engine is None:
+    if engine_module.engine is None:
         return
 
     try:
-        async with engine.begin() as conn:
+        async with engine_module.engine.begin() as conn:
             def _inspect_columns(sync_conn):
                 inspector = sa_inspect(sync_conn)
                 return {
@@ -73,7 +74,7 @@ async def run_lightweight_migrations() -> None:
                 for column in table.columns:
                     if column.name in table_columns:
                         continue
-                    ddl = _build_add_column_ddl(table.name, column, engine.dialect)
+                    ddl = _build_add_column_ddl(table.name, column, engine_module.engine.dialect)
                     logging.info(f"Applying lightweight migration: {ddl}")
                     await conn.execute(text(ddl))
     except Exception as exc:
@@ -195,6 +196,10 @@ async def main() -> None:
     redis_url = os.getenv("REDIS_URL")
     redis_host = os.getenv("REDIS_HOST")
     if redis_url:
+        parsed_redis = urllib.parse.urlsplit(redis_url)
+        logging.info(
+            f"Redis-ga ulanish manzili: {parsed_redis.hostname}:{parsed_redis.port or REDIS_PORT}"
+        )
         redis_client = Redis.from_url(redis_url)
         try:
             await redis_client.ping()
@@ -205,6 +210,7 @@ async def main() -> None:
             redis_client = None
             storage = MemoryStorage()
     elif redis_host and redis_host not in {"localhost", "127.0.0.1", "0.0.0.0"}:
+        logging.info(f"Redis-ga ulanish manzili: {redis_host}:{REDIS_PORT}")
         try:
             redis_client = Redis(host=redis_host, port=REDIS_PORT)
             await redis_client.ping()
@@ -232,10 +238,17 @@ async def main() -> None:
     dp.include_router(admin_router)
 
     try:
-        async with engine.begin() as conn:
+        async with engine_module.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     except Exception as exc:
         logging.warning(f"Database setup warning: {exc}")
+        try:
+            engine_module.switch_to_sqlite_fallback(exc)
+            async with engine_module.engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logging.warning("SQLite fallback aktivlashtirildi.")
+        except Exception as fallback_exc:
+            logging.warning(f"SQLite fallback setup warning: {fallback_exc}")
 
     await run_lightweight_migrations()
 

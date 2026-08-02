@@ -1,8 +1,38 @@
 from collections.abc import AsyncGenerator
+from pathlib import Path
 import logging
+import socket
+import tempfile
 
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from config import DATABASE_URL
+
+
+_SQLITE_FALLBACK_PATH = Path(tempfile.gettempdir()) / "amorix_fallback.db"
+
+
+def _build_sqlite_fallback_url() -> str:
+    return f"sqlite+aiosqlite:///{_SQLITE_FALLBACK_PATH.resolve().as_posix()}"
+
+
+def _database_host_is_resolvable(database_url: str) -> bool:
+    try:
+        url = make_url(database_url)
+    except Exception:
+        return False
+
+    if url.drivername.startswith("sqlite"):
+        return True
+
+    if not url.host:
+        return False
+
+    try:
+        socket.getaddrinfo(url.host, url.port or 5432)
+        return True
+    except OSError:
+        return False
 
 
 class _EmptyResult:
@@ -107,6 +137,9 @@ class _SafeSessionMaker:
     def __init__(self, maker):
         self._maker = maker
 
+    def set_maker(self, maker):
+        self._maker = maker
+
     def __call__(self):
         if self._maker is None:
             logging.warning("Database unavailable, using fallback session factory.")
@@ -119,7 +152,16 @@ class _SafeSessionMaker:
 
 
 # Asinxron engine va sessiya yaratuvchi (session maker)
-if DATABASE_URL:
+if DATABASE_URL and _database_host_is_resolvable(DATABASE_URL):
+    try:
+        # Parol/login chiqarmasdan qaysi hostga ulanilayotganini logga yozamiz (DNS/timeout xatolarini tekshirish uchun).
+        _db_url = make_url(DATABASE_URL)
+        logging.info(
+            f"Ma'lumotlar bazasiga ulanish manzili: {_db_url.host}:{_db_url.port}/{_db_url.database}"
+        )
+    except Exception:
+        logging.warning("DATABASE_URL formatini aniqlab bo'lmadi.")
+
     engine = create_async_engine(
         DATABASE_URL,
         echo=False,
@@ -131,11 +173,42 @@ if DATABASE_URL:
         expire_on_commit=False,
     )
 else:
-    logging.warning("DATABASE_URL not configured. Database features will be disabled.")
-    engine = None
-    _real_async_session_maker = None
+    if DATABASE_URL:
+        logging.warning("DATABASE_URL hosti yechilmayapti; SQLite fallback ishlatiladi.")
+    else:
+        logging.warning("DATABASE_URL not configured. SQLite fallback ishlatiladi.")
+
+    engine = create_async_engine(
+        _build_sqlite_fallback_url(),
+        echo=False,
+        pool_pre_ping=True,
+    )
+    _real_async_session_maker = async_sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
 
 async_session_maker = _SafeSessionMaker(_real_async_session_maker)
+
+
+def switch_to_sqlite_fallback(reason: Exception | str | None = None) -> None:
+    global engine, _real_async_session_maker
+
+    if reason:
+        logging.warning("SQLite fallback yoqildi: %s", reason)
+
+    engine = create_async_engine(
+        _build_sqlite_fallback_url(),
+        echo=False,
+        pool_pre_ping=True,
+    )
+    _real_async_session_maker = async_sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    async_session_maker.set_maker(_real_async_session_maker)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:

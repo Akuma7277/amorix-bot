@@ -2,9 +2,11 @@ import asyncio
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from config import build_database_url, parse_admin_ids
 from bot import acquire_polling_lock
+from engine import _database_host_is_resolvable
 
 
 class ConfigHelpersTests(unittest.TestCase):
@@ -42,6 +44,12 @@ class ConfigHelpersTests(unittest.TestCase):
             build_database_url(),
             "postgresql+asyncpg://pguser:secret@railway.internal:5433/kairyx",
         )
+
+    def test_database_host_resolution_detects_unresolvable_host(self):
+        with patch("engine.socket.getaddrinfo", side_effect=OSError):
+            self.assertFalse(
+                _database_host_is_resolvable("postgresql+asyncpg://user:pass@no-such-host:5432/db")
+            )
 
     def test_acquire_polling_lock_reuses_a_single_lock_file(self):
         with tempfile.TemporaryDirectory() as tmpdir:
