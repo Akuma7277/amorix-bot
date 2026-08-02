@@ -22,6 +22,24 @@ class ConfigHelpersTests(unittest.TestCase):
             "postgresql+asyncpg://postgres:secret@db.internal:5433/kairyx",
         )
 
+    def test_build_database_url_uses_pghost_when_present(self):
+        os.environ.pop("DATABASE_URL", None)
+        os.environ.pop("POSTGRES_HOST", None)
+        os.environ.pop("POSTGRES_PORT", None)
+        os.environ.pop("POSTGRES_USER", None)
+        os.environ.pop("POSTGRES_PASSWORD", None)
+        os.environ.pop("POSTGRES_DB", None)
+        os.environ["PGHOST"] = "railway.internal"
+        os.environ["PGPORT"] = "5433"
+        os.environ["PGUSER"] = "pguser"
+        os.environ["PGPASSWORD"] = "secret"
+        os.environ["PGDATABASE"] = "kairyx"
+
+        self.assertEqual(
+            build_database_url(),
+            "postgresql+asyncpg://pguser:secret@railway.internal:5433/kairyx",
+        )
+
     def test_parse_admin_ids(self):
         self.assertEqual(parse_admin_ids("12, 34,56"), [12, 34, 56])
 

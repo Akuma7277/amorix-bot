@@ -108,6 +108,9 @@ class _SafeSessionMaker:
         self._maker = maker
 
     def __call__(self):
+        if self._maker is None:
+            logging.warning("Database unavailable, using fallback session factory.")
+            return _FallbackSession()
         try:
             return _FallbackSession(self._maker())
         except Exception as exc:
@@ -115,19 +118,23 @@ class _SafeSessionMaker:
             return _FallbackSession()
 
 
-# Asinxron engine yaratish
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
-)
+# Asinxron engine va sessiya yaratuvchi (session maker)
+if DATABASE_URL:
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+    )
+    _real_async_session_maker = async_sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+else:
+    logging.warning("DATABASE_URL not configured. Database features will be disabled.")
+    engine = None
+    _real_async_session_maker = None
 
-# Asinxron sessiya yaratuvchi (session maker)
-_real_async_session_maker = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
 async_session_maker = _SafeSessionMaker(_real_async_session_maker)
 
 

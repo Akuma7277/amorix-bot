@@ -136,6 +136,7 @@ async def main() -> None:
     storage = MemoryStorage()
 
     redis_url = os.getenv("REDIS_URL")
+    redis_host = os.getenv("REDIS_HOST")
     if redis_url:
         redis_client = Redis.from_url(redis_url)
         try:
@@ -146,9 +147,9 @@ async def main() -> None:
             logging.warning(f"Redis unavailable, falling back to MemoryStorage: {exc}")
             redis_client = None
             storage = MemoryStorage()
-    else:
+    elif redis_host and redis_host not in {"localhost", "127.0.0.1", "0.0.0.0"}:
         try:
-            redis_client = Redis(host=REDIS_HOST, port=REDIS_PORT)
+            redis_client = Redis(host=redis_host, port=REDIS_PORT)
             await redis_client.ping()
             storage = RedisStorage(redis=redis_client)
             logging.info("Redis storage connected.")
@@ -156,6 +157,8 @@ async def main() -> None:
             logging.warning(f"Redis unavailable, falling back to MemoryStorage: {exc}")
             redis_client = None
             storage = MemoryStorage()
+    else:
+        logging.info("Redis not configured; using MemoryStorage.")
 
     bot = Bot(
         token=BOT_TOKEN,
@@ -179,7 +182,7 @@ async def main() -> None:
     polling_lock_token = None
 
     try:
-        lock_acquired, polling_lock_token = await acquire_polling_lock(redis_client, lock_key)
+        lock_acquired, polling_lock_token = await acquire_polling_lock(redis_client, lock_key, os.getenv("BOT_POLLING_LOCK_FILE"))
         if not lock_acquired:
             logging.warning(
                 "Another bot instance is already polling or the local lock is busy. "
