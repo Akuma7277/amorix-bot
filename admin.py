@@ -476,7 +476,7 @@ async def user_management_start(message: Message, state: FSMContext):
     await state.clear()
     user = await get_user_by_telegram_id(message.from_user.id)
     language = user.language if user else "uz"
-    await message.answer(USER_SEARCH_PROMPT_TEXT[language])
+    await message.answer(USER_SEARCH_PROMPT_TEXT[language], reply_markup=ReplyKeyboardRemove())
     await state.set_state(AdminStates.waiting_for_user_id)
 
 
@@ -484,6 +484,10 @@ async def user_management_start(message: Message, state: FSMContext):
 async def find_user_handler(message: Message, state: FSMContext):
     admin_user = await get_user_by_telegram_id(message.from_user.id)
     language = admin_user.language if admin_user else "uz"
+
+    if not message.text.strip().lstrip("-").isdigit():
+        await message.answer(INVALID_TELEGRAM_ID_TEXT)
+        return
 
     user_to_view = await find_user_by_id_or_telegram_id(message.text)
 
@@ -750,7 +754,7 @@ async def start_broadcast(message: Message, state: FSMContext):
     admin_user = await get_user_by_telegram_id(message.from_user.id)
     language = admin_user.language if admin_user else "uz"
 
-    await message.answer(BROADCAST_MESSAGE_PROMPT[language])
+    await message.answer(BROADCAST_MESSAGE_PROMPT[language], reply_markup=ReplyKeyboardRemove())
     await state.set_state(AdminStates.waiting_for_broadcast_message)
 
 
@@ -1118,7 +1122,7 @@ async def logs_back_to_filter_menu_handler(callback: CallbackQuery, state: FSMCo
 async def logs_filter_by_date_start(callback: CallbackQuery, state: FSMContext):
     admin_user = await get_user_by_telegram_id(callback.from_user.id)
     language = admin_user.language if admin_user else "uz"
-    await callback.message.edit_text(FILTER_BY_DATE_PROMPT[language])
+    await callback.message.edit_text(FILTER_BY_DATE_PROMPT[language], reply_markup=None)
     await state.set_state(AdminStates.entering_log_date)
     await callback.answer()
 
@@ -1293,7 +1297,7 @@ async def manage_admins_start(message: Message, state: FSMContext):
 @router.callback_query(AdminStates.viewing_admins, F.data == "admin_add_new")
 async def prompt_add_admin(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AdminStates.waiting_for_admin_id_to_add)
-    await callback.message.edit_text(ADD_ADMIN_PROMPT_TEXT)
+    await callback.message.edit_text(ADD_ADMIN_PROMPT_TEXT, reply_markup=None)
     await callback.answer()
 
 
