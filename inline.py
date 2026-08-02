@@ -481,16 +481,19 @@ HELP_BUTTON_TEXTS = {
     "uz": {
         "faq": "Savollar va Javoblar",
         "contact_support": "Texnik yordam",
+        "message_admin": "✉️ Admin'ga xabar yozish",
         "back": "⬅️ Orqaga",
     },
     "ru": {
         "faq": "Часто задаваемые вопросы",
         "contact_support": "Техническая поддержка",
+        "message_admin": "✉️ Написать администратору",
         "back": "⬅️ Назад",
     },
     "en": {
         "faq": "Frequently Asked Questions",
         "contact_support": "Contact Support",
+        "message_admin": "✉️ Message the admin",
         "back": "⬅️ Back",
     },
 }
@@ -500,6 +503,7 @@ def get_help_keyboard(language: str = "uz"):
     buttons = [
         [InlineKeyboardButton(text=texts["faq"], callback_data="help_faq")],
         [InlineKeyboardButton(text=texts["contact_support"], callback_data="help_contact_support")],
+        [InlineKeyboardButton(text=texts["message_admin"], callback_data="help_message_admin")],
         [InlineKeyboardButton(text=texts["back"], callback_data="help_back_to_main_menu")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -726,4 +730,44 @@ def get_log_action_filter_keyboard(language: str):
     if row:
         buttons.append(row)
     buttons.append([InlineKeyboardButton(text=back_text, callback_data="logs_back_to_filter_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+PROFILE_APPROVAL_BUTTON_TEXTS = {
+    "uz": {"approve": "✅ Tasdiqlash", "reject": "❌ Rad etish"},
+    "ru": {"approve": "✅ Одобрить", "reject": "❌ Отклонить"},
+    "en": {"approve": "✅ Approve", "reject": "❌ Reject"},
+}
+
+def get_profile_approval_keyboard(language: str, user_id: int):
+    """Admin uchun: yangi ro'yxatdan o'tgan profilni tasdiqlash/rad etish tugmalari."""
+    texts = PROFILE_APPROVAL_BUTTON_TEXTS.get(language, PROFILE_APPROVAL_BUTTON_TEXTS["uz"])
+    buttons = [
+        [
+            InlineKeyboardButton(text=texts["approve"], callback_data=f"approve_profile_{user_id}"),
+            InlineKeyboardButton(text=texts["reject"], callback_data=f"reject_profile_{user_id}"),
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+MANAGE_ADMINS_BUTTON_TEXTS = {
+    "uz": {"add": "➕ Admin qo'shish", "remove_prefix": "❌"},
+    "ru": {"add": "➕ Добавить админа", "remove_prefix": "❌"},
+    "en": {"add": "➕ Add admin", "remove_prefix": "❌"},
+}
+
+def get_manage_admins_keyboard(language: str, admins: list[tuple[int, str]]):
+    """Admin uchun: bot orqali qo'shilgan qo'shimcha adminlar ro'yxati + boshqarish tugmalari."""
+    texts = MANAGE_ADMINS_BUTTON_TEXTS.get(language, MANAGE_ADMINS_BUTTON_TEXTS["uz"])
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=f"{texts['remove_prefix']} {name} ({telegram_id})",
+                callback_data=f"admin_remove_{telegram_id}",
+            )
+        ]
+        for telegram_id, name in admins
+    ]
+    buttons.append([InlineKeyboardButton(text=texts["add"], callback_data="admin_add_new")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)

@@ -53,6 +53,43 @@ class FakeQuotaSessionMaker:
         return FakeQuotaSession(self.user)
 
 
+class _ScalarResult:
+    def __init__(self, value):
+        self._value = value
+
+    def scalar_one_or_none(self):
+        return self._value
+
+
+class FakeLookupSession:
+    def __init__(self, user):
+        self.user = user
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def execute(self, query):
+        return _ScalarResult(self.user)
+
+
+class FakeLookupSessionMaker:
+    def __init__(self, user):
+        self.user = user
+
+    def __call__(self):
+        return FakeLookupSession(self.user)
+
+
+class FakeAdminUser:
+    def __init__(self, is_admin=False):
+        self.id = 5
+        self.telegram_id = 555
+        self.is_admin = is_admin
+
+
 class CrudFallbackTests(unittest.IsolatedAsyncioTestCase):
     async def test_get_user_by_telegram_id_returns_none_when_db_is_unavailable(self):
         with patch.object(crud, "async_session_maker", BrokenSessionMaker()):
@@ -132,6 +169,32 @@ class CrudFallbackTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(allowed)
         self.assertEqual(remaining, crud.DAILY_LIKE_LIMITS[PremiumPlan.basic] - 1)
+
+    async def test_is_admin_user_true_for_env_admin_even_when_db_is_down(self):
+        with patch.object(crud, "ADMIN_IDS", [999]), patch.object(crud, "async_session_maker", BrokenSessionMaker()):
+            result = await crud.is_admin_user(999)
+
+        self.assertTrue(result)
+
+    async def test_is_admin_user_false_when_not_admin_and_db_unavailable(self):
+        with patch.object(crud, "ADMIN_IDS", [999]), patch.object(crud, "async_session_maker", BrokenSessionMaker()):
+            result = await crud.is_admin_user(123)
+
+        self.assertFalse(result)
+
+    async def test_is_admin_user_true_for_db_flagged_admin(self):
+        user = FakeAdminUser(is_admin=True)
+        with patch.object(crud, "ADMIN_IDS", []), patch.object(crud, "async_session_maker", FakeLookupSessionMaker(user)):
+            result = await crud.is_admin_user(555)
+
+        self.assertTrue(result)
+
+    async def test_is_admin_user_false_for_regular_registered_user(self):
+        user = FakeAdminUser(is_admin=False)
+        with patch.object(crud, "ADMIN_IDS", []), patch.object(crud, "async_session_maker", FakeLookupSessionMaker(user)):
+            result = await crud.is_admin_user(555)
+
+        self.assertFalse(result)
 
 
 if __name__ == "__main__":

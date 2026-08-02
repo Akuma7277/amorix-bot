@@ -32,6 +32,16 @@ class LightweightMigrationDDLTests(unittest.TestCase):
             ddl = _build_add_column_ddl("users", column, postgresql.dialect())
             self.assertIn(f'"{column_name}"', ddl)
 
+    def test_is_admin_column_defaults_existing_rows_to_false(self):
+        # Existing users must not become admins just because the column was added.
+        column = User.__table__.columns["is_admin"]
+        self.assertEqual(_describe_column_default(column), " DEFAULT FALSE")
+
+    def test_profile_approval_status_has_no_default_to_avoid_hiding_existing_users(self):
+        # NULL (no default) means legacy profiles stay visible/approved after this migration.
+        column = User.__table__.columns["profile_approval_status"]
+        self.assertEqual(_describe_column_default(column), "")
+
 
 if __name__ == "__main__":
     unittest.main()

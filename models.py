@@ -67,6 +67,10 @@ class ActionType(enum.Enum):
     reject_report = "Shikoyatni rad etish"
     confirm_payment = "To'lovni tasdiqlash"
     reject_payment = "To'lovni rad etish"
+    approve_profile = "Profilni tasdiqlash"
+    reject_profile = "Profilni rad etish"
+    add_admin = "Admin qo'shildi"
+    remove_admin = "Admin olib tashlandi"
 
 # Jadvallar
 class User(Base):
@@ -93,6 +97,11 @@ class User(Base):
     registered_at = Column(DateTime, server_default=func.now())
     last_activity = Column(DateTime, onupdate=func.now())
     referred_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    # Profil to'liq ro'yxatdan o'tgandan keyin admin tasdig'ini kutish holati.
+    # Qiymatlar: "pending", "approved", "rejected". NULL = eski profillar (avtomatik tasdiqlangan deb hisoblanadi).
+    profile_approval_status = Column(String(20), nullable=True)
+    # ADMIN_IDS (.env) dagi asosiy adminlardan tashqari, bot orqali qo'shilgan qo'shimcha adminlar uchun.
+    is_admin = Column(Boolean, default=False)
 
 class Photo(Base):
     __tablename__ = "photos"
@@ -197,5 +206,16 @@ class VerificationRequest(Base):
     created_at = Column(DateTime, server_default=func.now())
     reviewed_at = Column(DateTime)
     reviewed_by = Column(BigInteger) # Admin telegram_id
+
+    user = relationship("User")
+
+
+class SupportMessage(Base):
+    __tablename__ = "support_messages"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String(20), default="pending")  # pending, read
+    created_at = Column(DateTime, server_default=func.now())
 
     user = relationship("User")

@@ -25,6 +25,7 @@ class MenuStates(StatesGroup):
     viewing_referrals = State() # Added for referral system
     confirm_block = State() # Added for user blocking
     viewing_likes = State()
+    writing_to_admin = State() # Foydalanuvchi adminga xabar yozayotgan holat
 
 class EditingStates(StatesGroup):
     choosing_field = State()
@@ -54,6 +55,8 @@ class AdminStates(StatesGroup):
     choosing_log_filter = State()
     choosing_log_action = State()
     entering_log_date = State()
+    viewing_admins = State()
+    waiting_for_admin_id_to_add = State()
 
 
 class SettingsStates(StatesGroup):

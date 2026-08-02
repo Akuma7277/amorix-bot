@@ -5,11 +5,10 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import ADMIN_IDS
 from reply import (
     get_admin_main_menu_keyboard, ADMIN_MENU_BUTTONS, get_main_menu_keyboard
 )
-from inline import get_moderation_keyboard, get_user_management_keyboard, get_report_keyboard, get_verification_moderation_keyboard, get_payment_moderation_keyboard, get_logs_view_keyboard, get_log_filter_keyboard, get_log_action_filter_keyboard
+from inline import get_moderation_keyboard, get_user_management_keyboard, get_report_keyboard, get_verification_moderation_keyboard, get_payment_moderation_keyboard, get_logs_view_keyboard, get_log_filter_keyboard, get_log_action_filter_keyboard, get_profile_approval_keyboard, get_manage_admins_keyboard
 from states import AdminStates
 from crud import (
     get_bot_statistics, get_user_by_telegram_id, get_unapproved_photo, get_all_active_user_telegram_ids, get_payment_statistics,
@@ -22,6 +21,7 @@ from crud import (
     get_report_by_id,
     get_admin_logs,
     update_user_profile_field,
+    is_admin_user, add_admin_by_telegram_id, remove_admin_by_telegram_id, get_dynamic_admins,
 )
 from models import UserStatus, ReportStatus, ActionType, VerificationStatus, PremiumPlan
 from menu import PROFILE_VIEW_TEXTS, PREMIUM_MAIN_TEXT
@@ -317,7 +317,7 @@ LOGS_PAGE_SIZE = 10
 
 @router.message(Command("admin"))
 async def cmd_admin(message: Message, state: FSMContext):
-    if message.from_user.id not in ADMIN_IDS:
+    if not await is_admin_user(message.from_user.id):
         user = await get_user_by_telegram_id(message.from_user.id)
         # Use a default language if the user is not in the database
         language = "uz"
@@ -1057,3 +1057,159 @@ async def reject_payment_handler(callback: CallbackQuery, state: FSMContext, bot
 
     await callback.message.delete()
     await show_payment_for_moderation(callback.message, state)
+
+
+PROFILE_APPROVED_USER_TEXT = {
+    "uz": "✅ Tabriklaymiz! Profilingiz administrator tomonidan tasdiqlandi va endi qidiruvda ko'rinadi.",
+    "ru": "✅ Поздравляем! Ваш профиль одобрен администратором и теперь виден в поиске.",
+    "en": "✅ Congratulations! Your profile has been approved by the administrator and is now visible in search.",
+}
+
+PROFILE_REJECTED_USER_TEXT = {
+    "uz": "❌ Afsuski, profilingiz administrator tomonidan rad etildi. Iltimos, \"Mening profilim\" bo'limida ma'lumotlaringizni tahrirlab qayta yuboring.",
+    "ru": "❌ К сожалению, ваш профиль отклонен администратором. Пожалуйста, отредактируйте данные в разделе «Мой профиль» и отправьте снова.",
+    "en": "❌ Unfortunately, your profile was rejected by the administrator. Please edit your details under \"My Profile\" and resubmit.",
+}
+
+
+@router.callback_query(F.data.startswith("approve_profile_"))
+async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
+    if not await is_admin_user(callback.from_user.id):
+        await callback.answer(UNAUTHORIZED_ACCESS_TEXT["uz"], show_alert=True)
+        return
+
+    user_id = int(callback.data.split("_")[-1])
+    user = await get_user_by_id(user_id)
+    if not user:
+        await callback.answer(USER_NOT_FOUND_TEXT["uz"], show_alert=True)
+        return
+
+    await update_user_profile_field(user_id, "profile_approval_status", "approved")
+    await create_admin_log(
+        admin_id=callback.from_user.id,
+        action=ActionType.approve_profile,
+        target_user_id=user_id,
+    )
+    await callback.answer("✅ Profil tasdiqlandi.")
+
+    if callback.message.photo:
+        await callback.message.edit_caption(caption=f"{callback.message.caption}\n\n✅ TASDIQLANDI", reply_markup=None)
+    else:
+        await callback.message.edit_text(f"{callback.message.text}\n\n✅ TASDIQLANDI", reply_markup=None)
+
+    user_lang = user.language or "uz"
+    try:
+        await bot.send_message(
+            chat_id=user.telegram_id,
+            text=PROFILE_APPROVED_USER_TEXT.get(user_lang, PROFILE_APPROVED_USER_TEXT["uz"]),
+        )
+    except Exception as exc:
+        logging.warning(f"Could not notify user {user.telegram_id} about profile approval: {exc}")
+
+
+@router.callback_query(F.data.startswith("reject_profile_"))
+async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
+    if not await is_admin_user(callback.from_user.id):
+        await callback.answer(UNAUTHORIZED_ACCESS_TEXT["uz"], show_alert=True)
+        return
+
+    user_id = int(callback.data.split("_")[-1])
+    user = await get_user_by_id(user_id)
+    if not user:
+        await callback.answer(USER_NOT_FOUND_TEXT["uz"], show_alert=True)
+        return
+
+    await update_user_profile_field(user_id, "profile_approval_status", "rejected")
+    await create_admin_log(
+        admin_id=callback.from_user.id,
+        action=ActionType.reject_profile,
+        target_user_id=user_id,
+    )
+    await callback.answer("❌ Profil rad etildi.")
+
+    if callback.message.photo:
+        await callback.message.edit_caption(caption=f"{callback.message.caption}\n\n❌ RAD ETILDI", reply_markup=None)
+    else:
+        await callback.message.edit_text(f"{callback.message.text}\n\n❌ RAD ETILDI", reply_markup=None)
+
+    user_lang = user.language or "uz"
+    try:
+        await bot.send_message(
+            chat_id=user.telegram_id,
+            text=PROFILE_REJECTED_USER_TEXT.get(user_lang, PROFILE_REJECTED_USER_TEXT["uz"]),
+        )
+    except Exception as exc:
+        logging.warning(f"Could not notify user {user.telegram_id} about profile rejection: {exc}")
+
+
+MANAGE_ADMINS_HEADER_TEXT = (
+    "👮 <b>Adminlar ro'yxati</b>\n\n"
+    "Qo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n"
+    "<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>"
+)
+ADD_ADMIN_PROMPT_TEXT = "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)"
+ADMIN_ADDED_TEXT = "✅ Admin muvaffaqiyatli qo'shildi."
+ADMIN_REMOVED_TEXT = "✅ Admin olib tashlandi."
+ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak."
+INVALID_TELEGRAM_ID_TEXT = "Iltimos, faqat raqam (Telegram ID) yuboring."
+
+
+async def show_manage_admins(message: Message, state: FSMContext):
+    dynamic_admins = await get_dynamic_admins()
+    keyboard = get_manage_admins_keyboard(
+        "uz", [(admin.telegram_id, admin.name or str(admin.telegram_id)) for admin in dynamic_admins]
+    )
+    await message.answer(MANAGE_ADMINS_HEADER_TEXT, reply_markup=keyboard)
+    await state.set_state(AdminStates.viewing_admins)
+
+
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["uz"]["manage_admins"])
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["ru"]["manage_admins"])
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["en"]["manage_admins"])
+async def manage_admins_start(message: Message, state: FSMContext):
+    await show_manage_admins(message, state)
+
+
+@router.callback_query(AdminStates.viewing_admins, F.data == "admin_add_new")
+async def prompt_add_admin(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(AdminStates.waiting_for_admin_id_to_add)
+    await callback.message.edit_text(ADD_ADMIN_PROMPT_TEXT)
+    await callback.answer()
+
+
+@router.message(AdminStates.waiting_for_admin_id_to_add, F.text)
+async def add_admin_received(message: Message, state: FSMContext):
+    if not message.text.strip().lstrip("-").isdigit():
+        await message.answer(INVALID_TELEGRAM_ID_TEXT)
+        return
+
+    telegram_id = int(message.text.strip())
+    new_admin = await add_admin_by_telegram_id(telegram_id)
+    if not new_admin:
+        await message.answer(ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT)
+        return
+
+    await create_admin_log(
+        admin_id=message.from_user.id,
+        action=ActionType.add_admin,
+        target_user_id=new_admin.id,
+        comment=f"Telegram ID: {telegram_id}",
+    )
+    await message.answer(ADMIN_ADDED_TEXT)
+    await show_manage_admins(message, state)
+
+
+@router.callback_query(AdminStates.viewing_admins, F.data.startswith("admin_remove_"))
+async def remove_admin_handler(callback: CallbackQuery, state: FSMContext):
+    telegram_id = int(callback.data.split("_")[-1])
+    removed_admin = await remove_admin_by_telegram_id(telegram_id)
+    if removed_admin:
+        await create_admin_log(
+            admin_id=callback.from_user.id,
+            action=ActionType.remove_admin,
+            target_user_id=removed_admin.id,
+            comment=f"Telegram ID: {telegram_id}",
+        )
+    await callback.answer(ADMIN_REMOVED_TEXT)
+    await callback.message.delete()
+    await show_manage_admins(callback.message, state)

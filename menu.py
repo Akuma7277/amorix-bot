@@ -7,7 +7,7 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 
 from reply import MAIN_MENU_BUTTONS, get_main_menu_keyboard
-from config import PAYMENT_CARD_NUMBER
+from config import PAYMENT_CARD_NUMBER, ADMIN_IDS
 from crud import (
     get_user_by_telegram_id,
     get_user_photos,
@@ -26,6 +26,7 @@ from crud import (
     get_users_who_liked_me, block_user, get_user_referrals, # Added for "Who Liked Me", User Blocking and Referral feature
     check_and_consume_like_quota,
     activate_profile_boost,
+    create_support_message,
     DAILY_LIKE_LIMITS,
     DAILY_SUPER_LIKE_LIMITS,
     BOOST_DURATION_MINUTES,
@@ -38,7 +39,7 @@ from inline import (
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard, get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan # Import UserStatus
-from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT # Import common texts
+from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS # Import common texts
 
 # Using RegistrationStates to clear state is not ideal, but works.
 # Let's keep it for now. from app.states import RegistrationStates
@@ -454,6 +455,29 @@ async def show_my_profile(message: Message, state: FSMContext):
         )
 
 
+@router.callback_query(F.data == "edit_profile_menu")
+async def edit_profile_menu_handler(callback: CallbackQuery, state: FSMContext):
+    """'✉️ Tahrirlash' tugmasi - 'Mening profilim' ekranidan profilni tahrirlash bo'limiga o'tadi."""
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    if not user:
+        await callback.answer(NOT_REGISTERED_TEXTS["uz"], show_alert=True)
+        return
+    language = user.language or "uz"
+
+    await state.set_state(EditingStates.choosing_field)
+    if callback.message.photo:
+        await callback.message.edit_caption(
+            caption=EDIT_PROFILE_TEXTS.get(language, EDIT_PROFILE_TEXTS["uz"]),
+            reply_markup=get_edit_profile_keyboard(language),
+        )
+    else:
+        await callback.message.edit_text(
+            EDIT_PROFILE_TEXTS.get(language, EDIT_PROFILE_TEXTS["uz"]),
+            reply_markup=get_edit_profile_keyboard(language),
+        )
+    await callback.answer()
+
+
 async def show_next_profile(message: Message | CallbackQuery, state: FSMContext):
     """Shows the next profile from the search queue."""
     data = await state.get_data()
@@ -559,6 +583,9 @@ async def show_next_liked_profile(message: Message | CallbackQuery, state: FSMCo
 @router.message(F.text.in_([MAIN_MENU_BUTTONS["uz"]["likes"], MAIN_MENU_BUTTONS["ru"]["likes"], MAIN_MENU_BUTTONS["en"]["likes"]]))
 async def show_who_liked_me(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
+    if not user:
+        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        return
     language = user.language or "uz"
 
     liked_users = await get_users_who_liked_me(user.id)
@@ -778,6 +805,9 @@ async def report_description_entered(message: Message, state: FSMContext):
 @router.message(F.text == MAIN_MENU_BUTTONS["en"]["referrals"])
 async def show_referral_info(message: Message, state: FSMContext, bot: Bot):
     user = await get_user_by_telegram_id(message.from_user.id)
+    if not user:
+        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        return
     language = user.language or "uz"
 
     referrals = await get_user_referrals(user.id)
@@ -798,6 +828,9 @@ async def show_referral_info(message: Message, state: FSMContext, bot: Bot):
 @router.message(F.text == MAIN_MENU_BUTTONS["en"]["help"])
 async def help_main_menu(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
+    if not user:
+        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        return
     language = user.language or "uz"
 
     await message.answer(
@@ -839,12 +872,71 @@ async def help_back_to_main_menu_handler(callback: CallbackQuery, state: FSMCont
     await callback.message.edit_text(MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]), reply_markup=get_main_menu_keyboard(language))
     await callback.answer()
 
+MESSAGE_ADMIN_PROMPT_TEXTS = {
+    "uz": "✉️ Taklif yoki shikoyatingizni yozib yuboring. Xabaringiz to'g'ridan-to'g'ri administratorga yetkaziladi.",
+    "ru": "✉️ Напишите ваше предложение или жалобу. Ваше сообщение будет напрямую передано администратору.",
+    "en": "✉️ Write your suggestion or complaint. Your message will be sent directly to the administrator.",
+}
+
+MESSAGE_ADMIN_SENT_TEXTS = {
+    "uz": "✅ Xabaringiz administratorga yuborildi. Tez orada bog'lanamiz!",
+    "ru": "✅ Ваше сообщение отправлено администратору. Мы скоро свяжемся с вами!",
+    "en": "✅ Your message has been sent to the administrator. We will contact you soon!",
+}
+
+
+@router.callback_query(MenuStates.viewing_help, F.data == "help_message_admin")
+async def start_message_admin(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    if not user:
+        await callback.answer(NOT_REGISTERED_TEXTS["uz"], show_alert=True)
+        return
+    language = user.language or "uz"
+
+    await state.set_state(MenuStates.writing_to_admin)
+    await callback.message.edit_text(MESSAGE_ADMIN_PROMPT_TEXTS.get(language, MESSAGE_ADMIN_PROMPT_TEXTS["uz"]))
+    await callback.answer()
+
+
+@router.message(MenuStates.writing_to_admin, F.text)
+async def message_admin_received(message: Message, state: FSMContext, bot: Bot):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    if not user:
+        await state.clear()
+        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        return
+    language = user.language or "uz"
+
+    await create_support_message(user.id, message.text)
+
+    username_part = f"@{message.from_user.username}" if message.from_user.username else "yo'q"
+    notify_text = (
+        f"✉️ <b>Yangi murojaat</b>\n\n"
+        f"Foydalanuvchi: {user.name} (ID: {user.id})\n"
+        f"Username: {username_part} | Telegram ID: {user.telegram_id}\n\n"
+        f"Xabar:\n{message.text}"
+    )
+    for admin_id in ADMIN_IDS:
+        try:
+            await bot.send_message(chat_id=admin_id, text=notify_text)
+        except Exception as exc:
+            logging.warning(f"Could not notify admin {admin_id} about support message: {exc}")
+
+    await state.clear()
+    await message.answer(
+        MESSAGE_ADMIN_SENT_TEXTS.get(language, MESSAGE_ADMIN_SENT_TEXTS["uz"]),
+        reply_markup=get_main_menu_keyboard(language)
+    )
+
 @router.message(F.text == MAIN_MENU_BUTTONS["uz"]["settings"])
 @router.message(F.text == MAIN_MENU_BUTTONS["ru"]["settings"])
 @router.message(F.text == MAIN_MENU_BUTTONS["en"]["settings"])
 async def settings_main_menu(message: Message, state: FSMContext):
     await state.clear()
     user = await get_user_by_telegram_id(message.from_user.id)
+    if not user:
+        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        return
     language = user.language or "uz"
 
     await message.answer(
@@ -934,10 +1026,11 @@ async def delete_account_handler(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(SettingsStates.confirm_delete_account, F.data == "confirm_delete_no")
 @router.callback_query(SettingsStates.main_menu, F.data == "settings_back_to_main_menu")
+@router.callback_query(F.data == "premium_back_to_main_menu")
 async def settings_back_to_main_menu_handler(callback: CallbackQuery, state: FSMContext):
     # This handler is also used by premium menu's back button
     user = await get_user_by_telegram_id(callback.from_user.id)
-    language = user.language or "uz"
+    language = user.language if user else "uz"
     await state.clear()
     await callback.message.edit_text(MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]), reply_markup=get_main_menu_keyboard(language))
     await callback.answer()
@@ -986,6 +1079,9 @@ async def verification_document_invalid(message: Message, state: FSMContext):
 async def my_chats_handler(message: Message, state: FSMContext):
     await state.clear()
     user = await get_user_by_telegram_id(message.from_user.id)
+    if not user:
+        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        return
     language = user.language or "uz"
 
     matches = await get_user_matches(user.id)
@@ -1074,6 +1170,9 @@ async def message_in_chat_handler(message: Message, state: FSMContext, bot: Bot)
 @router.message(F.text == MAIN_MENU_BUTTONS["en"]["premium"])
 async def premium_main_menu(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
+    if not user:
+        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        return
     language = user.language or "uz"
 
     # Check if user already has an active premium plan
@@ -1101,6 +1200,9 @@ async def premium_main_menu(message: Message, state: FSMContext):
 @router.callback_query(F.data == "activate_boost")
 async def activate_boost_handler(callback: CallbackQuery):
     user = await get_user_by_telegram_id(callback.from_user.id)
+    if not user:
+        await callback.answer(NOT_REGISTERED_TEXTS["uz"], show_alert=True)
+        return
     language = user.language or "uz"
 
     if not has_active_premium(user):

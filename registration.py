@@ -1,5 +1,5 @@
 import logging
-from aiogram import F, Router
+from aiogram import F, Router, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.filters import Command
@@ -17,13 +17,15 @@ from inline import (
     get_region_keyboard,
     get_review_keyboard,
     get_edit_profile_keyboard,
+    get_profile_approval_keyboard,
     resolve_region_name,
     is_tashkent_city_region,
 )
 from reply import get_main_menu_keyboard
-from crud import create_user_profile
+from crud import create_user_profile, get_user_by_telegram_id, get_user_photos
 from states import RegistrationStates, EditingStates
 from common import MAIN_MENU_TEXTS
+from config import ADMIN_IDS
 
 router = Router()
 
@@ -569,10 +571,17 @@ async def photos_done(callback: CallbackQuery, state: FSMContext):
     # Barcha ma'lumotlarni bazaga saqlash
     telegram_id = callback.from_user.id
     try:
-        await create_user_profile(telegram_id, data)
+        new_user = await create_user_profile(telegram_id, data)
     except Exception as e:
         logging.error(f"Foydalanuvchi {telegram_id} uchun profil yaratishda xatolik: {e}")
-        await callback.message.answer("Profilingizni yaratishda xatolik yuz berdi. Iltimos, /start buyrug'ini bosib qayta urinib ko'ring.", reply_markup=ReplyKeyboardRemove())
+        new_user = None
+
+    if not new_user:
+        logging.error(f"Foydalanuvchi {telegram_id} uchun profil yaratib bo'lmadi (baza bilan bog'lanishda muammo).")
+        await callback.message.answer(
+            "Profilingizni yaratishda xatolik yuz berdi. Iltimos, birozdan so'ng /start buyrug'ini bosib qaytadan urinib ko'ring.",
+            reply_markup=ReplyKeyboardRemove(),
+        )
         await state.clear()
         return
 
@@ -604,8 +613,55 @@ async def photos_done(callback: CallbackQuery, state: FSMContext):
     await state.set_state(RegistrationStates.reviewing_profile)
 
 
+NEW_PROFILE_ADMIN_NOTIFICATION_TEXT = (
+    "🆕 <b>Yangi profil tasdiqlashni kutmoqda</b>\n\n"
+    "👤 Ism: {name}\n"
+    "🎂 Yosh: {age}\n"
+    "📍 Manzil: {city}, {district}\n"
+    "❤️ Qiziqishlar: {interests}\n"
+    "📝 Bio: {bio}\n\n"
+    "🆔 Telegram ID: {telegram_id}"
+)
+
+
+async def notify_admins_about_new_profile(bot: Bot, telegram_id: int) -> None:
+    """Ro'yxatdan to'liq o'tgan yangi profil haqida barcha adminlarga tasdiqlash so'rovini yuboradi."""
+    user = await get_user_by_telegram_id(telegram_id)
+    if not user:
+        logging.warning(f"Admin bildirishnomasi uchun foydalanuvchi topilmadi: {telegram_id}")
+        return
+
+    photos = await get_user_photos(user.id)
+    interest_keys = user.interests.split(",") if user.interests else []
+    interest_names = [
+        ALL_INTERESTS[key].get("uz", ALL_INTERESTS[key]["uz"])
+        for key in interest_keys
+        if key in ALL_INTERESTS
+    ]
+
+    caption = NEW_PROFILE_ADMIN_NOTIFICATION_TEXT.format(
+        name=user.name,
+        age=user.age,
+        city=user.city,
+        district=user.district,
+        interests=", ".join(interest_names) if interest_names else "Yo'q",
+        bio=user.bio or "-",
+        telegram_id=user.telegram_id,
+    )
+    keyboard = get_profile_approval_keyboard("uz", user.id)
+
+    for admin_id in ADMIN_IDS:
+        try:
+            if photos:
+                await bot.send_photo(chat_id=admin_id, photo=photos[0].file_id, caption=caption, reply_markup=keyboard)
+            else:
+                await bot.send_message(chat_id=admin_id, text=caption, reply_markup=keyboard)
+        except Exception as exc:
+            logging.warning(f"Admin {admin_id} ga yangi profil haqida xabar berib bo'lmadi: {exc}")
+
+
 @router.callback_query(RegistrationStates.reviewing_profile, F.data == "confirm_profile")
-async def profile_confirmed(callback: CallbackQuery, state: FSMContext):
+async def profile_confirmed(callback: CallbackQuery, state: FSMContext, bot: Bot):
     data = await state.get_data()
     language = data.get("language", "uz")
 
@@ -622,6 +678,8 @@ async def profile_confirmed(callback: CallbackQuery, state: FSMContext):
         reply_markup=get_main_menu_keyboard(language)
     )
     await state.clear()
+
+    await notify_admins_about_new_profile(bot, callback.from_user.id)
 
 
 @router.callback_query(RegistrationStates.reviewing_profile, F.data == "edit_profile")

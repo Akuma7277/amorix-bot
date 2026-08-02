@@ -23,8 +23,10 @@ from models import (
     PremiumPlan,
     BlockedUser, # Import BlockedUser
     Payment,
+    SupportMessage,
 )
 from engine import async_session_maker
+from config import ADMIN_IDS
 
 
 # Premium tier daily quotas. None means unlimited.
@@ -122,6 +124,8 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
                 bio=user_data.get("bio"),
                 interests=",".join(user_data.get("interests", [])),
                 language=user_data.get("language"),
+                # Yangi profil har doim admin tasdig'ini kutadi.
+                profile_approval_status="pending",
                 # Boshqa maydonlar default qiymatlar bilan to'ldiriladi
             )
             session.add(new_user)
@@ -261,6 +265,12 @@ async def get_profiles_for_user(current_user: User, limit: int = 20) -> list[Use
         # Ensure the user has at least one approved photo
         query = query.where(exists().where(and_(Photo.user_id == User.id, Photo.is_approved == True)))
 
+        # Only show profiles that are admin-approved. NULL means a legacy profile
+        # created before this feature existed, which is treated as already approved.
+        query = query.where(
+            or_(User.profile_approval_status == "approved", User.profile_approval_status.is_(None))
+        )
+
         # Boosted profiles (active boost) are shown first, then random order
         now = datetime.now()
         is_boosted = case((and_(User.boost_active_until.isnot(None), User.boost_active_until > now), 1), else_=0)
@@ -378,6 +388,57 @@ async def update_user_profile_field(user_id: int, field: str, value: any) -> boo
             await session.commit()
             return True
         return False
+
+
+async def is_admin_user(telegram_id: int) -> bool:
+    """Checks if a telegram user is an admin: either listed in ADMIN_IDS (.env) or granted via the bot."""
+    if telegram_id in ADMIN_IDS:
+        return True
+    user = await get_user_by_telegram_id(telegram_id)
+    return bool(user and user.is_admin)
+
+
+async def add_admin_by_telegram_id(telegram_id: int) -> User | None:
+    """Grants bot-level admin rights to an already-registered user. Returns None if the user doesn't exist."""
+    async with async_session_maker() as session:
+        result = await session.execute(select(User).where(User.telegram_id == telegram_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+        user.is_admin = True
+        await session.commit()
+        await session.refresh(user)
+        return user
+
+
+async def remove_admin_by_telegram_id(telegram_id: int) -> User | None:
+    """Revokes bot-granted admin rights from a user. Returns None if the user doesn't exist."""
+    async with async_session_maker() as session:
+        result = await session.execute(select(User).where(User.telegram_id == telegram_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+        user.is_admin = False
+        await session.commit()
+        await session.refresh(user)
+        return user
+
+
+async def get_dynamic_admins() -> list[User]:
+    """Fetches all users granted admin rights via the bot (not the primary ADMIN_IDS env admins)."""
+    async with async_session_maker() as session:
+        result = await session.execute(select(User).where(User.is_admin == True))
+        return result.scalars().all()
+
+
+async def create_support_message(user_id: int, message: str) -> SupportMessage:
+    """Persists a user's complaint/suggestion message sent to admins."""
+    async with async_session_maker() as session:
+        new_message = SupportMessage(user_id=user_id, message=message)
+        session.add(new_message)
+        await session.commit()
+        await session.refresh(new_message)
+        return new_message
 
 
 async def create_admin_log(admin_id: int, action: ActionType, target_user_id: int | None = None, comment: str | None = None) -> AdminLog:

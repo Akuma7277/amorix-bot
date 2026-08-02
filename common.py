@@ -16,6 +16,14 @@ MAIN_MENU_TEXTS = {
     "en": "Main menu. Please select a section:",
 }
 
+# Foydalanuvchi bazada topilmaganda (masalan, ro'yxatdan hali o'tmagan yoki
+# ro'yxatdan o'tish tugallanmagan) ko'rsatiladigan umumiy xabar.
+NOT_REGISTERED_TEXTS = {
+    "uz": "Siz hali ro'yxatdan o'tmagansiz. Iltimos, /start buyrug'ini bosing.",
+    "ru": "Вы еще не зарегистрированы. Пожалуйста, нажмите команду /start.",
+    "en": "You are not registered yet. Please press the /start command.",
+}
+
 VERIFICATION_START_TEXT = {
     "uz": "Hisobingizni tasdiqlash uchun shaxsingizni tasdiqlovchi hujjat (pasport yoki ID karta) rasmini yuboring. Ma'lumotlaringiz maxfiy saqlanadi.",
     "ru": "Для верификации вашего аккаунта, пожалуйста, отправьте фотографию вашего документа, удостоверяющего личность (паспорт или ID-карта). Ваши данные будут сохранены конфиденциально.",
