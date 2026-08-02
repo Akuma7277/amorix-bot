@@ -174,9 +174,9 @@ if DATABASE_URL and _database_host_is_resolvable(DATABASE_URL):
     )
 else:
     if DATABASE_URL:
-        logging.warning("DATABASE_URL hosti yechilmayapti; SQLite fallback ishlatiladi.")
+        logging.info("DATABASE_URL hosti yechilmayapti; SQLite fallback ishlatiladi.")
     else:
-        logging.warning("DATABASE_URL not configured. SQLite fallback ishlatiladi.")
+        logging.info("DATABASE_URL not configured. SQLite fallback ishlatiladi.")
 
     engine = create_async_engine(
         _build_sqlite_fallback_url(),

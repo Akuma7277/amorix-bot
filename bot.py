@@ -206,7 +206,7 @@ async def main() -> None:
             storage = RedisStorage(redis=redis_client)
             logging.info("Redis storage connected.")
         except Exception as exc:
-            logging.warning(f"Redis unavailable, falling back to MemoryStorage: {exc}")
+            logging.info(f"Redis unavailable, falling back to MemoryStorage: {exc}")
             redis_client = None
             storage = MemoryStorage()
     elif redis_host and redis_host not in {"localhost", "127.0.0.1", "0.0.0.0"}:
@@ -217,7 +217,7 @@ async def main() -> None:
             storage = RedisStorage(redis=redis_client)
             logging.info("Redis storage connected.")
         except Exception as exc:
-            logging.warning(f"Redis unavailable, falling back to MemoryStorage: {exc}")
+            logging.info(f"Redis unavailable, falling back to MemoryStorage: {exc}")
             redis_client = None
             storage = MemoryStorage()
     else:
