@@ -8,11 +8,11 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from reply import (
     get_admin_main_menu_keyboard, ADMIN_MENU_BUTTONS, get_main_menu_keyboard
 )
-from inline import get_moderation_keyboard, get_user_management_keyboard, get_report_keyboard, get_verification_moderation_keyboard, get_payment_moderation_keyboard, get_logs_view_keyboard, get_log_filter_keyboard, get_log_action_filter_keyboard, get_profile_approval_keyboard, get_manage_admins_keyboard
+from inline import get_moderation_keyboard, get_user_management_keyboard, get_report_keyboard, get_verification_moderation_keyboard, get_payment_moderation_keyboard, get_logs_view_keyboard, get_log_filter_keyboard, get_log_action_filter_keyboard, get_profile_approval_keyboard, get_manage_admins_keyboard, get_ban_duration_keyboard, get_delete_confirmation_keyboard
 from states import AdminStates
 from crud import (
     get_bot_statistics, get_user_by_telegram_id, get_unapproved_photo, get_all_active_user_telegram_ids, get_payment_statistics,
-    find_user_by_id_or_telegram_id, set_user_status,
+    find_user_by_id_or_telegram_id, set_user_status, ban_user_with_duration, lift_user_ban, delete_user_data, auto_lift_expired_ban,
     get_user_photos, get_pending_report, update_report_status, get_photo_by_id, get_user_by_id,
     get_pending_payment, update_payment_status,
     get_pending_verification_request,
@@ -106,6 +106,29 @@ USER_NOT_FOUND_TEXT = {
 
 USER_BANNED_TEXT = "🚫 Foydalanuvchi bloklandi va endi botda ko'rinmaydi."
 USER_UNBANNED_TEXT = "✅ Foydalanuvchi blokdan chiqarildi."
+PROFILE_DELETED_TEXT = {
+    "uz": "🗑 Profil butunlay o'chirildi.",
+    "ru": "🗑 Профиль полностью удален.",
+    "en": "🗑 The profile has been permanently deleted.",
+}
+
+BAN_NOTICE_TEXT = {
+    "uz": "🚫 Sizning hisobingiz {until} sanasigacha vaqtincha bloklandi.",
+    "ru": "🚫 Ваш аккаунт временно заблокирован до {until}.",
+    "en": "🚫 Your account has been temporarily banned until {until}.",
+}
+
+BAN_NOTICE_PERMANENT_TEXT = {
+    "uz": "🚫 Sizning hisobingiz doimiy ravishda bloklandi.",
+    "ru": "🚫 Ваш аккаунт заблокирован навсегда.",
+    "en": "🚫 Your account has been permanently banned.",
+}
+
+PROFILE_DELETED_NOTICE_TEXT = {
+    "uz": "🗑 Sizning profilingiz administrator tomonidan o'chirildi. Qayta ro'yxatdan o'tish uchun /start buyrug'ini bosing.",
+    "ru": "🗑 Ваш профиль был удален администратором. Чтобы зарегистрироваться заново, нажмите /start.",
+    "en": "🗑 Your profile has been deleted by an administrator. Press /start to register again.",
+}
 
 REPORT_DETAILS_TEXT = {
     "uz": (
@@ -491,6 +514,8 @@ async def find_user_handler(message: Message, state: FSMContext):
     )
 
     photos = await get_user_photos(user_to_view.id)
+    # Reflect a live ban status in case a temporary ban has already expired.
+    user_to_view = await auto_lift_expired_ban(user_to_view)
     is_banned = user_to_view.status == UserStatus.banned
     keyboard = get_user_management_keyboard(language, user_to_view.id, is_banned)
 
@@ -502,17 +527,55 @@ async def find_user_handler(message: Message, state: FSMContext):
     await state.set_state(AdminStates.viewing_user)
 
 
-@router.callback_query(AdminStates.viewing_user, F.data.startswith("manage_ban_"))
+@router.callback_query(AdminStates.viewing_user, F.data.regexp(r"^manage_ban_\d+$"))
 async def ban_user_handler(callback: CallbackQuery, state: FSMContext):
     user_id = int(callback.data.split("_")[-1])
     admin_user = await get_user_by_telegram_id(callback.from_user.id)
     language = admin_user.language if admin_user else "uz"
-    await set_user_status(user_id, UserStatus.banned)
+    await callback.answer()
+    await callback.message.edit_reply_markup(reply_markup=get_ban_duration_keyboard(language, user_id))
+
+
+@router.callback_query(AdminStates.viewing_user, F.data.startswith("manage_ban_cancel_"))
+async def cancel_ban_duration_handler(callback: CallbackQuery, state: FSMContext):
+    user_id = int(callback.data.split("_")[-1])
+    admin_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = admin_user.language if admin_user else "uz"
+    await callback.answer()
+    await callback.message.edit_reply_markup(reply_markup=get_user_management_keyboard(language, user_id, is_banned=False))
+
+
+@router.callback_query(AdminStates.viewing_user, F.data.startswith("manage_ban_apply_"))
+async def apply_ban_duration_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    _, _, _, user_id_str, duration_token = callback.data.split("_")
+    user_id = int(user_id_str)
+    duration_days = None if duration_token == "perm" else int(duration_token)
+
+    admin_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = admin_user.language if admin_user else "uz"
+
+    await ban_user_with_duration(user_id, duration_days)
     await create_admin_log(
         admin_id=callback.from_user.id,
         action=ActionType.ban_user,
-        target_user_id=user_id
+        target_user_id=user_id,
+        comment=f"Ban muddati: {duration_days} kun" if duration_days else "Ban muddati: doimiy"
     )
+
+    banned_user = await get_user_by_id(user_id)
+    if banned_user:
+        notice_language = banned_user.language or "uz"
+        if banned_user.banned_until:
+            outcome_text = BAN_NOTICE_TEXT.get(notice_language, BAN_NOTICE_TEXT["uz"]).format(
+                until=banned_user.banned_until.strftime("%Y-%m-%d %H:%M")
+            )
+        else:
+            outcome_text = BAN_NOTICE_PERMANENT_TEXT.get(notice_language, BAN_NOTICE_PERMANENT_TEXT["uz"])
+        try:
+            await bot.send_message(chat_id=banned_user.telegram_id, text=outcome_text)
+        except Exception as exc:
+            logging.warning(f"Foydalanuvchi {banned_user.telegram_id} ga ban haqida xabar berib bo'lmadi: {exc}")
+
     await callback.answer(USER_BANNED_TEXT)
     await callback.message.edit_reply_markup(reply_markup=get_user_management_keyboard(language, user_id, is_banned=True))
 
@@ -522,7 +585,7 @@ async def unban_user_handler(callback: CallbackQuery, state: FSMContext):
     user_id = int(callback.data.split("_")[-1])
     admin_user = await get_user_by_telegram_id(callback.from_user.id)
     language = admin_user.language if admin_user else "uz"
-    await set_user_status(user_id, UserStatus.active)
+    await lift_user_ban(user_id)
     await create_admin_log(
         admin_id=callback.from_user.id,
         action=ActionType.unban_user,
@@ -530,6 +593,63 @@ async def unban_user_handler(callback: CallbackQuery, state: FSMContext):
     )
     await callback.answer(USER_UNBANNED_TEXT)
     await callback.message.edit_reply_markup(reply_markup=get_user_management_keyboard(language, user_id, is_banned=False))
+
+
+@router.callback_query(AdminStates.viewing_user, F.data.startswith("manage_delete_prompt_"))
+async def prompt_delete_profile_handler(callback: CallbackQuery, state: FSMContext):
+    user_id = int(callback.data.split("_")[-1])
+    admin_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = admin_user.language if admin_user else "uz"
+    await callback.answer()
+    await callback.message.edit_reply_markup(reply_markup=get_delete_confirmation_keyboard(language, user_id))
+
+
+@router.callback_query(AdminStates.viewing_user, F.data.startswith("manage_delete_cancel_"))
+async def cancel_delete_profile_handler(callback: CallbackQuery, state: FSMContext):
+    user_id = int(callback.data.split("_")[-1])
+    admin_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = admin_user.language if admin_user else "uz"
+    await callback.answer()
+    await callback.message.edit_reply_markup(reply_markup=get_user_management_keyboard(language, user_id, is_banned=False))
+
+
+@router.callback_query(AdminStates.viewing_user, F.data.startswith("manage_delete_confirm_"))
+async def confirm_delete_profile_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    user_id = int(callback.data.split("_")[-1])
+    admin_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = admin_user.language if admin_user else "uz"
+
+    user_to_delete = await get_user_by_id(user_id)
+    telegram_id_to_notify = user_to_delete.telegram_id if user_to_delete else None
+    notify_language = (user_to_delete.language if user_to_delete else None) or "uz"
+
+    deleted = await delete_user_data(user_id)
+
+    if deleted:
+        # delete_user_data() also removes AdminLog rows whose target_user_id points at this user,
+        # so logging with target_user_id=user_id here would erase this very entry. Log with
+        # target_user_id=None and keep the deleted user's telegram_id in the comment instead.
+        await create_admin_log(
+            admin_id=callback.from_user.id,
+            action=ActionType.delete_profile,
+            target_user_id=None,
+            comment=f"O'chirilgan foydalanuvchi: telegram_id={telegram_id_to_notify}",
+        )
+
+    await callback.answer(
+        PROFILE_DELETED_TEXT.get(language, PROFILE_DELETED_TEXT["uz"]) if deleted else USER_NOT_FOUND_TEXT.get(language, USER_NOT_FOUND_TEXT["uz"]),
+        show_alert=True,
+    )
+    await callback.message.edit_reply_markup(reply_markup=None)
+
+    if deleted and telegram_id_to_notify:
+        try:
+            await bot.send_message(
+                chat_id=telegram_id_to_notify,
+                text=PROFILE_DELETED_NOTICE_TEXT.get(notify_language, PROFILE_DELETED_NOTICE_TEXT["uz"]),
+            )
+        except Exception as exc:
+            logging.warning(f"Foydalanuvchi {telegram_id_to_notify} ga profil o'chirilgani haqida xabar berib bo'lmadi: {exc}")
 
 
 async def show_report_for_moderation(message: Message, state: FSMContext):

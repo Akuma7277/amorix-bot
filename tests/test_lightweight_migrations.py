@@ -42,6 +42,17 @@ class LightweightMigrationDDLTests(unittest.TestCase):
         column = User.__table__.columns["profile_approval_status"]
         self.assertEqual(_describe_column_default(column), "")
 
+    def test_banned_until_column_has_no_default(self):
+        # NULL means "not banned" (or a permanent ban when paired with status=banned) for existing rows.
+        column = User.__table__.columns["banned_until"]
+        self.assertEqual(_describe_column_default(column), "")
+
+    def test_add_column_ddl_for_banned_until(self):
+        column = User.__table__.columns["banned_until"]
+        ddl = _build_add_column_ddl("users", column, postgresql.dialect())
+
+        self.assertIn('ALTER TABLE "users" ADD COLUMN "banned_until"', ddl)
+
 
 if __name__ == "__main__":
     unittest.main()

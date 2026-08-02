@@ -1,12 +1,13 @@
-from aiogram import Router
+from aiogram import Router, BaseMiddleware
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, TelegramObject, Update
 from aiogram.fsm.context import FSMContext
  
-from crud import get_user_by_telegram_id
+from crud import get_user_by_telegram_id, auto_lift_expired_ban
 from states import RegistrationStates
 from inline import get_language_keyboard
 from reply import get_main_menu_keyboard
+from models import UserStatus
 
 router = Router()
 
@@ -47,6 +48,60 @@ VERIFICATION_ALREADY_VERIFIED_TEXT = {
     "ru": "Ваш аккаунт уже верифицирован.",
     "en": "Your account is already verified.",
 }
+
+BANNED_USER_TEXTS = {
+    "uz": "🚫 Siz botdan foydalanishdan vaqtincha chetlashtirilgansiz.\nMuddati: {until}",
+    "ru": "🚫 Вы временно отстранены от использования бота.\nСрок действия: {until}",
+    "en": "🚫 You have been temporarily suspended from using the bot.\nUntil: {until}",
+}
+
+BANNED_USER_PERMANENT_TEXTS = {
+    "uz": "🚫 Siz botdan foydalanish huquqidan doimiy mahrum qilingansiz.",
+    "ru": "🚫 Вы навсегда лишены права пользоваться ботом.",
+    "en": "🚫 You have been permanently banned from using the bot.",
+}
+
+
+class BanCheckMiddleware(BaseMiddleware):
+    """Bloklangan foydalanuvchilarning istalgan handlerga yetib borishini to'xtatadi."""
+
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        if not isinstance(event, Update):
+            return await handler(event, data)
+
+        telegram_user = None
+        reply_target = None
+        if event.message:
+            telegram_user = event.message.from_user
+            reply_target = event.message
+        elif event.callback_query:
+            telegram_user = event.callback_query.from_user
+            reply_target = event.callback_query
+
+        if telegram_user is None:
+            return await handler(event, data)
+
+        user = await get_user_by_telegram_id(telegram_user.id)
+        if user is None or user.status != UserStatus.banned:
+            return await handler(event, data)
+
+        user = await auto_lift_expired_ban(user)
+        if user.status != UserStatus.banned:
+            return await handler(event, data)
+
+        language = user.language or "uz"
+        if user.banned_until:
+            text = BANNED_USER_TEXTS.get(language, BANNED_USER_TEXTS["uz"]).format(
+                until=user.banned_until.strftime("%Y-%m-%d %H:%M")
+            )
+        else:
+            text = BANNED_USER_PERMANENT_TEXTS.get(language, BANNED_USER_PERMANENT_TEXTS["uz"])
+
+        if event.message:
+            await reply_target.answer(text)
+        else:
+            await reply_target.answer(text, show_alert=True)
+        return None
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import crud
-from models import PremiumPlan
+from models import PremiumPlan, UserStatus
 
 
 class BrokenSessionMaker:
@@ -88,6 +88,73 @@ class FakeAdminUser:
         self.id = 5
         self.telegram_id = 555
         self.is_admin = is_admin
+
+
+class FakeBannableUser:
+    def __init__(self, status=UserStatus.active, banned_until=None):
+        self.id = 9
+        self.telegram_id = 999
+        self.status = status
+        self.banned_until = banned_until
+
+
+class FakeExistingUser:
+    def __init__(self):
+        self.id = 42
+        self.telegram_id = 555111
+        self.name = "Old Name"
+        self.age = 20
+        self.gender = None
+        self.looking_for = None
+        self.city = None
+        self.district = None
+        self.bio = None
+        self.interests = None
+        self.language = None
+        self.status = UserStatus.inactive
+        self.profile_approval_status = "rejected"
+
+
+class FakeUpsertSession:
+    def __init__(self, existing_user):
+        self.existing_user = existing_user
+        self.added = []
+        self.executed_queries = []
+        self.committed = False
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def execute(self, query):
+        self.executed_queries.append(query)
+        return _ScalarResult(self.existing_user)
+
+    def add(self, instance):
+        self.added.append(instance)
+        if getattr(instance, "id", None) is None:
+            instance.id = len(self.added) + 100
+
+    async def flush(self):
+        return None
+
+    async def commit(self):
+        self.committed = True
+
+    async def refresh(self, instance):
+        return None
+
+
+class FakeUpsertSessionMaker:
+    def __init__(self, existing_user):
+        self.existing_user = existing_user
+        self.session = None
+
+    def __call__(self):
+        self.session = FakeUpsertSession(self.existing_user)
+        return self.session
 
 
 class CrudFallbackTests(unittest.IsolatedAsyncioTestCase):
@@ -195,6 +262,119 @@ class CrudFallbackTests(unittest.IsolatedAsyncioTestCase):
             result = await crud.is_admin_user(555)
 
         self.assertFalse(result)
+
+    async def test_ban_user_with_duration_sets_future_banned_until(self):
+        user = FakeBannableUser()
+        with patch.object(crud, "async_session_maker", FakeQuotaSessionMaker(user)):
+            result = await crud.ban_user_with_duration(user.id, 7)
+
+        self.assertTrue(result)
+        self.assertEqual(user.status, UserStatus.banned)
+        self.assertGreater(user.banned_until, datetime.now() + timedelta(days=6))
+
+    async def test_ban_user_with_duration_none_is_permanent(self):
+        user = FakeBannableUser()
+        with patch.object(crud, "async_session_maker", FakeQuotaSessionMaker(user)):
+            result = await crud.ban_user_with_duration(user.id, None)
+
+        self.assertTrue(result)
+        self.assertEqual(user.status, UserStatus.banned)
+        self.assertIsNone(user.banned_until)
+
+    async def test_lift_user_ban_clears_status_and_duration(self):
+        user = FakeBannableUser(status=UserStatus.banned, banned_until=datetime.now() + timedelta(days=1))
+        with patch.object(crud, "async_session_maker", FakeQuotaSessionMaker(user)):
+            result = await crud.lift_user_ban(user.id)
+
+        self.assertTrue(result)
+        self.assertEqual(user.status, UserStatus.active)
+        self.assertIsNone(user.banned_until)
+
+    async def test_auto_lift_expired_ban_leaves_active_user_untouched(self):
+        user = FakeBannableUser(status=UserStatus.active)
+        result = await crud.auto_lift_expired_ban(user)
+
+        self.assertIs(result, user)
+        self.assertEqual(result.status, UserStatus.active)
+
+    async def test_auto_lift_expired_ban_leaves_future_ban_untouched(self):
+        user = FakeBannableUser(status=UserStatus.banned, banned_until=datetime.now() + timedelta(days=1))
+        result = await crud.auto_lift_expired_ban(user)
+
+        self.assertEqual(result.status, UserStatus.banned)
+        self.assertIsNotNone(result.banned_until)
+
+    async def test_auto_lift_expired_ban_lifts_a_past_due_ban(self):
+        user = FakeBannableUser(status=UserStatus.banned, banned_until=datetime.now() - timedelta(days=1))
+        with patch.object(crud, "async_session_maker", FakeQuotaSessionMaker(user)):
+            result = await crud.auto_lift_expired_ban(user)
+
+        self.assertEqual(result.status, UserStatus.active)
+        self.assertIsNone(result.banned_until)
+
+    async def test_create_user_profile_updates_existing_user_instead_of_duplicating(self):
+        existing = FakeExistingUser()
+        maker = FakeUpsertSessionMaker(existing)
+        with patch.object(crud, "async_session_maker", maker):
+            result = await crud.create_user_profile(existing.telegram_id, {
+                "name": "New Name",
+                "age": 25,
+                "gender": "male",
+                "looking_for": "female",
+                "region": "Andijon",
+                "city": "Andijon",
+                "district": "Markaz",
+                "bio": "hi",
+                "interests": ["music"],
+                "language": "uz",
+                "photos": ["file1"],
+            })
+
+        # Same DB identity is preserved instead of a duplicate/new row being created.
+        self.assertIs(result, existing)
+        self.assertEqual(result.id, 42)
+        self.assertEqual(result.name, "New Name")
+        # Re-registering resets moderation state so the profile goes through approval again.
+        self.assertEqual(result.status, UserStatus.active)
+        self.assertEqual(result.profile_approval_status, "pending")
+        self.assertTrue(maker.session.committed)
+
+    async def test_create_user_profile_falls_back_to_region_when_city_missing(self):
+        # "Toshkent shahri" skips the separate city-selection step, so only "region" is ever set.
+        maker = FakeUpsertSessionMaker(None)
+        with patch.object(crud, "async_session_maker", maker):
+            result = await crud.create_user_profile(777, {
+                "name": "Ali",
+                "age": 22,
+                "gender": "male",
+                "looking_for": "female",
+                "region": "Toshkent shahri",
+                "district": "Yunusobod",
+                "bio": "",
+                "interests": [],
+                "language": "uz",
+                "photos": [],
+            })
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.city, "Toshkent shahri")
+
+    async def test_create_user_profile_returns_none_when_db_is_unavailable(self):
+        with patch.object(crud, "async_session_maker", BrokenSessionMaker()):
+            result = await crud.create_user_profile(777, {
+                "name": "Ali",
+                "age": 22,
+                "gender": "male",
+                "looking_for": "female",
+                "region": "Andijon",
+                "district": "Markaz",
+                "bio": "",
+                "interests": [],
+                "language": "uz",
+                "photos": [],
+            })
+
+        self.assertIsNone(result)
 
 
 if __name__ == "__main__":

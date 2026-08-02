@@ -109,33 +109,57 @@ async def activate_profile_boost(user_id: int) -> datetime | None:
 async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
     """
     Foydalanuvchi ma'lumotlarini va rasmlarini ma'lumotlar bazasiga saqlaydi.
+    Shu telegram_id uchun profil allaqachon mavjud bo'lsa (masalan, foydalanuvchi
+    avval ro'yxatdan o'tgani aniqlanmay qayta ro'yxatdan o'tgan bo'lsa), xatolik
+    chiqarish o'rniga mavjud yozuvni yangilaydi - profil hech qachon yo'qolmaydi
+    yoki takroriy telegram_id sababli yaratilish xatoligiga uchramaydi.
     """
     try:
         async with async_session_maker() as session:
-            # User obyektini yaratish
-            new_user = User(
-                telegram_id=telegram_id,
-                name=user_data.get("name"),
-                age=user_data.get("age"),
-                gender=UserGender[user_data["gender"]],  # Enumga o'tkazish
-                looking_for=LookingForGender[user_data["looking_for"]],  # Enumga o'tkazish
-                city=user_data.get("city"),
-                district=user_data.get("district"),
-                bio=user_data.get("bio"),
-                interests=",".join(user_data.get("interests", [])),
-                language=user_data.get("language"),
-                # Yangi profil har doim admin tasdig'ini kutadi.
-                profile_approval_status="pending",
-                # Boshqa maydonlar default qiymatlar bilan to'ldiriladi
-            )
-            session.add(new_user)
-            await session.flush()  # new_user.id ni olish uchun
+            result = await session.execute(select(User).where(User.telegram_id == telegram_id))
+            target_user = result.scalar_one_or_none()
+            # Toshkent shahri tanlanganda alohida shahar bosqichi bo'lmagani uchun region qiymati zaxira bo'ladi.
+            city = user_data.get("city") or user_data.get("region")
+
+            if target_user:
+                target_user.name = user_data.get("name")
+                target_user.age = user_data.get("age")
+                target_user.gender = UserGender[user_data["gender"]]
+                target_user.looking_for = LookingForGender[user_data["looking_for"]]
+                target_user.city = city
+                target_user.district = user_data.get("district")
+                target_user.bio = user_data.get("bio")
+                target_user.interests = ",".join(user_data.get("interests", []))
+                target_user.language = user_data.get("language")
+                target_user.status = UserStatus.active
+                target_user.profile_approval_status = "pending"
+                # Eski rasmlar o'rniga yangi yuklangan rasmlar saqlanadi.
+                await session.execute(delete(Photo).where(Photo.user_id == target_user.id))
+            else:
+                target_user = User(
+                    telegram_id=telegram_id,
+                    name=user_data.get("name"),
+                    age=user_data.get("age"),
+                    gender=UserGender[user_data["gender"]],  # Enumga o'tkazish
+                    looking_for=LookingForGender[user_data["looking_for"]],  # Enumga o'tkazish
+                    city=city,
+                    district=user_data.get("district"),
+                    bio=user_data.get("bio"),
+                    interests=",".join(user_data.get("interests", [])),
+                    language=user_data.get("language"),
+                    # Yangi profil har doim admin tasdig'ini kutadi.
+                    profile_approval_status="pending",
+                    # Boshqa maydonlar default qiymatlar bilan to'ldiriladi
+                )
+                session.add(target_user)
+
+            await session.flush()  # target_user.id ni olish uchun
 
             # Rasmlarni saqlash
             photos = user_data.get("photos", [])
             for i, file_id in enumerate(photos):
                 new_photo = Photo(
-                    user_id=new_user.id,
+                    user_id=target_user.id,
                     file_id=file_id,
                     order=i + 1,
                     is_approved=False,  # Moderatsiya uchun dastlab tasdiqlanmagan
@@ -143,9 +167,9 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
                 session.add(new_photo)
 
             await session.commit()
-            await session.refresh(new_user)
+            await session.refresh(target_user)
 
-            return new_user
+            return target_user
     except Exception as exc:
         import logging
         logging.warning(f"Database unavailable while creating user profile: {exc}")
@@ -570,6 +594,41 @@ async def set_user_status(user_id: int, status: UserStatus) -> bool:
         return False
 
 
+async def ban_user_with_duration(user_id: int, duration_days: int | None) -> bool:
+    """Foydalanuvchini bloklaydi. duration_days=None bo'lsa, ban doimiy bo'ladi."""
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        if not user:
+            return False
+        user.status = UserStatus.banned
+        user.banned_until = (datetime.now() + timedelta(days=duration_days)) if duration_days else None
+        await session.commit()
+        return True
+
+
+async def lift_user_ban(user_id: int) -> bool:
+    """Foydalanuvchini blokdan chiqaradi va ban muddatini tozalaydi."""
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        if not user:
+            return False
+        user.status = UserStatus.active
+        user.banned_until = None
+        await session.commit()
+        return True
+
+
+async def auto_lift_expired_ban(user: User) -> User:
+    """Muddatli ban muddati o'tgan bo'lsa, avtomatik ravishda blokdan chiqaradi."""
+    if user.status != UserStatus.banned or user.banned_until is None or user.banned_until > datetime.now():
+        return user
+
+    await lift_user_ban(user.id)
+    user.status = UserStatus.active
+    user.banned_until = None
+    return user
+
+
 async def find_user_by_id_or_telegram_id(identifier: str) -> User | None:
     """Finds a user by their DB ID or Telegram ID."""
     if not identifier.isdigit():
@@ -641,28 +700,38 @@ async def get_all_active_user_telegram_ids() -> list[int]:
 # Placeholder for delete_user_data, assuming it will be implemented to remove all user-related data
 async def delete_user_data(user_id: int) -> bool:
     """Deletes all data associated with a user."""
-    async with async_session_maker() as session:
-        # Delete photos
-        await session.execute(delete(Photo).where(Photo.user_id == user_id))
-        # Delete verification requests
-        await session.execute(delete(VerificationRequest).where(VerificationRequest.user_id == user_id))
-        # Delete likes where user is from_user or to_user
-        await session.execute(delete(Like).where(or_(Like.from_user_id == user_id, Like.to_user_id == user_id)))
-        # Delete matches where user is user1 or user2
-        await session.execute(delete(Match).where(or_(Match.user1_id == user_id, Match.user2_id == user_id)))
-        # Delete chat messages where user is sender
-        await session.execute(delete(ChatMessage).where(ChatMessage.sender_id == user_id))
-        # Delete blocks made by or to the user
-        await session.execute(delete(BlockedUser).where(or_(BlockedUser.blocker_id == user_id, BlockedUser.blocked_id == user_id)))
-        # Delete payments and subscriptions
-        await session.execute(delete(Payment).where(Payment.user_id == user_id))
-        await session.execute(delete(Subscription).where(Subscription.user_id == user_id))
-        # Delete reports where user is reporter or reported
-        await session.execute(delete(Report).where(or_(Report.reporter_id == user_id, Report.reported_id == user_id)))
-        # Delete the user itself
-        await session.execute(delete(User).where(User.id == user_id))
-        await session.commit()
-        return True
+    try:
+        async with async_session_maker() as session:
+            # Delete photos
+            await session.execute(delete(Photo).where(Photo.user_id == user_id))
+            # Delete verification requests
+            await session.execute(delete(VerificationRequest).where(VerificationRequest.user_id == user_id))
+            # Delete likes where user is from_user or to_user
+            await session.execute(delete(Like).where(or_(Like.from_user_id == user_id, Like.to_user_id == user_id)))
+            # Delete matches where user is user1 or user2
+            await session.execute(delete(Match).where(or_(Match.user1_id == user_id, Match.user2_id == user_id)))
+            # Delete chat messages where user is sender
+            await session.execute(delete(ChatMessage).where(ChatMessage.sender_id == user_id))
+            # Delete blocks made by or to the user
+            await session.execute(delete(BlockedUser).where(or_(BlockedUser.blocker_id == user_id, BlockedUser.blocked_id == user_id)))
+            # Delete payments and subscriptions
+            await session.execute(delete(Payment).where(Payment.user_id == user_id))
+            await session.execute(delete(Subscription).where(Subscription.user_id == user_id))
+            # Delete reports where user is reporter or reported
+            await session.execute(delete(Report).where(or_(Report.reporter_id == user_id, Report.reported_id == user_id)))
+            # Delete support messages sent by the user
+            await session.execute(delete(SupportMessage).where(SupportMessage.user_id == user_id))
+            # Admin logs reference target_user_id via a FK, so they must go before the user row.
+            await session.execute(delete(AdminLog).where(AdminLog.target_user_id == user_id))
+            # Delete the user itself
+            await session.execute(delete(User).where(User.id == user_id))
+            await session.commit()
+            return True
+    except Exception as exc:
+        import logging
+        logging.warning(f"Foydalanuvchi ma'lumotlarini o'chirishda xatolik (user_id={user_id}): {exc}")
+        return False
+
 
 
 async def get_payment_statistics() -> dict:

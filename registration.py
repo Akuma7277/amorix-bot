@@ -7,9 +7,11 @@ from aiogram.filters import Command
 from inline import (
     get_accept_terms_keyboard,
     get_age_keyboard,
+    get_back_only_keyboard,
     get_city_keyboard,
     get_district_keyboard,
     get_gender_keyboard,
+    get_language_keyboard,
     get_looking_for_keyboard,
     get_interests_keyboard,
     ALL_INTERESTS,
@@ -255,10 +257,20 @@ async def language_chosen(callback: CallbackQuery, state: FSMContext):
     terms_text = TERMS_TEXTS.get(language, TERMS_TEXTS["uz"])
 
     await callback.message.edit_text(
-        text=terms_text, reply_markup=get_accept_terms_keyboard(language)
+        text=terms_text, reply_markup=get_accept_terms_keyboard(language, back_callback="reg_back_language")
     )
     await callback.answer()
     await state.set_state(RegistrationStates.accepting_terms)
+
+
+@router.callback_query(RegistrationStates.accepting_terms, F.data == "reg_back_language")
+async def back_to_language(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        text="Tilni tanlang / Выберите язык / Choose a language:",
+        reply_markup=get_language_keyboard(),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_language)
 
 
 @router.callback_query(RegistrationStates.accepting_terms, F.data == "accept_terms")
@@ -268,9 +280,25 @@ async def terms_accepted(callback: CallbackQuery, state: FSMContext):
 
     next_step_text = NEXT_STEP_TEXTS.get(language, NEXT_STEP_TEXTS["uz"])
 
-    await callback.message.edit_text(next_step_text)
+    await callback.message.edit_text(
+        next_step_text,
+        reply_markup=get_back_only_keyboard(language, "reg_back_terms"),
+    )
     await callback.answer()
     await state.set_state(RegistrationStates.entering_name)
+
+
+@router.callback_query(RegistrationStates.entering_name, F.data == "reg_back_terms")
+async def back_to_terms(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=TERMS_TEXTS.get(language, TERMS_TEXTS["uz"]),
+        reply_markup=get_accept_terms_keyboard(language, back_callback="reg_back_language"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.accepting_terms)
 
 
 @router.message(RegistrationStates.entering_name, F.text)
@@ -285,8 +313,24 @@ async def name_entered(message: Message, state: FSMContext):
     
     await state.update_data(name=name)
 
-    await message.answer(AGE_REQUEST_TEXTS.get(language, AGE_REQUEST_TEXTS["uz"]))
+    await message.answer(
+        AGE_REQUEST_TEXTS.get(language, AGE_REQUEST_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, "reg_back_name"),
+    )
     await state.set_state(RegistrationStates.entering_age)
+
+
+@router.callback_query(RegistrationStates.entering_age, F.data == "reg_back_name")
+async def back_to_name(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=NEXT_STEP_TEXTS.get(language, NEXT_STEP_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, "reg_back_terms"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_name)
 
 
 @router.message(RegistrationStates.entering_age, F.text)
@@ -308,7 +352,7 @@ async def age_entered(message: Message, state: FSMContext):
 
     await message.answer(
         GENDER_REQUEST_TEXTS.get(language, GENDER_REQUEST_TEXTS["uz"]),
-        reply_markup=get_gender_keyboard(language),
+        reply_markup=get_gender_keyboard(language, back_callback="reg_back_age"),
     )
     await state.set_state(RegistrationStates.choosing_gender)
 
@@ -335,10 +379,23 @@ async def age_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(age=age)
     await callback.message.edit_text(
         text=GENDER_REQUEST_TEXTS.get(language, GENDER_REQUEST_TEXTS["uz"]),
-        reply_markup=get_gender_keyboard(language),
+        reply_markup=get_gender_keyboard(language, back_callback="reg_back_age"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.choosing_gender)
+
+
+@router.callback_query(RegistrationStates.choosing_gender, F.data == "reg_back_age")
+async def back_to_age(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=AGE_REQUEST_TEXTS.get(language, AGE_REQUEST_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, "reg_back_name"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_age)
 
 
 @router.callback_query(RegistrationStates.choosing_gender, F.data.startswith("gender_"))
@@ -351,10 +408,23 @@ async def gender_chosen(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         text=LOOKING_FOR_REQUEST_TEXTS.get(language, LOOKING_FOR_REQUEST_TEXTS["uz"]),
-        reply_markup=get_looking_for_keyboard(language),
+        reply_markup=get_looking_for_keyboard(language, back_callback="reg_back_gender"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.choosing_looking_for)
+
+
+@router.callback_query(RegistrationStates.choosing_looking_for, F.data == "reg_back_gender")
+async def back_to_gender(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=GENDER_REQUEST_TEXTS.get(language, GENDER_REQUEST_TEXTS["uz"]),
+        reply_markup=get_gender_keyboard(language, back_callback="reg_back_age"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_gender)
 
 
 @router.callback_query(
@@ -369,10 +439,23 @@ async def looking_for_chosen(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         text=CITY_REQUEST_TEXTS.get(language, CITY_REQUEST_TEXTS["uz"]),
-        reply_markup=get_region_keyboard(language),
+        reply_markup=get_region_keyboard(language, back_callback="reg_back_looking_for"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.entering_city)
+
+
+@router.callback_query(RegistrationStates.entering_city, F.data == "reg_back_looking_for")
+async def back_to_looking_for(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=LOOKING_FOR_REQUEST_TEXTS.get(language, LOOKING_FOR_REQUEST_TEXTS["uz"]),
+        reply_markup=get_looking_for_keyboard(language, back_callback="reg_back_gender"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_looking_for)
 
 
 @router.callback_query(RegistrationStates.entering_city, F.data.startswith("region_"))
@@ -385,7 +468,7 @@ async def region_selected(callback: CallbackQuery, state: FSMContext):
     if is_tashkent_city_region(region_name):
         await callback.message.edit_text(
             text=DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"]),
-            reply_markup=get_district_keyboard(region_name, language),
+            reply_markup=get_district_keyboard(region_name, language, back_callback="reg_back_city_or_region"),
         )
         await callback.answer()
         await state.set_state(RegistrationStates.entering_district)
@@ -393,10 +476,23 @@ async def region_selected(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         text=CITY_SELECTION_TEXTS.get(language, CITY_SELECTION_TEXTS["uz"]),
-        reply_markup=get_city_keyboard(region_name, language),
+        reply_markup=get_city_keyboard(region_name, language, back_callback="reg_back_region"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.choosing_city)
+
+
+@router.callback_query(RegistrationStates.choosing_city, F.data == "reg_back_region")
+async def back_to_region_from_city(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=CITY_REQUEST_TEXTS.get(language, CITY_REQUEST_TEXTS["uz"]),
+        reply_markup=get_region_keyboard(language, back_callback="reg_back_looking_for"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_city)
 
 
 @router.callback_query(RegistrationStates.choosing_city, F.data.startswith("city_"))
@@ -409,10 +505,33 @@ async def city_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(city=city_name)
     await callback.message.edit_text(
         text=DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"]),
-        reply_markup=get_district_keyboard(region_name or city_name, language),
+        reply_markup=get_district_keyboard(region_name or city_name, language, back_callback="reg_back_city_or_region"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.entering_district)
+
+
+@router.callback_query(RegistrationStates.entering_district, F.data == "reg_back_city_or_region")
+async def back_to_city_or_region(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    region_name = data.get("region")
+
+    if data.get("city"):
+        await callback.message.edit_text(
+            text=CITY_SELECTION_TEXTS.get(language, CITY_SELECTION_TEXTS["uz"]),
+            reply_markup=get_city_keyboard(region_name, language, back_callback="reg_back_region"),
+        )
+        await callback.answer()
+        await state.set_state(RegistrationStates.choosing_city)
+        return
+
+    await callback.message.edit_text(
+        text=CITY_REQUEST_TEXTS.get(language, CITY_REQUEST_TEXTS["uz"]),
+        reply_markup=get_region_keyboard(language, back_callback="reg_back_looking_for"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_city)
 
 
 @router.message(RegistrationStates.entering_city, F.text)
@@ -440,7 +559,7 @@ async def district_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(district=district)
     await callback.message.edit_text(
         text=INTERESTS_REQUEST_TEXTS.get(language, INTERESTS_REQUEST_TEXTS["uz"]),
-        reply_markup=get_interests_keyboard(language),
+        reply_markup=get_interests_keyboard(language, back_callback="reg_back_district"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.choosing_interests)
@@ -460,9 +579,23 @@ async def district_entered(message: Message, state: FSMContext):
 
     await message.answer(
         INTERESTS_REQUEST_TEXTS.get(language, INTERESTS_REQUEST_TEXTS["uz"]),
-        reply_markup=get_interests_keyboard(language),
+        reply_markup=get_interests_keyboard(language, back_callback="reg_back_district"),
     )
     await state.set_state(RegistrationStates.choosing_interests)
+
+
+@router.callback_query(RegistrationStates.choosing_interests, F.data == "reg_back_district")
+async def back_to_district(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    region_name = data.get("region")
+
+    await callback.message.edit_text(
+        text=DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"]),
+        reply_markup=get_district_keyboard(region_name, language, back_callback="reg_back_city_or_region"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_district)
 
 
 @router.callback_query(RegistrationStates.choosing_interests, F.data.startswith("interest_"))
@@ -480,7 +613,7 @@ async def interest_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(selected_interests=selected_interests)
 
     await callback.message.edit_reply_markup(
-        reply_markup=get_interests_keyboard(language, selected_interests)
+        reply_markup=get_interests_keyboard(language, selected_interests, back_callback="reg_back_district")
     )
     await callback.answer()
 
@@ -496,11 +629,26 @@ async def interests_done(callback: CallbackQuery, state: FSMContext):
         return
 
     await callback.message.edit_text(
-        text=BIO_REQUEST_TEXTS.get(language, BIO_REQUEST_TEXTS["uz"])
+        text=BIO_REQUEST_TEXTS.get(language, BIO_REQUEST_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, "reg_back_interests"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.entering_bio)
     await state.update_data(interests=selected_interests) # Finalize for create_user_profile
+
+
+@router.callback_query(RegistrationStates.entering_bio, F.data == "reg_back_interests")
+async def back_to_interests(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    selected_interests = data.get("selected_interests", [])
+
+    await callback.message.edit_text(
+        text=INTERESTS_REQUEST_TEXTS.get(language, INTERESTS_REQUEST_TEXTS["uz"]),
+        reply_markup=get_interests_keyboard(language, selected_interests, back_callback="reg_back_district"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_interests)
 
 
 @router.message(RegistrationStates.entering_bio, F.text)
@@ -516,9 +664,22 @@ async def bio_entered(message: Message, state: FSMContext):
 
     await message.answer(
         PHOTO_REQUEST_TEXTS.get(language, PHOTO_REQUEST_TEXTS["uz"]),
-        reply_markup=get_photo_upload_done_keyboard(language),
+        reply_markup=get_photo_upload_done_keyboard(language, back_callback="reg_back_bio"),
     )
     await state.set_state(RegistrationStates.uploading_photos)
+
+
+@router.callback_query(RegistrationStates.uploading_photos, F.data == "reg_back_bio")
+async def back_to_bio(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=BIO_REQUEST_TEXTS.get(language, BIO_REQUEST_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, "reg_back_interests"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_bio)
 
 
 @router.message(RegistrationStates.uploading_photos, F.photo)
@@ -540,7 +701,7 @@ async def photo_uploaded(message: Message, state: FSMContext):
 
     await message.answer(
         PHOTO_UPLOAD_SUCCESS_TEXTS.get(language, PHOTO_UPLOAD_SUCCESS_TEXTS["uz"]),
-        reply_markup=get_photo_upload_done_keyboard(language),
+        reply_markup=get_photo_upload_done_keyboard(language, back_callback="reg_back_bio"),
     )
 
 
@@ -549,9 +710,13 @@ async def photo_upload_invalid_message(message: Message, state: FSMContext):
     """Foydalanuvchi rasm o'rniga boshqa turdagi xabar yuborganda"""
     data = await state.get_data()
     language = data.get("language", "uz")
+    if data.get("photos"):
+        keyboard = get_photo_upload_done_keyboard(language, back_callback="reg_back_bio")
+    else:
+        keyboard = get_back_only_keyboard(language, "reg_back_bio")
     await message.answer(
         PHOTO_REQUEST_TEXTS.get(language, PHOTO_REQUEST_TEXTS["uz"]),
-        reply_markup=get_photo_upload_done_keyboard(language) if data.get("photos") else None
+        reply_markup=keyboard
     )
 
 

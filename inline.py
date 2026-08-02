@@ -63,6 +63,22 @@ def get_language_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
+BACK_BUTTON_TEXTS = {
+    "uz": "⬅️ Orqaga",
+    "ru": "⬅️ Назад",
+    "en": "⬅️ Back",
+}
+
+
+def _back_button_row(language: str, back_callback: str):
+    text = BACK_BUTTON_TEXTS.get(language, BACK_BUTTON_TEXTS["uz"])
+    return [InlineKeyboardButton(text=text, callback_data=back_callback)]
+
+
+def get_back_only_keyboard(language: str, back_callback: str):
+    return InlineKeyboardMarkup(inline_keyboard=[_back_button_row(language, back_callback)])
+
+
 ACCEPT_BUTTON_TEXTS = {
     "uz": "✅ Roziman",
     "ru": "✅ Согласен",
@@ -70,9 +86,11 @@ ACCEPT_BUTTON_TEXTS = {
 }
 
 
-def get_accept_terms_keyboard(language: str = "uz"):
+def get_accept_terms_keyboard(language: str = "uz", back_callback: str | None = None):
     button_text = ACCEPT_BUTTON_TEXTS.get(language, ACCEPT_BUTTON_TEXTS["uz"])
     buttons = [[InlineKeyboardButton(text=button_text, callback_data="accept_terms")]]
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -83,7 +101,7 @@ GENDER_BUTTON_TEXTS = {
 }
 
 
-def get_gender_keyboard(language: str = "uz"):
+def get_gender_keyboard(language: str = "uz", back_callback: str | None = None):
     texts = GENDER_BUTTON_TEXTS.get(language, GENDER_BUTTON_TEXTS["uz"])
     buttons = [
         [
@@ -91,6 +109,8 @@ def get_gender_keyboard(language: str = "uz"):
             InlineKeyboardButton(text=texts["female"], callback_data="gender_female"),
         ]
     ]
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -101,7 +121,7 @@ LOOKING_FOR_BUTTON_TEXTS = {
 }
 
 
-def get_looking_for_keyboard(language: str = "uz"):
+def get_looking_for_keyboard(language: str = "uz", back_callback: str | None = None):
     texts = LOOKING_FOR_BUTTON_TEXTS.get(language, LOOKING_FOR_BUTTON_TEXTS["uz"])
     buttons = [
         [
@@ -110,29 +130,37 @@ def get_looking_for_keyboard(language: str = "uz"):
         ],
         [InlineKeyboardButton(text=texts["any"], callback_data="looking_for_any")],
     ]
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_region_keyboard(language: str = "uz"):
+def get_region_keyboard(language: str = "uz", back_callback: str | None = None):
     buttons = []
     for region_name in UZBEK_REGIONS.keys():
         buttons.append([InlineKeyboardButton(text=region_name, callback_data=f"region_{_slugify(region_name)}")])
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_city_keyboard(region_name: str, language: str = "uz"):
+def get_city_keyboard(region_name: str, language: str = "uz", back_callback: str | None = None):
     cities = UZBEK_CITIES.get(region_name, [])
     buttons = []
     for city_name in cities:
         buttons.append([InlineKeyboardButton(text=city_name, callback_data=f"city_{_slugify(city_name)}")])
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_district_keyboard(region_name: str, language: str = "uz"):
+def get_district_keyboard(region_name: str, language: str = "uz", back_callback: str | None = None):
     districts = UZBEK_REGIONS.get(region_name, [])
     buttons = []
     for district_name in districts:
         buttons.append([InlineKeyboardButton(text=district_name, callback_data=f"district_{_slugify(district_name)}")])
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -168,7 +196,7 @@ DONE_BUTTON_TEXTS = {
 }
 
 
-def get_interests_keyboard(language: str = "uz", selected_interests: list = None):
+def get_interests_keyboard(language: str = "uz", selected_interests: list = None, back_callback: str | None = None):
     if selected_interests is None:
         selected_interests = []
 
@@ -186,6 +214,8 @@ def get_interests_keyboard(language: str = "uz", selected_interests: list = None
         buttons.append(row)
 
     buttons.append([InlineKeyboardButton(text=DONE_BUTTON_TEXTS.get(language, DONE_BUTTON_TEXTS["uz"]), callback_data="interests_done")])
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -196,8 +226,11 @@ PHOTO_DONE_BUTTON_TEXTS = {
 }
 
 
-def get_photo_upload_done_keyboard(language: str = "uz"):
-    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=PHOTO_DONE_BUTTON_TEXTS.get(language, PHOTO_DONE_BUTTON_TEXTS["uz"]), callback_data="photos_done")]])
+def get_photo_upload_done_keyboard(language: str = "uz", back_callback: str | None = None):
+    buttons = [[InlineKeyboardButton(text=PHOTO_DONE_BUTTON_TEXTS.get(language, PHOTO_DONE_BUTTON_TEXTS["uz"]), callback_data="photos_done")]]
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 REVIEW_BUTTON_TEXTS = {
@@ -384,26 +417,62 @@ def get_profile_view_keyboard(language: str = "uz"):
 
 
 USER_MANAGEMENT_BUTTON_TEXTS = {
-    "uz": {"ban": "🚫 Bloklash", "unban": "✅ Blokdan chiqarish", "back": "⬅️ Orqaga"},
-    "ru": {"ban": "🚫 Заблокировать", "unban": "✅ Разблокировать", "back": "⬅️ Назад"},
-    "en": {"ban": "🚫 Ban", "unban": "✅ Unban", "back": "⬅️ Back"},
+    "uz": {"ban": "🚫 Bloklash", "unban": "✅ Blokdan chiqarish", "back": "⬅️ Orqaga", "delete": "🗑 Profilni o'chirish"},
+    "ru": {"ban": "🚫 Заблокировать", "unban": "✅ Разблокировать", "back": "⬅️ Назад", "delete": "🗑 Удалить профиль"},
+    "en": {"ban": "🚫 Ban", "unban": "✅ Unban", "back": "⬅️ Back", "delete": "🗑 Delete profile"},
 }
 
 
 def get_user_management_keyboard(language: str, user_id: int, is_banned: bool):
     texts = USER_MANAGEMENT_BUTTON_TEXTS.get(language, USER_MANAGEMENT_BUTTON_TEXTS["uz"])
-    buttons = []
 
     if is_banned:
-        buttons.append(
-            InlineKeyboardButton(text=texts["unban"], callback_data=f"manage_unban_{user_id}")
-        )
+        ban_row = [InlineKeyboardButton(text=texts["unban"], callback_data=f"manage_unban_{user_id}")]
     else:
-        buttons.append(
-            InlineKeyboardButton(text=texts["ban"], callback_data=f"manage_ban_{user_id}")
-        )
-    
-    return InlineKeyboardMarkup(inline_keyboard=[buttons])
+        ban_row = [InlineKeyboardButton(text=texts["ban"], callback_data=f"manage_ban_{user_id}")]
+
+    buttons = [
+        ban_row,
+        [InlineKeyboardButton(text=texts["delete"], callback_data=f"manage_delete_prompt_{user_id}")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+BAN_DURATION_BUTTON_TEXTS = {
+    "uz": {"1": "1 kun", "7": "7 kun", "30": "30 kun", "perm": "♾️ Doimiy", "cancel": "⬅️ Bekor qilish"},
+    "ru": {"1": "1 день", "7": "7 дней", "30": "30 дней", "perm": "♾️ Навсегда", "cancel": "⬅️ Отмена"},
+    "en": {"1": "1 day", "7": "7 days", "30": "30 days", "perm": "♾️ Permanent", "cancel": "⬅️ Cancel"},
+}
+
+
+def get_ban_duration_keyboard(language: str, user_id: int):
+    texts = BAN_DURATION_BUTTON_TEXTS.get(language, BAN_DURATION_BUTTON_TEXTS["uz"])
+    buttons = [
+        [
+            InlineKeyboardButton(text=texts["1"], callback_data=f"manage_ban_apply_{user_id}_1"),
+            InlineKeyboardButton(text=texts["7"], callback_data=f"manage_ban_apply_{user_id}_7"),
+            InlineKeyboardButton(text=texts["30"], callback_data=f"manage_ban_apply_{user_id}_30"),
+        ],
+        [InlineKeyboardButton(text=texts["perm"], callback_data=f"manage_ban_apply_{user_id}_perm")],
+        [InlineKeyboardButton(text=texts["cancel"], callback_data=f"manage_ban_cancel_{user_id}")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+DELETE_CONFIRM_BUTTON_TEXTS = {
+    "uz": {"confirm": "🗑 Ha, o'chirish", "cancel": "⬅️ Bekor qilish"},
+    "ru": {"confirm": "🗑 Да, удалить", "cancel": "⬅️ Отмена"},
+    "en": {"confirm": "🗑 Yes, delete", "cancel": "⬅️ Cancel"},
+}
+
+
+def get_delete_confirmation_keyboard(language: str, user_id: int):
+    texts = DELETE_CONFIRM_BUTTON_TEXTS.get(language, DELETE_CONFIRM_BUTTON_TEXTS["uz"])
+    buttons = [
+        [InlineKeyboardButton(text=texts["confirm"], callback_data=f"manage_delete_confirm_{user_id}")],
+        [InlineKeyboardButton(text=texts["cancel"], callback_data=f"manage_delete_cancel_{user_id}")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 MODERATION_BUTTON_TEXTS = {

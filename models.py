@@ -71,6 +71,7 @@ class ActionType(enum.Enum):
     reject_profile = "Profilni rad etish"
     add_admin = "Admin qo'shildi"
     remove_admin = "Admin olib tashlandi"
+    delete_profile = "Profilni o'chirish"
 
 # Jadvallar
 class User(Base):
@@ -87,6 +88,8 @@ class User(Base):
     interests = Column(Text) # Qiziqishlar vergul bilan ajratilgan string sifatida
     language = Column(String(10))
     status = Column(Enum(UserStatus), default=UserStatus.active)
+    # Muddatli ban uchun tugash sanasi. NULL + status=banned => doimiy ban.
+    banned_until = Column(DateTime, nullable=True)
     verification_status = Column(Enum(VerificationStatus), default=VerificationStatus.not_verified)
     premium_plan = Column(Enum(PremiumPlan), default=PremiumPlan.basic)
     premium_expires_at = Column(DateTime)
