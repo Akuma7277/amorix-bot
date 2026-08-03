@@ -9,6 +9,7 @@ from ai import generate_bio_with_ai
 from inline import (
     get_accept_terms_keyboard,
     get_age_keyboard,
+    get_back_only_keyboard,
     get_city_keyboard,
     get_district_keyboard,
     get_bio_request_keyboard,
