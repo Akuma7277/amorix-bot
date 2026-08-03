@@ -5,12 +5,13 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.filters import Command
 
+from ai import generate_bio_with_ai
 from inline import (
     get_accept_terms_keyboard,
     get_age_keyboard,
-    get_back_only_keyboard,
     get_city_keyboard,
     get_district_keyboard,
+    get_bio_request_keyboard,
     get_gender_keyboard,
     get_language_keyboard,
     get_looking_for_keyboard,
@@ -20,6 +21,7 @@ from inline import (
     get_region_keyboard,
     get_review_keyboard,
     get_edit_profile_keyboard,
+    get_ai_bio_confirmation_keyboard,
     get_profile_approval_keyboard,
     resolve_region_name,
     is_tashkent_city_region,
@@ -126,6 +128,24 @@ BIO_REQUEST_TEXTS = {
     "en": "Great! Write a short bio about yourself. This helps others get to know you.",
 }
 
+AI_BIO_GENERATING_TEXTS = {
+    "uz": "✨ AI yordamida bio yaratilmoqda, iltimos, kuting...",
+    "ru": "✨ Генерирую био с помощью ИИ, пожалуйста, подождите...",
+    "en": "✨ Generating bio with AI, please wait...",
+}
+
+AI_BIO_RESULT_TEXTS = {
+    "uz": "Mana siz uchun yaratilgan bio varianti. Ma'qulmi yoki boshqa variant yarataymi?",
+    "ru": "Вот вариант био, сгенерированный для вас. Вам нравится или сгенерировать другой вариант?",
+    "en": "Here is a bio generated for you. Do you like it, or should I generate another one?",
+}
+
+AI_BIO_ERROR_TEXTS = {
+    "uz": "Xatolik yuz berdi. Bio yaratib bo'lmadi. Iltimos, o'zingiz kiriting yoki keyinroq urinib ko'ring.",
+    "ru": "Произошла ошибка. Не удалось сгенерировать био. Пожалуйста, введите его вручную или попробуйте позже.",
+    "en": "An error occurred. Failed to generate bio. Please enter it manually or try again later.",
+}
+
 INTERESTS_MIN_ERROR_TEXTS = {
     "uz": "Iltimos, kamida bitta qiziqishni tanlang.",
     "ru": "Пожалуйста, выберите хотя бы одно увлечение.",
@@ -160,12 +180,6 @@ PHOTO_MIN_ERROR_TEXTS = {
     "uz": "Iltimos, kamida bitta rasm yuklang.",
     "ru": "Пожалуйста, загрузите хотя бы одну фотографию.",
     "en": "Please upload at least one photo.",
-}
-
-REVIEW_PROFILE_TEXTS = {
-    "uz": "Ajoyib! Ro'yxatdan o'tish jarayoni yakunlandi. Endi profilingizni ko'rib chiqishingiz va tasdiqlashingiz mumkin.",
-    "ru": "Отлично! Процесс регистрации завершен. Теперь вы можете просмотреть и подтвердить свой профиль.",
-    "en": "Great! Registration is complete. Now you can review and confirm your profile.",
 }
 
 PROFILE_PREVIEW_TEXTS = {
@@ -631,7 +645,7 @@ async def interests_done(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         text=BIO_REQUEST_TEXTS.get(language, BIO_REQUEST_TEXTS["uz"]),
-        reply_markup=get_back_only_keyboard(language, "reg_back_interests"),
+        reply_markup=get_bio_request_keyboard(language, "reg_back_interests"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.entering_bio)
@@ -651,6 +665,69 @@ async def back_to_interests(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.set_state(RegistrationStates.choosing_interests)
 
+
+@router.callback_query(RegistrationStates.entering_bio, F.data == "generate_bio_ai")
+async def generate_bio_handler(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(AI_BIO_GENERATING_TEXTS.get(language, AI_BIO_GENERATING_TEXTS["uz"]))
+    await callback.answer()
+
+    interest_keys = data.get("interests", [])
+    interest_names = [ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]['uz']) for key in interest_keys]
+    ai_user_data = {
+        "name": data.get("name"),
+        "age": data.get("age"),
+        "city": data.get("city") or data.get("region"),
+        "interests_names": interest_names,
+    }
+
+    generated_bio = await generate_bio_with_ai(ai_user_data, language)
+
+    if not generated_bio or generated_bio.startswith("Afsuski"):
+        await callback.message.edit_text(
+            generated_bio or AI_BIO_ERROR_TEXTS.get(language, AI_BIO_ERROR_TEXTS["uz"]),
+            reply_markup=get_bio_request_keyboard(language, "reg_back_interests")
+        )
+        await state.set_state(RegistrationStates.entering_bio)
+        return
+
+    await state.update_data(generated_bio=generated_bio)
+    await state.set_state(RegistrationStates.confirming_ai_bio)
+
+    await callback.message.edit_text(
+        f"<i>{generated_bio}</i>\n\n{AI_BIO_RESULT_TEXTS.get(language, AI_BIO_RESULT_TEXTS['uz'])}",
+        reply_markup=get_ai_bio_confirmation_keyboard(language, back_callback="reg_back_bio_from_ai")
+    )
+
+
+@router.callback_query(RegistrationStates.confirming_ai_bio, F.data == "reg_back_bio_from_ai")
+async def back_to_bio_from_ai(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    await callback.message.edit_text(
+        text=BIO_REQUEST_TEXTS.get(language, BIO_REQUEST_TEXTS["uz"]),
+        reply_markup=get_bio_request_keyboard(language, "reg_back_interests"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_bio)
+
+
+@router.callback_query(RegistrationStates.confirming_ai_bio, F.data == "ai_bio_regenerate")
+async def regenerate_bio_handler(callback: CallbackQuery, state: FSMContext):
+    await generate_bio_handler(callback, state)
+
+
+@router.callback_query(RegistrationStates.confirming_ai_bio, F.data == "ai_bio_accept")
+async def accept_ai_bio_handler(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    generated_bio = data.get("generated_bio")
+    await state.update_data(bio=generated_bio)
+    await callback.message.edit_text(PHOTO_REQUEST_TEXTS.get(language, PHOTO_REQUEST_TEXTS["uz"]), reply_markup=get_photo_upload_done_keyboard(language, back_callback="reg_back_bio"))
+    await state.set_state(RegistrationStates.uploading_photos)
+    await callback.answer()
 
 @router.message(RegistrationStates.entering_bio, F.text)
 async def bio_entered(message: Message, state: FSMContext):

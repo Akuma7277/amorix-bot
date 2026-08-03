@@ -3,7 +3,7 @@ import logging
 from aiogram import F, Router, Bot
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputMediaPhoto
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from reply import (
     get_admin_main_menu_keyboard, ADMIN_MENU_BUTTONS, get_main_menu_keyboard
@@ -110,6 +110,12 @@ PROFILE_DELETED_TEXT = {
     "uz": "🗑 Profil butunlay o'chirildi.",
     "ru": "🗑 Профиль полностью удален.",
     "en": "🗑 The profile has been permanently deleted.",
+}
+
+USER_MANAGEMENT_TEXT = {
+    "uz": "Foydalanuvchini boshqarish:",
+    "ru": "Управление пользователем:",
+    "en": "User management:",
 }
 
 BAN_NOTICE_TEXT = {
@@ -360,6 +366,27 @@ async def cmd_admin(message: Message, state: FSMContext):
     await state.set_state(AdminStates.main_menu)
 
 
+@router.callback_query(F.data == "admin_back_to_main_menu")
+async def admin_back_to_main_menu_handler(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language if user else "uz"
+    
+    # Try to delete the previous message, if it fails, just ignore it.
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+
+    await callback.message.answer(
+        "🛡️ Asosiy menyu.",
+        reply_markup=get_admin_main_menu_keyboard(language)
+    )
+    await callback.answer()
+
+
+
+
 @router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["uz"]["statistics"])
 @router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["ru"]["statistics"])
 @router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["en"]["statistics"])
@@ -371,7 +398,8 @@ async def show_statistics(message: Message, state: FSMContext):
     stats_text = STATISTICS_TEXT[language].format(**stats)
 
     await message.answer(stats_text, reply_markup=get_admin_main_menu_keyboard(language))
-    await state.set_state(AdminStates.statistics) # Statistikani ko'rsatish holatiga o'tish
+    # No need to set a state here, it's a one-off view.
+    # await state.set_state(AdminStates.statistics) # Statistikani ko'rsatish holatiga o'tish
 
 
 async def show_photo_for_moderation(message: Message, state: FSMContext):
@@ -523,10 +551,20 @@ async def find_user_handler(message: Message, state: FSMContext):
     is_banned = user_to_view.status == UserStatus.banned
     keyboard = get_user_management_keyboard(language, user_to_view.id, is_banned)
 
-    if photos:
+    if not photos:
+        await message.answer(profile_text, reply_markup=keyboard)
+    elif len(photos) == 1:
         await message.answer_photo(photo=photos[0].file_id, caption=profile_text, reply_markup=keyboard)
     else:
-        await message.answer(profile_text, reply_markup=keyboard)
+        media_group = []
+        for i, photo in enumerate(photos):
+            # Caption is only supported for the first item in a media group
+            if i == 0:
+                media_group.append(InputMediaPhoto(media=photo.file_id, caption=profile_text))
+            else:
+                media_group.append(InputMediaPhoto(media=photo.file_id))
+        await message.answer_media_group(media=media_group)
+        await message.answer(USER_MANAGEMENT_TEXT[language], reply_markup=keyboard)
 
     await state.set_state(AdminStates.viewing_user)
 
@@ -835,7 +873,6 @@ async def show_tariffs_payments_stats(message: Message, state: FSMContext):
     stats_text = TARIFFS_PAYMENTS_TEXT[language].format(**stats)
 
     await message.answer(stats_text, reply_markup=get_admin_main_menu_keyboard(language))
-    await state.set_state(AdminStates.tariffs_payments)
 
 
 async def show_verification_for_moderation(message: Message, state: FSMContext):

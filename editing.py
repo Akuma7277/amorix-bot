@@ -2,187 +2,295 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from states import EditingStates
-from crud import (
-    get_user_by_telegram_id,
-    update_user_profile_field,
-    update_user_photos,
+from ai import generate_bio_with_ai
+from crud import get_user_by_telegram_id, update_user_profile_field, update_user_photos
+from inline import (
+    get_region_keyboard,
+    get_city_keyboard,
+    get_district_keyboard,
+    get_interests_keyboard,
+    get_bio_request_keyboard,
+    get_ai_bio_confirmation_keyboard,
+    get_photo_upload_done_keyboard,
+    is_tashkent_city_region,
+    resolve_region_name,
+    ALL_INTERESTS,
 )
-from reply import get_main_menu_keyboard # Import get_main_menu_keyboard
-from inline import get_interests_keyboard, get_photo_upload_done_keyboard # Import get_interests_keyboard, get_photo_upload_done_keyboard
-from registration import NAME_INVALID_TEXTS, CITY_INVALID_TEXTS, DISTRICT_INVALID_TEXTS, BIO_TOO_LONG_TEXTS # Import validation texts
+from menu import show_my_profile
+from states import EditingStates
+from registration import (
+    NAME_INVALID_TEXTS,
+    BIO_TOO_LONG_TEXTS,
+    AI_BIO_GENERATING_TEXTS,
+    AI_BIO_RESULT_TEXTS,
+    AI_BIO_ERROR_TEXTS,
+    INTERESTS_MIN_ERROR_TEXTS,
+    PHOTO_LIMIT_EXCEEDED_TEXTS,
+    PHOTO_UPLOAD_SUCCESS_TEXTS,
+    PHOTO_MIN_ERROR_TEXTS,
+)
 
 router = Router()
 
-EDIT_REQUEST_TEXTS = {
+EDIT_FIELD_PROMPTS = {
     "uz": {
         "name": "Yangi ismingizni kiriting:",
-        "bio": "O'zingiz haqingizda yangi ma'lumotni kiriting:",
-        "city": "Yangi shahringizni kiriting:",
-        "district": "Yangi tumaningizni kiriting:",
+        "bio": "O'zingiz haqingizda yangi ma'lumot kiriting (maksimum 500 belgi):",
+        "city": "Yangi viloyatingizni tanlang:",
+        "interests": "Qiziqishlaringizni qayta tanlang:",
+        "photos": "Yangi rasmlaringizni yuboring (eskilar o'chiriladi, maksimum 5 ta). Rasmlar tayyor bo'lgach, '✅ Rasmlar tayyor' tugmasini bosing.",
     },
     "ru": {
         "name": "Введите ваше новое имя:",
-        "bio": "Введите новую информацию о себе:",
-        "city": "Введите ваш новый город:",
-        "district": "Введите ваш новый район:",
+        "bio": "Введите новую информацию о себе (максимум 500 символов):",
+        "city": "Выберите ваш новый регион:",
+        "interests": "Выберите ваши интересы заново:",
+        "photos": "Отправьте ваши новые фотографии (старые будут удалены, максимум 5). Когда закончите, нажмите '✅ Фотографии готовы'.",
     },
     "en": {
         "name": "Enter your new name:",
-        "bio": "Enter your new bio:",
-        "city": "Enter your new city:",
-        "district": "Enter your new district:",
+        "bio": "Enter a new bio about yourself (max 500 characters):",
+        "city": "Select your new region:",
+        "interests": "Re-select your interests:",
+        "photos": "Send your new photos (old ones will be deleted, max 5). When done, press '✅ Photos done'.",
     },
 }
 
-UPDATE_SUCCESS_TEXT = {
-    "uz": "✅ Ma'lumot muvaffaqiyatli yangilandi! Profilingizni ko'rish uchun '👤 Mening profilim' tugmasini bosing.",
-    "ru": "✅ Информация успешно обновлена! Нажмите '👤 Мой профиль', чтобы просмотреть свой профиль.",
-    "en": "✅ Information updated successfully! Press '👤 My Profile' to view your profile.",
+FIELD_UPDATED_TEXTS = {
+    "uz": "✅ Ma'lumot muvaffaqiyatli yangilandi.",
+    "ru": "✅ Информация успешно обновлена.",
+    "en": "✅ Information updated successfully.",
 }
 
-EDIT_INTERESTS_TEXT = {
-    "uz": "Qiziqishlaringizni yangilang:",
-    "ru": "Обновите ваши интересы:",
-    "en": "Update your interests:",
-}
-
-EDIT_PHOTOS_TEXT = {
-    "uz": "Eski rasmlaringiz o'chiriladi. Yangi rasmlaringizni yuboring (1 tadan 5 tagacha).",
-    "ru": "Ваши старые фотографии будут удалены. Отправьте новые фотографии (от 1 до 5).",
-    "en": "Your old photos will be deleted. Send your new photos (from 1 to 5).",
-}
-
-PHOTO_UPLOAD_SUCCESS_TEXTS = {
-    "uz": "Rasm yuklandi. Yana rasm yuborishingiz (jami 5 tagacha) yoki 'Rasmlar tayyor' tugmasini bosishingiz mumkin.",
-    "ru": "Фотография загружена. Вы можете отправить еще (до 5 всего) или нажать кнопку 'Фотографии готовы'.",
-    "en": "Photo uploaded. You can send more (up to 5 total) or click 'Photos done'.",
-}
-
-PHOTO_LIMIT_EXCEEDED_TEXTS = {
-    "uz": "Siz maksimal rasm soniga (5 ta) yetdingiz. Iltimos, 'Rasmlar tayyor' tugmasini bosing.",
-    "ru": "Вы достигли максимального количества фотографий (5). Пожалуйста, нажмите кнопку 'Фотографии готовы'.",
-    "en": "You have uploaded the maximum number of photos (5). Please click 'Photos done'.",
-}
-
-PHOTO_MIN_ERROR_TEXTS = {
-    "uz": "Iltimos, kamida bitta rasm yuklang.",
-    "ru": "Пожалуйста, загрузите хотя бы одну фотографию.",
-    "en": "Please upload at least one photo.",
-}
-
-INTERESTS_MIN_ERROR_TEXTS = {
-    "uz": "Iltimos, kamida bitta qiziqishni tanlang.",
-    "ru": "Пожалуйста, выберите хотя бы одно увлечение.",
-    "en": "Please select at least one interest.",
-}
-
-CANCEL_EDIT_TEXTS = {
-    "uz": "Tahrirlash bekor qilindi. Asosiy menyu.",
-    "ru": "Редактирование отменено. Главное меню.",
-    "en": "Editing cancelled. Main menu.",
+PHOTOS_MODERATION_NOTICE = {
+    "uz": "Rasmlaringiz moderatsiyadan o'tgandan so'ng profilingizda ko'rinadi.",
+    "ru": "Ваши фотографии появятся в профиле после прохождения модерации.",
+    "en": "Your photos will appear in your profile after they have been moderated.",
 }
 
 
-@router.callback_query(EditingStates.choosing_field, F.data.startswith("edit_field_"))
-async def request_new_field_value(callback: CallbackQuery, state: FSMContext):
-    field_to_edit = callback.data.split("_")[-1]
+@router.callback_query(EditingStates.choosing_field, F.data == "back_to_profile")
+async def back_to_profile_view(callback: CallbackQuery, state: FSMContext):
+    """Handles returning to the main profile view from the edit menu."""
+    await callback.message.delete()
+    await show_my_profile(callback.message, state)
+    await callback.answer()
+
+
+# --- Edit Name ---
+@router.callback_query(EditingStates.choosing_field, F.data == "edit_field_name")
+async def edit_name_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
-
-    state_map = {
-        "name": EditingStates.editing_name,
-        "bio": EditingStates.editing_bio,
-        "city": EditingStates.editing_city,
-        "interests": EditingStates.editing_interests,
-        "photos": EditingStates.editing_photos,
-    }
-
-    if field_to_edit in state_map:
-        await state.set_state(state_map[field_to_edit])
-
-        if field_to_edit == "interests":
-            current_interests = user.interests.split(',') if user.interests else []
-            await state.update_data(selected_interests=current_interests, language=language)
-            await callback.message.edit_text(
-                EDIT_INTERESTS_TEXT[language],
-                reply_markup=get_interests_keyboard(language, current_interests)
-            )
-        elif field_to_edit == "photos":
-            await state.update_data(new_photos=[], language=language)
-            await callback.message.edit_text(EDIT_PHOTOS_TEXT[language])
-        else:
-            await callback.message.edit_text(EDIT_REQUEST_TEXTS[language][field_to_edit])
-        await callback.answer()
-
-
-
-async def process_new_text_value(message: Message, state: FSMContext, field_name: str, value: str, next_state: EditingStates = None, next_prompt_field: str = None):
-    user = await get_user_by_telegram_id(message.from_user.id)
-    language = user.language or "uz"
-
-    await update_user_profile_field(user.id, field_name, value)
-
-    if next_state:
-        await state.set_state(next_state)
-        await message.answer(EDIT_REQUEST_TEXTS[language][next_prompt_field])
-    else:
-        await state.clear()
-        await message.answer(UPDATE_SUCCESS_TEXT[language])
-        # Asosiy menyuni ko'rsatish uchun alohida xabar yuborish yaxshiroq
-        await message.answer("Asosiy menyu:", reply_markup=get_main_menu_keyboard(language))
+    await state.set_state(EditingStates.editing_name)
+    await callback.message.delete()
+    await callback.message.answer(EDIT_FIELD_PROMPTS[language]["name"])
+    await callback.answer()
 
 
 @router.message(EditingStates.editing_name, F.text)
-async def process_new_name(message: Message, state: FSMContext):
+async def edit_name_finish(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     language = user.language or "uz"
-    name = message.text.strip()
+    new_name = message.text.strip()
 
-    if not (2 <= len(name) <= 50 and all(c.isalpha() or c.isspace() or c == '-' for c in name)):
+    if not (2 <= len(new_name) <= 50 and all(c.isalpha() or c.isspace() or c == '-' for c in new_name)):
         await message.answer(NAME_INVALID_TEXTS.get(language, NAME_INVALID_TEXTS["uz"]))
         return
-    
-    await process_new_text_value(message, state, "name", name)
 
+    await update_user_profile_field(user.id, "name", new_name)
+    await message.answer(FIELD_UPDATED_TEXTS[language])
+    await show_my_profile(message, state)
+
+
+# --- Edit Bio ---
+@router.callback_query(EditingStates.choosing_field, F.data == "edit_field_bio")
+async def edit_bio_start(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    await state.set_state(EditingStates.editing_bio)
+    await callback.message.delete()
+    await callback.message.answer(
+        EDIT_FIELD_PROMPTS[language]["bio"],
+        reply_markup=get_bio_request_keyboard(language, back_callback="back_to_profile")
+    )
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.editing_bio, F.data == "generate_bio_ai")
+async def edit_generate_bio_handler(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+
+    await callback.message.edit_text(AI_BIO_GENERATING_TEXTS.get(language, AI_BIO_GENERATING_TEXTS["uz"]))
+    await callback.answer()
+
+    interest_keys = user.interests.split(',') if user.interests else []
+    interest_names = [ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]['uz']) for key in interest_keys if key in ALL_INTERESTS]
+    ai_user_data = {
+        "name": user.name,
+        "age": user.age,
+        "city": user.city,
+        "interests_names": interest_names,
+    }
+
+    generated_bio = await generate_bio_with_ai(ai_user_data, language)
+
+    if not generated_bio or generated_bio.startswith("Afsuski"):
+        await callback.message.edit_text(
+            generated_bio or AI_BIO_ERROR_TEXTS.get(language, AI_BIO_ERROR_TEXTS["uz"]),
+            reply_markup=get_bio_request_keyboard(language, "back_to_profile")
+        )
+        await state.set_state(EditingStates.editing_bio)
+        return
+
+    await state.update_data(generated_bio=generated_bio)
+    await state.set_state(EditingStates.confirming_ai_bio)
+
+    await callback.message.edit_text(
+        f"<i>{generated_bio}</i>\n\n{AI_BIO_RESULT_TEXTS.get(language, AI_BIO_RESULT_TEXTS['uz'])}",
+        reply_markup=get_ai_bio_confirmation_keyboard(language, back_callback="back_to_bio_edit")
+    )
 
 @router.message(EditingStates.editing_bio, F.text)
-async def process_new_bio(message: Message, state: FSMContext):
+async def edit_bio_finish(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     language = user.language or "uz"
-    bio = message.text.strip()
+    new_bio = message.text
 
-    if len(bio) > 500:
-        await message.answer(BIO_TOO_LONG_TEXTS.get(language, BIO_TOO_LONG_TEXTS["uz"]))
+    if len(new_bio) > 500:
+        await message.answer(BIO_TOO_LONG_TEXTS[language])
         return
-    
-    await process_new_text_value(message, state, "bio", bio)
+
+    await update_user_profile_field(user.id, "bio", new_bio)
+    await message.answer(FIELD_UPDATED_TEXTS[language])
+    await show_my_profile(message, state)
 
 
-@router.message(EditingStates.editing_city, F.text)
-async def process_new_city(message: Message, state: FSMContext):
-    user = await get_user_by_telegram_id(message.from_user.id)
+@router.callback_query(EditingStates.confirming_ai_bio, F.data == "back_to_bio_edit")
+async def back_to_bio_edit(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
-    city = message.text.strip()
+    await state.set_state(EditingStates.editing_bio)
+    await callback.message.edit_text(
+        EDIT_FIELD_PROMPTS[language]["bio"],
+        reply_markup=get_bio_request_keyboard(language, back_callback="back_to_profile")
+    )
+    await callback.answer()
 
-    if not (2 <= len(city) <= 100 and all(c.isalpha() or c.isspace() or c == '-' for c in city)):
-        await message.answer(CITY_INVALID_TEXTS.get(language, CITY_INVALID_TEXTS["uz"]))
-        return
-    
-    await process_new_text_value(message, state, "city", city, next_state=EditingStates.editing_district, next_prompt_field="district")
+
+@router.callback_query(EditingStates.confirming_ai_bio, F.data == "ai_bio_regenerate")
+async def edit_regenerate_bio_handler(callback: CallbackQuery, state: FSMContext):
+    await edit_generate_bio_handler(callback, state)
 
 
-@router.message(EditingStates.editing_district, F.text)
-async def process_new_district(message: Message, state: FSMContext):
-    user = await get_user_by_telegram_id(message.from_user.id)
+@router.callback_query(EditingStates.confirming_ai_bio, F.data == "ai_bio_accept")
+async def accept_ai_bio_for_edit_handler(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
-    district = message.text.strip()
+    data = await state.get_data()
+    generated_bio = data.get("generated_bio")
 
-    if not (2 <= len(district) <= 100 and all(c.isalpha() or c.isspace() or c == '-' for c in district)):
-        await message.answer(DISTRICT_INVALID_TEXTS.get(language, DISTRICT_INVALID_TEXTS["uz"]))
+    if len(generated_bio) > 500:
+        await callback.answer(BIO_TOO_LONG_TEXTS[language], show_alert=True)
+        await state.set_state(EditingStates.editing_bio)
+        await callback.message.edit_text(
+            EDIT_FIELD_PROMPTS[language]["bio"],
+            reply_markup=get_bio_request_keyboard(language, back_callback="back_to_profile")
+        )
         return
-    
-    await process_new_text_value(message, state, "district", district, next_state=None, next_prompt_field=None)
+
+    await update_user_profile_field(user.id, "bio", generated_bio)
+    # In editing flow, we don't have a photo on the screen to edit caption for.
+    # So we delete the message and show the profile.
+    await callback.message.delete()
+    await callback.message.answer(FIELD_UPDATED_TEXTS[language])
+    await show_my_profile(callback.message, state)
+    await callback.answer()
+
+# --- Edit City/District ---
+@router.callback_query(EditingStates.choosing_field, F.data == "edit_field_city")
+async def edit_city_start(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    await state.set_state(EditingStates.editing_city)
+    await callback.message.delete()
+    await callback.message.answer(
+        EDIT_FIELD_PROMPTS[language]["city"],
+        reply_markup=get_region_keyboard(language),
+    )
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.editing_city, F.data.startswith("region_"))
+async def edit_region_selected(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    region_name = resolve_region_name(callback.data.split("_", 1)[1])
+    await state.update_data(edit_region=region_name)
+
+    if is_tashkent_city_region(region_name):
+        await state.set_state(EditingStates.editing_district)
+        await callback.message.edit_text(
+            "Yangi tumaningizni tanlang:",
+            reply_markup=get_district_keyboard(region_name, language),
+        )
+    else:
+        await callback.message.edit_text(
+            "Yangi shahringizni tanlang:",
+            reply_markup=get_city_keyboard(region_name, language),
+        )
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.editing_city, F.data.startswith("city_"))
+async def edit_city_selected(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    city_name = callback.data.split("_", 1)[1].replace("_", " ").title()
+    data = await state.get_data()
+    region_name = data.get("edit_region")
+
+    await state.update_data(edit_city=city_name)
+    await state.set_state(EditingStates.editing_district)
+    await callback.message.edit_text(
+        "Yangi tumaningizni tanlang:",
+        reply_markup=get_district_keyboard(region_name, language),
+    )
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.editing_district, F.data.startswith("district_"))
+async def edit_district_selected(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    district_name = callback.data.split("_", 1)[1].replace("_", " ").title()
+    data = await state.get_data()
+    city_name = data.get("edit_city") or data.get("edit_region") # Toshkent sh. uchun
+
+    await update_user_profile_field(user.id, "city", city_name)
+    await update_user_profile_field(user.id, "district", district_name)
+
+    await callback.message.delete()
+    await callback.message.answer(FIELD_UPDATED_TEXTS[language])
+    await show_my_profile(callback.message, state)
+
+
+# --- Edit Interests ---
+@router.callback_query(EditingStates.choosing_field, F.data == "edit_field_interests")
+async def edit_interests_start(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    current_interests = user.interests.split(",") if user.interests else []
+
+    await state.set_state(EditingStates.editing_interests)
+    await state.update_data(edit_interests=current_interests)
+    await callback.message.delete()
+    await callback.message.answer(
+        EDIT_FIELD_PROMPTS[language]["interests"],
+        reply_markup=get_interests_keyboard(language, current_interests),
+    )
+    await callback.answer()
 
 
 @router.callback_query(EditingStates.editing_interests, F.data.startswith("interest_"))
@@ -190,15 +298,14 @@ async def edit_interest_selected(callback: CallbackQuery, state: FSMContext):
     interest_key = callback.data.split("_")[1]
     data = await state.get_data()
     language = data.get("language", "uz")
-    selected_interests = data.get("selected_interests", [])
+    selected_interests = data.get("edit_interests", [])
 
     if interest_key in selected_interests:
         selected_interests.remove(interest_key)
     else:
         selected_interests.append(interest_key)
 
-    await state.update_data(selected_interests=selected_interests)
-
+    await state.update_data(edit_interests=selected_interests)
     await callback.message.edit_reply_markup(
         reply_markup=get_interests_keyboard(language, selected_interests)
     )
@@ -206,71 +313,67 @@ async def edit_interest_selected(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(EditingStates.editing_interests, F.data == "interests_done")
-async def edit_interests_done(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
+async def edit_interests_finish(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
-    selected_interests = data.get("selected_interests", [])
+    data = await state.get_data()
+    selected_interests = data.get("edit_interests", [])
 
     if not selected_interests:
         await callback.answer(INTERESTS_MIN_ERROR_TEXTS[language], show_alert=True)
         return
 
     await update_user_profile_field(user.id, "interests", ",".join(selected_interests))
+    await callback.message.delete()
+    await callback.message.answer(FIELD_UPDATED_TEXTS[language])
+    await show_my_profile(callback.message, state)
 
-    await state.clear()
-    await callback.message.edit_text(UPDATE_SUCCESS_TEXT[language])
-    await callback.message.answer("Asosiy menyu:", reply_markup=get_main_menu_keyboard(language))
+
+# --- Edit Photos ---
+@router.callback_query(EditingStates.choosing_field, F.data == "edit_field_photos")
+async def edit_photos_start(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    await state.set_state(EditingStates.editing_photos)
+    await state.update_data(edit_photos=[]) # Start with an empty list
+    await callback.message.delete() # Delete the profile view
+    await callback.message.answer(
+        EDIT_FIELD_PROMPTS[language]["photos"],
+        reply_markup=get_photo_upload_done_keyboard(language),
+    )
     await callback.answer()
 
 
 @router.message(EditingStates.editing_photos, F.photo)
 async def edit_photo_uploaded(message: Message, state: FSMContext):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language or "uz"
     data = await state.get_data()
-    language = data.get("language", "uz")
-    new_photos = data.get("new_photos", [])
+    uploaded_photos = data.get("edit_photos", [])
 
-    if len(new_photos) >= 5:
+    if len(uploaded_photos) >= 5:
         await message.answer(PHOTO_LIMIT_EXCEEDED_TEXTS[language])
         return
 
     file_id = message.photo[-1].file_id
-    new_photos.append(file_id)
-    await state.update_data(new_photos=new_photos)
+    uploaded_photos.append(file_id)
+    await state.update_data(edit_photos=uploaded_photos)
 
-    await message.answer(
-        PHOTO_UPLOAD_SUCCESS_TEXTS[language],
-        reply_markup=get_photo_upload_done_keyboard(language),
-    )
+    await message.answer(PHOTO_UPLOAD_SUCCESS_TEXTS[language])
 
 
 @router.callback_query(EditingStates.editing_photos, F.data == "photos_done")
-async def edit_photos_done(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
+async def edit_photos_finish(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
-    new_photos = data.get("new_photos", [])
+    data = await state.get_data()
+    new_photos = data.get("edit_photos", [])
 
     if not new_photos:
         await callback.answer(PHOTO_MIN_ERROR_TEXTS[language], show_alert=True)
         return
 
     await update_user_photos(user.id, new_photos)
-
-    await state.clear()
-    await callback.message.edit_text(UPDATE_SUCCESS_TEXT[language])
-    await callback.message.answer("Asosiy menyu:", reply_markup=get_main_menu_keyboard(language))
-    await callback.answer()
-
-
-@router.callback_query(EditingStates.choosing_field, F.data == "back_to_profile")
-async def back_to_profile_handler(callback: CallbackQuery, state: FSMContext):
-    await state.clear()
-    user = await get_user_by_telegram_id(callback.from_user.id)
-    language = user.language or "uz"
-    await callback.message.delete()
-    await callback.message.answer(
-        CANCEL_EDIT_TEXTS.get(language, CANCEL_EDIT_TEXTS["uz"]),
-        reply_markup=get_main_menu_keyboard(language)
-    )
-    await callback.answer()
+    await callback.message.answer(FIELD_UPDATED_TEXTS[language])
+    await callback.message.answer(PHOTOS_MODERATION_NOTICE[language])
+    await show_my_profile(callback.message, state)

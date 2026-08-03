@@ -3,5 +3,6 @@ aiogram~=3.30
 SQLAlchemy~=2.0
 asyncpg
 aiosqlite
-redis
+redis>=4.0
 apscheduler
+openai>=1.0

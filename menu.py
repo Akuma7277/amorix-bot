@@ -27,16 +27,19 @@ from crud import (
     check_and_consume_like_quota,
     activate_profile_boost,
     create_support_message,
+    get_all_admin_ids,
     DAILY_LIKE_LIMITS,
     DAILY_SUPER_LIKE_LIMITS,
     BOOST_DURATION_MINUTES,
+    create_gift, # Import create_gift
 )
 from states import MenuStates, EditingStates, ReportingStates, SettingsStates, VerificationStates, PremiumStates
 from inline import ALL_INTERESTS # Qiziqishlar nomlarini olish uchun
-from inline import (
-    get_search_keyboard, get_match_keyboard, get_chats_keyboard,
-    get_profile_view_keyboard, get_edit_profile_keyboard,
-    get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard, get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard
+from inline import ( # Updated imports for gift feature
+    get_search_keyboard, get_match_keyboard, get_chats_keyboard, get_profile_view_keyboard, get_edit_profile_keyboard,
+    get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
+    get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard,
+    get_gift_type_keyboard, GIFT_BUTTON_TEXTS
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan # Import UserStatus
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS # Import common texts
@@ -393,6 +396,43 @@ PREMIUM_ALREADY_ACTIVE_TEXT = {
     "uz": "Sizda allaqachon faol premium obuna mavjud.",
     "ru": "У вас уже есть активная премиум-подписка.",
     "en": "You already have an active premium subscription.",
+}
+
+# NEW GIFT RELATED TEXTS
+GIFT_CHOOSE_TYPE_TEXTS = {
+    "uz": "Qanday sovg'a yubormoqchisiz?",
+    "ru": "Какой подарок вы хотите отправить?",
+    "en": "What kind of gift do you want to send?",
+}
+
+GIFT_ENTER_MESSAGE_TEXTS = {
+    "uz": "Sovg'a bilan birga xabar yubormoqchimisiz? (Ixtiyoriy, 200 belgidan oshmasin)",
+    "ru": "Хотите отправить сообщение вместе с подарком? (Необязательно, не более 200 символов)",
+    "en": "Do you want to send a message with the gift? (Optional, max 200 characters)",
+}
+
+GIFT_CONFIRM_TEXTS = {
+    "uz": "Siz <b>{receiver_name}</b> ga <b>{gift_type_emoji}</b> sovg'asini yubormoqchisiz.\n\n{message_text}\n\nTasdiqlaysizmi?",
+    "ru": "Вы собираетесь отправить <b>{receiver_name}</b> <b>{gift_type_emoji}</b>.\n\n{message_text}\n\nПодтверждаете?",
+    "en": "You are about to send <b>{receiver_name}</b> a <b>{gift_type_emoji}</b>.\n\n{message_text}\n\nConfirm?",
+}
+
+GIFT_SENT_SUCCESS_TEXTS = {
+    "uz": "✅ Sovg'a <b>{receiver_name}</b> ga muvaffaqiyatli yuborildi!",
+    "ru": "✅ Подарок успешно отправлен <b>{receiver_name}</b>!",
+    "en": "✅ Gift successfully sent to <b>{receiver_name}</b>!",
+}
+
+GIFT_RECEIVED_NOTIFICATION_TEXTS = {
+    "uz": "🎁 Sizga <b>{sender_name}</b> dan <b>{gift_type_emoji}</b> sovg'asi keldi!\n\n{message_text}",
+    "ru": "🎁 Вам пришел <b>{gift_type_emoji}</b> от <b>{sender_name}</b>!\n\n{message_text}",
+    "en": "🎁 You received a <b>{gift_type_emoji}</b> from <b>{sender_name}</b>!\n\n{message_text}",
+}
+
+GIFT_MESSAGE_TOO_LONG_TEXTS = {
+    "uz": "Xabar juda uzun. Iltimos, 200 belgidan oshmasin.",
+    "ru": "Сообщение слишком длинное. Пожалуйста, не более 200 символов.",
+    "en": "Message is too long. Please keep it under 200 characters.",
 }
 
 # Plan details
@@ -800,6 +840,169 @@ async def report_description_entered(message: Message, state: FSMContext):
     await show_next_profile(message, state)
 
 
+# NEW GIFT HANDLERS
+@router.callback_query(MenuStates.searching, F.data.startswith("gift_"))
+async def start_gift_flow(callback: CallbackQuery, state: FSMContext):
+    target_user_id = int(callback.data.split("_")[1])
+    current_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = current_user.language or "uz"
+
+    # Store target user ID and current search data
+    search_data = await state.get_data()
+    await state.update_data(
+        target_user_id=target_user_id,
+        original_search_data=search_data,
+    )
+
+    await state.set_state(MenuStates.choosing_gift_type)
+    await callback.message.edit_text(
+        GIFT_CHOOSE_TYPE_TEXTS.get(language, GIFT_CHOOSE_TYPE_TEXTS["uz"]),
+        reply_markup=get_gift_type_keyboard(language, back_callback="gift_back_to_search")
+    )
+    await callback.answer()
+
+
+@router.callback_query(MenuStates.choosing_gift_type, F.data == "gift_back_to_search")
+async def gift_back_to_search_handler(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = (await get_user_by_telegram_id(callback.from_user.id)).language or "uz"
+    original_search_data = data.get("original_search_data", {})
+    
+    await state.set_state(MenuStates.searching)
+    await state.set_data(original_search_data)
+    await callback.message.delete() # Delete the gift menu
+    await show_next_profile(callback.message, state) # Show the profile again
+    await callback.answer()
+
+
+@router.callback_query(MenuStates.choosing_gift_type, F.data.startswith("gift_type_"))
+async def gift_type_chosen(callback: CallbackQuery, state: FSMContext):
+    gift_type_name = callback.data.split("_")[2]
+    
+    language = (await get_user_by_telegram_id(callback.from_user.id)).language or "uz"
+
+    await state.update_data(gift_type=gift_type_name)
+    await state.set_state(MenuStates.entering_gift_message)
+
+    await callback.message.edit_text(
+        GIFT_ENTER_MESSAGE_TEXTS.get(language, GIFT_ENTER_MESSAGE_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, "gift_back_to_choose_type")
+    )
+    await callback.answer()
+
+
+@router.callback_query(MenuStates.entering_gift_message, F.data == "gift_back_to_choose_type")
+async def gift_back_to_choose_type_handler(callback: CallbackQuery, state: FSMContext):
+    language = (await get_user_by_telegram_id(callback.from_user.id)).language or "uz"
+    await state.set_state(MenuStates.choosing_gift_type)
+    await callback.message.edit_text(
+        GIFT_CHOOSE_TYPE_TEXTS.get(language, GIFT_CHOOSE_TYPE_TEXTS["uz"]),
+        reply_markup=get_gift_type_keyboard(language, back_callback="gift_back_to_search")
+    )
+    await callback.answer()
+
+
+@router.message(MenuStates.entering_gift_message, F.text)
+async def gift_message_entered(message: Message, state: FSMContext):
+    data = await state.get_data()
+    language = (await get_user_by_telegram_id(message.from_user.id)).language or "uz"
+    
+    gift_message = message.text
+    if len(gift_message) > 200:
+        await message.answer(GIFT_MESSAGE_TOO_LONG_TEXTS.get(language, GIFT_MESSAGE_TOO_LONG_TEXTS["uz"]))
+        return
+
+    await state.update_data(gift_message=gift_message)
+    await state.set_state(MenuStates.confirming_gift)
+
+    target_user_id = data.get("target_user_id")
+    target_user = await get_user_by_id(target_user_id)
+    gift_type_name = data.get("gift_type")
+    gift_type_emoji = GIFT_BUTTON_TEXTS.get(language, GIFT_BUTTON_TEXTS["uz"]).get(gift_type_name, "")
+
+    confirm_text = GIFT_CONFIRM_TEXTS.get(language, GIFT_CONFIRM_TEXTS["uz"]).format(
+        receiver_name=target_user.name,
+        gift_type_emoji=gift_type_emoji,
+        message_text=f"<b>Xabar:</b> <i>{gift_message}</i>" if gift_message else "Xabar yo'q."
+    )
+    
+    confirm_keyboard_texts = {
+        "uz": {"confirm": "✅ Yuborish", "cancel": "❌ Bekor qilish"},
+        "ru": {"confirm": "✅ Отправить", "cancel": "❌ Отмена"},
+        "en": {"confirm": "✅ Send", "cancel": "❌ Cancel"},
+    }
+    texts = confirm_keyboard_texts.get(language, confirm_keyboard_texts["uz"])
+    confirm_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=texts["confirm"], callback_data="gift_confirm_send")],
+        [InlineKeyboardButton(text=texts["cancel"], callback_data="gift_cancel_send")]
+    ])
+
+    await message.answer(confirm_text, reply_markup=confirm_keyboard)
+
+
+@router.callback_query(MenuStates.confirming_gift, F.data == "gift_cancel_send")
+async def gift_cancel_send_handler(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = (await get_user_by_telegram_id(callback.from_user.id)).language or "uz"
+    original_search_data = data.get("original_search_data", {})
+    
+    await state.set_state(MenuStates.searching)
+    await state.set_data(original_search_data)
+    await callback.message.delete() # Delete the gift confirmation message
+    await show_next_profile(callback.message, state) # Show the profile again
+    await callback.answer("Sovg'a yuborish bekor qilindi.")
+
+
+@router.callback_query(MenuStates.confirming_gift, F.data == "gift_confirm_send")
+async def gift_confirm_send_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    sender_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = sender_user.language or "uz"
+
+    target_user_id = data.get("target_user_id")
+    gift_type_name = data.get("gift_type")
+    gift_message = data.get("gift_message")
+
+    receiver_user = await get_user_by_id(target_user_id)
+    if not receiver_user:
+        await callback.answer("Xatolik: Sovg'a qabul qiluvchi foydalanuvchi topilmadi.", show_alert=True)
+        await callback.message.delete()
+        await show_next_profile(callback.message, state)
+        return
+
+    # Create gift record in DB
+    await create_gift(
+        sender_id=sender_user.id,
+        receiver_id=receiver_user.id,
+        gift_type=GiftType[gift_type_name],
+        message=gift_message,
+    )
+
+    # Notify receiver
+    gift_type_emoji = GIFT_BUTTON_TEXTS.get(receiver_user.language or "uz", GIFT_BUTTON_TEXTS["uz"]).get(gift_type_name, "")
+    notification_text = GIFT_RECEIVED_NOTIFICATION_TEXTS.get(receiver_user.language or "uz", GIFT_RECEIVED_NOTIFICATION_TEXTS["uz"]).format(
+        sender_name=sender_user.name,
+        gift_type_emoji=gift_type_emoji,
+        message_text=f"<b>Xabar:</b> <i>{gift_message}</i>" if gift_message else "Xabar yo'q."
+    )
+    try:
+        await bot.send_message(chat_id=receiver_user.telegram_id, text=notification_text)
+    except Exception as exc:
+        logging.warning(f"Could not notify user {receiver_user.telegram_id} about received gift: {exc}")
+
+    await callback.message.delete()
+    await callback.message.answer(
+        GIFT_SENT_SUCCESS_TEXTS.get(language, GIFT_SENT_SUCCESS_TEXTS["uz"]).format(receiver_name=receiver_user.name)
+    )
+    
+    # Restore search state and continue
+    original_search_data = data.get("original_search_data", {})
+    await state.set_state(MenuStates.searching)
+    await state.set_data(original_search_data)
+    await show_next_profile(callback.message, state)
+    await callback.answer()
+
+
 @router.message(F.text == MAIN_MENU_BUTTONS["uz"]["referrals"])
 @router.message(F.text == MAIN_MENU_BUTTONS["ru"]["referrals"])
 @router.message(F.text == MAIN_MENU_BUTTONS["en"]["referrals"])
@@ -920,7 +1123,8 @@ async def message_admin_received(message: Message, state: FSMContext, bot: Bot):
         f"Username: {username_part} | Telegram ID: {user.telegram_id}\n\n"
         f"Xabar:\n{message.text}"
     )
-    for admin_id in ADMIN_IDS:
+    admin_ids = await get_all_admin_ids()
+    for admin_id in admin_ids:
         try:
             await bot.send_message(chat_id=admin_id, text=notify_text)
         except Exception as exc:

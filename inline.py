@@ -1,5 +1,5 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from models import UserStatus, ReportCategory, VerificationStatus, PremiumPlan, ActionType
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
+from models import UserStatus, ReportCategory, VerificationStatus, PremiumPlan, ActionType, GiftType
 
 
 UZBEK_REGIONS = {
@@ -194,6 +194,57 @@ DONE_BUTTON_TEXTS = {
     "ru": "✅ Готово",
     "en": "✅ Done",
 }
+
+
+AI_BIO_BUTTON_TEXTS = {
+    "uz": "✨ Bio yaratish (AI)",
+    "ru": "✨ Создать био (ИИ)",
+    "en": "✨ Generate bio (AI)",
+}
+
+
+AI_BIO_CONFIRM_BUTTON_TEXTS = {
+    "uz": {"accept": "✅ Qabul qilish", "regenerate": "🔄 Boshqa variant"},
+    "ru": {"accept": "✅ Принять", "regenerate": "🔄 Другой вариант"},
+    "en": {"accept": "✅ Accept", "regenerate": "🔄 Regenerate"},
+}
+
+
+GIFT_BUTTON_TEXTS = {
+    "uz": {"flower": "Gul 💐", "chocolate": "Shokolad 🍫", "coffee": "Qahva ☕", "bear": "O'yinchoq ayiq 🧸", "heart": "Yurak ❤️"},
+    "ru": {"flower": "Цветок 💐", "chocolate": "Шоколад 🍫", "coffee": "Кофе ☕", "bear": "Плюшевый мишка 🧸", "heart": "Сердце ❤️"},
+    "en": {"flower": "Flower 💐", "chocolate": "Chocolate 🍫", "coffee": "Coffee ☕", "bear": "Teddy Bear 🧸", "heart": "Heart ❤️"},
+}
+
+
+def get_gift_type_keyboard(language: str = "uz", back_callback: str | None = None):
+    texts = GIFT_BUTTON_TEXTS.get(language, GIFT_BUTTON_TEXTS["uz"])
+    buttons = []
+    for gift_type_enum in GiftType:
+        buttons.append([InlineKeyboardButton(text=texts[gift_type_enum.name], callback_data=f"gift_type_{gift_type_enum.name}")])
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_bio_request_keyboard(language: str = "uz", back_callback: str | None = None):
+    """Keyboard for the bio entry step, including an AI generation button."""
+    ai_text = AI_BIO_BUTTON_TEXTS.get(language, AI_BIO_BUTTON_TEXTS["uz"])
+    buttons = [[InlineKeyboardButton(text=ai_text, callback_data="generate_bio_ai")]]
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_ai_bio_confirmation_keyboard(language: str = "uz", back_callback: str | None = None):
+    """Keyboard to confirm or regenerate an AI-generated bio."""
+    texts = AI_BIO_CONFIRM_BUTTON_TEXTS.get(language, AI_BIO_CONFIRM_BUTTON_TEXTS["uz"])
+    buttons = [
+        [InlineKeyboardButton(text=texts["accept"], callback_data="ai_bio_accept"), InlineKeyboardButton(text=texts["regenerate"], callback_data="ai_bio_regenerate")]
+    ]
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def get_interests_keyboard(language: str = "uz", selected_interests: list = None, back_callback: str | None = None):
@@ -434,6 +485,7 @@ def get_user_management_keyboard(language: str, user_id: int, is_banned: bool):
     buttons = [
         ban_row,
         [InlineKeyboardButton(text=texts["delete"], callback_data=f"manage_delete_prompt_{user_id}")],
+        [InlineKeyboardButton(text=texts["back"], callback_data="admin_back_to_main_menu")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -741,6 +793,7 @@ LOGS_PAGINATION_TEXTS = {
 def get_logs_view_keyboard(language: str, current_page: int, total_pages: int):
     texts = LOGS_PAGINATION_TEXTS.get(language, LOGS_PAGINATION_TEXTS["uz"])
     filter_text = {"uz": "🔍 Filtr", "ru": "🔍 Фильтр", "en": "🔍 Filter"}.get(language, "🔍 Filtr")
+    back_text = {"uz": "⬅️ Orqaga", "ru": "⬅️ Назад", "en": "⬅️ Back"}.get(language, "⬅️ Orqaga")
     
     buttons = []
     pagination_row = []
@@ -753,6 +806,7 @@ def get_logs_view_keyboard(language: str, current_page: int, total_pages: int):
         buttons.append(pagination_row)
         
     buttons.append([InlineKeyboardButton(text=filter_text, callback_data="logs_filter_menu")])
+    buttons.append([InlineKeyboardButton(text=back_text, callback_data="admin_back_to_main_menu")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 

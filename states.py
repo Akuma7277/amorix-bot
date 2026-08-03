@@ -13,6 +13,7 @@ class RegistrationStates(StatesGroup):
     entering_district = State()
     choosing_interests = State()
     entering_bio = State()
+    confirming_ai_bio = State()
     uploading_photos = State()
     reviewing_profile = State()
     # Keyingi bosqichlar shu yerga qo'shiladi
@@ -26,11 +27,16 @@ class MenuStates(StatesGroup):
     confirm_block = State() # Added for user blocking
     viewing_likes = State()
     writing_to_admin = State() # Foydalanuvchi adminga xabar yozayotgan holat
+    # NEW GIFT STATES
+    choosing_gift_type = State()
+    entering_gift_message = State()
+    confirming_gift = State()
 
 class EditingStates(StatesGroup):
     choosing_field = State()
     editing_name = State()
     editing_bio = State()
+    confirming_ai_bio = State()
     editing_city = State()
     editing_district = State()
     editing_interests = State()

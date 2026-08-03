@@ -24,6 +24,11 @@ from models import (
     BlockedUser, # Import BlockedUser
     Payment,
     SupportMessage,
+    Gift, # Import Gift
+    GiftType, # Import GiftType
+    ProfileView, # Import ProfileView
+    UserEvent,
+    EventType,
 )
 from engine import async_session_maker
 from config import ADMIN_IDS
@@ -223,6 +228,28 @@ async def get_user_matches(user_id: int) -> list[Match]:
         return []
 
 
+async def unmatch_users(user1_id: int, user2_id: int) -> bool:
+    """Deactivates a match between two users. Returns True if a match was deactivated, False otherwise."""
+    async with async_session_maker() as session:
+        # Find the match, ignoring which user is user1 or user2
+        match_query = select(Match).where(
+            or_(
+                and_(Match.user1_id == user1_id, Match.user2_id == user2_id),
+                and_(Match.user1_id == user2_id, Match.user2_id == user1_id)
+            ),
+            Match.is_active == True
+        )
+        result = await session.execute(match_query)
+        match = result.scalar_one_or_none()
+
+        if not match:
+            return False
+
+        match.is_active = False
+        await session.commit()
+        return True
+
+
 async def get_user_by_id(user_id: int) -> User | None:
     """Finds a user by their primary key ID."""
     try:
@@ -233,6 +260,34 @@ async def get_user_by_id(user_id: int) -> User | None:
         import logging
         logging.warning(f"Database unavailable while fetching user by id: {exc}")
         return None
+
+
+async def update_last_seen(user_id: int):
+    """Updates the user's last_activity timestamp to the current time."""
+    async with async_session_maker() as session:
+        await session.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(last_activity=datetime.now())
+        )
+        await session.commit()
+
+
+async def get_online_status(user: User) -> str:
+    """
+    Returns a user-friendly string for the user's online status.
+    'online', 'recently', or the date they were last active.
+    """
+    if not user.last_activity:
+        return "never"  # Or some other default
+
+    now = datetime.now()
+    if user.last_activity > now - timedelta(minutes=5):
+        return "online"
+    elif user.last_activity > now - timedelta(hours=1):
+        return "recently"
+    else:
+        return user.last_activity.strftime("%Y-%m-%d")
 
 
 async def get_match_by_id(match_id: int) -> Match | None:
@@ -388,6 +443,21 @@ async def add_like_and_check_match(from_user_id: int, to_user_id: int, is_super_
         return None
 
 
+async def remove_like(from_user_id: int, to_user_id: int) -> bool:
+    """Removes a like from one user to another. Returns True if a like was removed, False otherwise."""
+    async with async_session_maker() as session:
+        result = await session.execute(
+            delete(Like).where(
+                and_(
+                    Like.from_user_id == from_user_id,
+                    Like.to_user_id == to_user_id
+                )
+            )
+        )
+        await session.commit()
+        return result.rowcount > 0
+
+
 async def create_chat_message(match_id: int, sender_id: int, text: str) -> ChatMessage:
     """
     Saves a new message to the database.
@@ -401,6 +471,127 @@ async def create_chat_message(match_id: int, sender_id: int, text: str) -> ChatM
         session.add(new_message)
         await session.commit()
         return new_message
+
+
+async def get_chat_messages(match_id: int, limit: int = 50) -> list[ChatMessage]:
+    """
+    Fetches the chat history for a given match, ordered from oldest to newest.
+    """
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(ChatMessage)
+            .where(ChatMessage.match_id == match_id)
+            .order_by(ChatMessage.created_at.asc())
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+
+async def mark_messages_as_read(match_id: int, user_id: int):
+    """Marks all messages in a match as read for a specific user."""
+    async with async_session_maker() as session:
+        await session.execute(
+            update(ChatMessage)
+            .where(
+                and_(
+                    ChatMessage.match_id == match_id,
+                    ChatMessage.sender_id != user_id,  # Mark messages sent by the other person
+                    ChatMessage.is_read == False
+                )
+            )
+            .values(is_read=True)
+        )
+        await session.commit()
+
+
+async def get_unread_count(user_id: int) -> int:
+    """
+    Counts the total number of unread messages for a user across all their active matches.
+    """
+    async with async_session_maker() as session:
+        # First, get all active match IDs for the user
+        matches_result = await session.execute(
+            select(Match.id).where(
+                or_(Match.user1_id == user_id, Match.user2_id == user_id),
+                Match.is_active == True
+            )
+        )
+        match_ids = matches_result.scalars().all()
+
+        if not match_ids:
+            return 0
+
+        # Then, count unread messages in those matches that were not sent by the user
+        unread_count_result = await session.scalar(
+            select(func.count(ChatMessage.id))
+            .where(
+                and_(
+                    ChatMessage.match_id.in_(match_ids),
+                    ChatMessage.sender_id != user_id,
+                    ChatMessage.is_read == False
+                )
+            )
+        )
+        return unread_count_result or 0
+
+
+async def get_user_chats(user_id: int) -> list[dict]:
+    """
+    Fetches all active chats for a user, including the other user's info and the last message.
+    """
+    async with async_session_maker() as session:
+        # Subquery for the last message in each match
+        last_message_sq = (
+            select(
+                ChatMessage.match_id,
+                ChatMessage.text,
+                ChatMessage.created_at,
+                func.row_number()
+                .over(partition_by=ChatMessage.match_id, order_by=ChatMessage.created_at.desc())
+                .label("row_num"),
+            )
+            .alias("last_message_sq")
+        )
+
+        last_message = select(
+            last_message_sq.c.match_id,
+            last_message_sq.c.text,
+            last_message_sq.c.created_at,
+        ).where(last_message_sq.c.row_num == 1).alias("last_message")
+
+        # Main query to get matches and join with other user and last message
+        result = await session.execute(
+            select(
+                Match,
+                User,
+                last_message.c.text.label("last_message_text"),
+                last_message.c.created_at.label("last_message_at"),
+            )
+            .join(
+                User,
+                # Join User on the condition that it's the OTHER user in the match
+                case(
+                    (Match.user1_id == user_id, User.id == Match.user2_id),
+                    else_= (User.id == Match.user1_id),
+                ),
+            )
+            .outerjoin(last_message, Match.id == last_message.c.match_id)
+            .where(
+                or_(Match.user1_id == user_id, Match.user2_id == user_id),
+                Match.is_active == True,
+            )
+            .order_by(last_message.c.created_at.desc().nullslast(), Match.created_at.desc())
+        )
+
+        chats = []
+        for match, other_user, last_text, last_at in result.all():
+            chats.append({
+                "match": match,
+                "other_user": other_user,
+                "last_message_text": last_text,
+                "last_message_at": last_at,
+            })
+        return chats
 
 
 async def update_user_profile_field(user_id: int, field: str, value: any) -> bool:
@@ -455,6 +646,22 @@ async def get_dynamic_admins() -> list[User]:
         return result.scalars().all()
 
 
+async def get_all_admin_ids() -> list[int]:
+    """
+    Fetches all admin Telegram IDs, combining static ADMIN_IDS from config
+    and dynamic admins from the database.
+    """
+    dynamic_admins = await get_dynamic_admins()
+    dynamic_admin_ids = [admin.telegram_id for admin in dynamic_admins]
+    
+    # Combine and remove duplicates
+    all_admin_ids = set(ADMIN_IDS)
+    all_admin_ids.update(dynamic_admin_ids)
+    
+    return list(all_admin_ids)
+
+
+
 async def create_support_message(user_id: int, message: str) -> SupportMessage:
     """Persists a user's complaint/suggestion message sent to admins."""
     async with async_session_maker() as session:
@@ -496,6 +703,28 @@ async def update_user_photos(user_id: int, new_photo_file_ids: list[str]):
             )
             session.add(new_photo)
         await session.commit()
+
+
+async def set_primary_photo(user_id: int, photo_id: int) -> bool:
+    """Sets a specific photo as the user's primary (first) photo."""
+    async with async_session_maker() as session:
+        # First, find the target photo and ensure it belongs to the user and is approved
+        target_photo = await session.get(Photo, photo_id)
+        if not target_photo or target_photo.user_id != user_id or not target_photo.is_approved:
+            return False
+        
+        # Set all other photos for this user to have order > 1
+        await session.execute(
+            update(Photo)
+            .where(and_(Photo.user_id == user_id, Photo.id != photo_id))
+            .values(order=Photo.order + 1)
+        )
+        
+        # Set the target photo's order to 1
+        target_photo.order = 1
+        
+        await session.commit()
+        return True
 
 
 async def create_report(reporter_id: int, reported_id: int, category: ReportCategory, description: str) -> Report:
@@ -550,6 +779,16 @@ async def reject_photo(photo_id: int) -> bool:
         return True
 
 
+async def delete_photo(photo_id: int) -> bool:
+    """Deletes a single photo by its ID."""
+    async with async_session_maker() as session:
+        result = await session.execute(
+            delete(Photo).where(Photo.id == photo_id)
+        )
+        await session.commit()
+        return result.rowcount > 0
+
+
 async def get_pending_report() -> Report | None:
     """Fetches a single pending report with its related users."""
     async with async_session_maker() as session:
@@ -564,6 +803,39 @@ async def get_pending_report() -> Report | None:
             .limit(1)
         )
         return result.scalar_one_or_none()
+
+
+async def get_all_reports(status: ReportStatus | None = None, page: int = 1, page_size: int = 10) -> tuple[list[Report], int]:
+    """Fetches all reports with pagination and optional status filtering."""
+    async with async_session_maker() as session:
+        query = select(Report).options(
+            selectinload(Report.reporter),
+            selectinload(Report.reported)
+        )
+        count_query = select(func.count(Report.id))
+
+        if status:
+            query = query.where(Report.status == status)
+            count_query = count_query.where(Report.status == status)
+
+        total_count = await session.scalar(count_query) or 0
+        
+        offset = (page - 1) * page_size
+        query = query.order_by(Report.created_at.desc()).offset(offset).limit(page_size)
+        
+        result = await session.execute(query)
+        reports = result.scalars().all()
+        
+        return reports, total_count
+
+
+async def get_user_report_count(user_id: int) -> int:
+    """Counts how many times a user has been reported."""
+    async with async_session_maker() as session:
+        count = await session.scalar(
+            select(func.count(Report.id)).where(Report.reported_id == user_id)
+        )
+        return count or 0
 
 
 async def get_report_by_id(report_id: int) -> Report | None:
@@ -721,6 +993,8 @@ async def delete_user_data(user_id: int) -> bool:
             await session.execute(delete(Report).where(or_(Report.reporter_id == user_id, Report.reported_id == user_id)))
             # Delete support messages sent by the user
             await session.execute(delete(SupportMessage).where(SupportMessage.user_id == user_id))
+            # Delete gifts sent by or to the user
+            await session.execute(delete(Gift).where(or_(Gift.sender_id == user_id, Gift.receiver_id == user_id)))
             # Admin logs reference target_user_id via a FK, so they must go before the user row.
             await session.execute(delete(AdminLog).where(AdminLog.target_user_id == user_id))
             # Delete the user itself
@@ -750,6 +1024,170 @@ async def get_payment_statistics() -> dict:
             "active_subscriptions": active_subscriptions or 0,
             "total_revenue": total_revenue or 0.0,
         }
+
+
+async def has_active_premium(user_id: int) -> bool:
+    """Checks if the user has an active, non-basic premium plan."""
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        if not user:
+            return False
+        
+        # Check for a non-basic plan and an expiration date in the future
+        return (
+            user.premium_plan is not None and
+            user.premium_plan != PremiumPlan.basic and
+            user.premium_expires_at is not None and
+            user.premium_expires_at > datetime.now()
+        )
+
+
+async def create_subscription(user_id: int, plan: PremiumPlan, duration_days: int) -> Subscription | None:
+    """Creates a new subscription and updates the user's premium status."""
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        if not user:
+            return None
+
+        start_date = datetime.now()
+        end_date = start_date + timedelta(days=duration_days)
+
+        new_subscription = Subscription(
+            user_id=user_id,
+            plan_name=plan.value,
+            start_date=start_date,
+            end_date=end_date,
+            is_active=True
+        )
+        session.add(new_subscription)
+
+        # Update user's premium status
+        user.premium_plan = plan
+        user.premium_expires_at = end_date
+
+        await session.commit()
+        return new_subscription
+
+
+async def cancel_subscription(user_id: int) -> bool:
+    """Cancels a user's active subscription."""
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        if not user:
+            return False
+
+        # Find the latest active subscription and deactivate it
+        sub_result = await session.execute(
+            select(Subscription)
+            .where(Subscription.user_id == user_id, Subscription.is_active == True)
+            .order_by(Subscription.start_date.desc())
+        )
+        active_sub = sub_result.scalar_one_or_none()
+
+        if active_sub:
+            active_sub.is_active = False
+            active_sub.end_date = datetime.now()
+
+        # Revert user to basic plan
+        user.premium_plan = PremiumPlan.basic
+        user.premium_expires_at = None
+
+        await session.commit()
+        return True
+
+async def renew_subscription(user_id: int, plan: PremiumPlan, duration_days: int) -> Subscription | None:
+    """Renews or upgrades a user's subscription."""
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        if not user:
+            return None
+
+        # If user has an existing active subscription, extend its end date
+        # Otherwise, treat it as a new subscription
+        current_end_date = user.premium_expires_at if user.premium_expires_at and user.premium_expires_at > datetime.now() else datetime.now()
+        
+        new_end_date = current_end_date + timedelta(days=duration_days)
+
+        # Deactivate old subscriptions for this user
+        await session.execute(
+            update(Subscription)
+            .where(Subscription.user_id == user_id)
+            .values(is_active=False)
+        )
+
+        # Create a new subscription record for the renewal
+        new_subscription = Subscription(
+            user_id=user_id,
+            plan_name=plan.value,
+            start_date=datetime.now(),
+            end_date=new_end_date,
+            is_active=True
+        )
+        session.add(new_subscription)
+        
+        # Update user's premium status
+        user.premium_plan = plan
+        user.premium_expires_at = new_end_date
+
+        await session.commit()
+        return new_subscription
+
+
+async def log_profile_view(viewer_id: int, viewed_id: int):
+    """Logs that a user has viewed another user's profile."""
+    # Prevent users from logging views of their own profile
+    if viewer_id == viewed_id:
+        return
+
+    async with async_session_maker() as session:
+        new_view = ProfileView(viewer_id=viewer_id, viewed_id=viewed_id)
+        session.add(new_view)
+        await session.commit()
+
+
+async def get_profile_viewers(user_id: int, limit: int = 20) -> list[User]:
+    """
+    Fetches a list of users who have recently viewed the given user's profile.
+    This is a premium feature.
+    """
+    async with async_session_maker() as session:
+        # Get recent, unique viewer IDs
+        subquery = (
+            select(ProfileView.viewer_id)
+            .where(ProfileView.viewed_id == user_id)
+            .distinct()
+            .order_by(func.max(ProfileView.timestamp).desc())
+            .group_by(ProfileView.viewer_id)
+            .limit(limit)
+        ).alias("recent_viewers")
+
+        # Fetch the full user objects for these viewers
+        result = await session.execute(
+            select(User).join(subquery, User.id == subquery.c.viewer_id)
+        )
+        return result.scalars().all()
+
+
+async def log_user_event(user_id: int, event_type: EventType, details: str | None = None):
+    """Logs a specific user event for analytics."""
+    async with async_session_maker() as session:
+        new_event = UserEvent(
+            user_id=user_id,
+            event_type=event_type,
+            details=details,
+        )
+        session.add(new_event)
+        await session.commit()
+
+
+async def get_daily_active_users(target_date: date) -> int:
+    """Counts the number of unique users who were active on a specific date."""
+    async with async_session_maker() as session:
+        count = await session.scalar(
+            select(func.count(func.distinct(UserEvent.user_id)))
+            .where(cast(UserEvent.created_at, Date) == target_date)
+        )
+        return count or 0
 
 
 async def block_user(blocker_id: int, blocked_id: int) -> BlockedUser:
@@ -913,7 +1351,7 @@ async def get_admin_logs(
         return logs, total_count
 
 
-async def update_user_language(user_id: int, new_language: str):
+async def _update_user_language(user_id: int, new_language: str):
     """Updates a user's language in the database."""
     async with async_session_maker() as session:
         await session.execute(
@@ -922,6 +1360,35 @@ async def update_user_language(user_id: int, new_language: str):
             .values(language=new_language)
         )
         await session.commit()
+
+
+async def update_user_language(admin_id: int, user_id: int, new_language: str):
+    """
+    Updates a user's language in the database and logs the admin action.
+    This function should be called by admins to change a user's language.
+    """
+    await _update_user_language(user_id, new_language)
+    await create_admin_log(
+        admin_id=admin_id,
+        action=ActionType.update_user_language,
+        target_user_id=user_id,
+        comment=f"User language updated to {new_language}"
+    )
+
+
+async def create_gift(sender_id: int, receiver_id: int, gift_type: GiftType, message: str | None = None) -> Gift:
+    """Creates a new gift record in the database."""
+    async with async_session_maker() as session:
+        new_gift = Gift(
+            sender_id=sender_id,
+            receiver_id=receiver_id,
+            gift_type=gift_type,
+            message=message,
+        )
+        session.add(new_gift)
+        await session.commit()
+        await session.refresh(new_gift)
+        return new_gift
 
 
 async def get_user_referrals(user_id: int) -> list[User]:

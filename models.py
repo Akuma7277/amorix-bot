@@ -55,6 +55,13 @@ class ReportStatus(enum.Enum):
     resolved = "Hal qilindi"
     rejected = "Rad etildi"
 
+# NEW ENUM FOR GIFTS
+class GiftType(enum.Enum):
+    flower = "Gul 💐"
+    chocolate = "Shokolad 🍫"
+    coffee = "Qahva ☕"
+    bear = "O'yinchoq ayiq 🧸"
+    heart = "Yurak ❤️"
 class ActionType(enum.Enum):
     ban_user = "Foydalanuvchini bloklash"
     unban_user = "Foydalanuvchini blokdan chiqarish"
@@ -72,6 +79,7 @@ class ActionType(enum.Enum):
     add_admin = "Admin qo'shildi"
     remove_admin = "Admin olib tashlandi"
     delete_profile = "Profilni o'chirish"
+    update_user_language = "Foydalanuvchi tilini o'zgartirish"
 
 # Jadvallar
 class User(Base):
@@ -212,6 +220,20 @@ class VerificationRequest(Base):
 
     user = relationship("User")
 
+# NEW GIFT MODEL
+class Gift(Base):
+    __tablename__ = "gifts"
+    id = Column(Integer, primary_key=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    gift_type = Column(Enum(GiftType), nullable=False)
+    message = Column(Text, nullable=True)
+    sent_at = Column(DateTime, server_default=func.now())
+    is_read = Column(Boolean, default=False)
+
+    sender = relationship("User", foreign_keys=[sender_id])
+    receiver = relationship("User", foreign_keys=[receiver_id])
+
 
 class SupportMessage(Base):
     __tablename__ = "support_messages"
@@ -219,6 +241,38 @@ class SupportMessage(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     message = Column(Text, nullable=False)
     status = Column(String(20), default="pending")  # pending, read
+    created_at = Column(DateTime, server_default=func.now())
+
+    user = relationship("User")
+
+
+class ProfileView(Base):
+    __tablename__ = "profile_views"
+    id = Column(Integer, primary_key=True)
+    viewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    viewed_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    timestamp = Column(DateTime, server_default=func.now())
+
+    viewer = relationship("User", foreign_keys=[viewer_id])
+    viewed = relationship("User", foreign_keys=[viewed_id])
+
+
+class EventType(enum.Enum):
+    app_start = "Ilovani ishga tushirish"
+    profile_view = "Profilni ko'rish"
+    like = "Layk bosish"
+    super_like = "Super-layk bosish"
+    match = "Moslik (match)"
+    chat_message = "Xabar yuborish"
+    premium_purchase = "Premium sotib olish"
+
+
+class UserEvent(Base):
+    __tablename__ = "user_events"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    event_type = Column(Enum(EventType), nullable=False)
+    details = Column(Text, nullable=True) # e.g., viewed_user_id, match_id
     created_at = Column(DateTime, server_default=func.now())
 
     user = relationship("User")
