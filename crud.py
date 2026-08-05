@@ -1362,14 +1362,22 @@ async def _update_user_language(user_id: int, new_language: str):
         await session.commit()
 
 
-async def update_user_language(admin_id: int, user_id: int, new_language: str):
+async def set_user_language(user_id: int, new_language: str):
+    """
+    Updates a user's language in the database.
+    This function should be called by users to change their own language.
+    """
+    await _update_user_language(user_id, new_language)
+
+
+async def admin_update_user_language(admin_telegram_id: int, user_id: int, new_language: str): # No change needed here, it calls _update_user_language
     """
     Updates a user's language in the database and logs the admin action.
     This function should be called by admins to change a user's language.
     """
     await _update_user_language(user_id, new_language)
     await create_admin_log(
-        admin_id=admin_id,
+        admin_id=admin_telegram_id,
         action=ActionType.update_user_language,
         target_user_id=user_id,
         comment=f"User language updated to {new_language}"

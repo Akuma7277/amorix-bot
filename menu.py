@@ -19,27 +19,26 @@ from crud import (
     create_chat_message,
     update_user_profile_field,
     create_report,
-    update_user_language,
     delete_user_data,
     create_verification_request,
     create_payment_record,
     get_users_who_liked_me, block_user, get_user_referrals, # Added for "Who Liked Me", User Blocking and Referral feature
-    check_and_consume_like_quota,
+    check_and_consume_like_quota, set_user_language, # Fix 12: Import set_user_language
     activate_profile_boost,
     create_support_message,
     get_all_admin_ids,
     DAILY_LIKE_LIMITS,
     DAILY_SUPER_LIKE_LIMITS,
     BOOST_DURATION_MINUTES,
-    create_gift, # Import create_gift
+    create_gift,
 )
 from states import MenuStates, EditingStates, ReportingStates, SettingsStates, VerificationStates, PremiumStates
 from inline import ALL_INTERESTS # Qiziqishlar nomlarini olish uchun
-from inline import ( # Updated imports for gift feature
+from inline import ( # Fix 12: Import get_back_only_keyboard and Updated imports for gift feature
     get_search_keyboard, get_match_keyboard, get_chats_keyboard, get_profile_view_keyboard, get_edit_profile_keyboard,
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
     get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard,
-    get_gift_type_keyboard, GIFT_BUTTON_TEXTS
+    get_gift_type_keyboard, GIFT_BUTTON_TEXTS, get_back_only_keyboard
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan # Import UserStatus
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS # Import common texts
@@ -449,7 +448,7 @@ async def show_my_profile(message: Message, state: FSMContext):
 
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
-        await message.answer("Siz ro'yxatdan o'tmagansiz. Iltimos, /start buyrug'ini bosing.")
+        await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
 
     language = user.language or "uz"
@@ -525,7 +524,7 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
     profiles_ids = data.get("profiles", [])
 
     if not profiles_ids:
-        await message.answer(
+        (message.message if isinstance(message, CallbackQuery) else message).answer( # Fix 11: Handle Message | CallbackQuery type
             NO_PROFILES_TEXTS.get(language, NO_PROFILES_TEXTS["uz"]),
             reply_markup=get_main_menu_keyboard(language)
         )
@@ -537,11 +536,11 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
 
     profile_user = await get_user_by_id(next_profile_id)
     if not profile_user:
-        # This user might have been deleted/banned, skip to the next one
-        await show_next_profile(message, state) # Recursive call
+        # This user might have been deleted/banned, skip to the next one.
+        await show_next_profile(message, state) # Recursive call.
         return
 
-    photos = await get_user_photos(profile_user.id)
+    photos = await get_user_photos(profile_user.id) # Fix 11: Ensure photos are fetched
     if not photos: # Should not happen due to DB query, but for safety
         await show_next_profile(message, state) # Recursive call
         return
@@ -564,7 +563,7 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
         verification_checkmark=verification_checkmark,
     )
 
-    await message.answer_photo(
+    (message.message if isinstance(message, CallbackQuery) else message).answer_photo( # Fix 11: Handle Message | CallbackQuery type
         photo=photos[0].file_id,
         caption=profile_text,
         reply_markup=get_search_keyboard(language, target_user_id=profile_user.id)
@@ -605,7 +604,7 @@ async def show_next_liked_profile(message: Message | CallbackQuery, state: FSMCo
     verification_checkmark = " ✅" if profile_user.verification_status == VerificationStatus.verified else ""
 
     profile_text = SEARCH_PROFILE_TEXTS.get(language, SEARCH_PROFILE_TEXTS["uz"]).format(
-        name=profile_user.name, age=profile_user.age, city=profile_user.city,
+        name=profile_user.name, age=profile_user.age, city=profile_user.city, # Fix 11: Ensure profile_text is formatted
         district=profile_user.district, interests=", ".join(interest_names) or "Yo'q",
         bio=profile_user.bio, verification_checkmark=verification_checkmark
     )
@@ -613,7 +612,7 @@ async def show_next_liked_profile(message: Message | CallbackQuery, state: FSMCo
     if isinstance(message, CallbackQuery):
         await message.message.delete()
 
-    await msg_to_answer.answer_photo(
+    (message.message if isinstance(message, CallbackQuery) else message).answer_photo( # Fix 11: Handle Message | CallbackQuery type
         photo=photos[0].file_id,
         caption=profile_text,
         reply_markup=get_likes_keyboard(language, target_user_id=profile_user.id),
@@ -624,7 +623,7 @@ async def show_next_liked_profile(message: Message | CallbackQuery, state: FSMCo
 async def show_who_liked_me(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
-        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
 
@@ -679,7 +678,7 @@ async def skip_liked_profile_handler(callback: CallbackQuery, state: FSMContext)
 async def start_search(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
-        await message.answer("Siz ro'yxatdan o'tmagansiz. Iltimos, /start buyrug'ini bosing.")
+        await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
 
     language = user.language or "uz"
@@ -931,12 +930,13 @@ async def gift_message_entered(message: Message, state: FSMContext):
         "ru": {"confirm": "✅ Отправить", "cancel": "❌ Отмена"},
         "en": {"confirm": "✅ Send", "cancel": "❌ Cancel"},
     }
-    texts = confirm_keyboard_texts.get(language, confirm_keyboard_texts["uz"])
+    texts = confirm_keyboard_texts.get(language, confirm_keyboard_texts["uz"]) # Error 8: The back button was missing here.
     confirm_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=texts["confirm"], callback_data="gift_confirm_send")],
-        [InlineKeyboardButton(text=texts["cancel"], callback_data="gift_cancel_send")]
+        [InlineKeyboardButton(text=texts["cancel"], callback_data="gift_cancel_send")],
+        get_back_only_keyboard(language, "gift_back_to_message_entry").inline_keyboard[0] # Add back button
     ])
-
+    
     await message.answer(confirm_text, reply_markup=confirm_keyboard)
 
 
@@ -1009,7 +1009,7 @@ async def gift_confirm_send_handler(callback: CallbackQuery, state: FSMContext, 
 async def show_referral_info(message: Message, state: FSMContext, bot: Bot):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
-        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
 
@@ -1032,7 +1032,7 @@ async def show_referral_info(message: Message, state: FSMContext, bot: Bot):
 async def help_main_menu(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
-        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
 
@@ -1096,7 +1096,7 @@ MESSAGE_ADMIN_SENT_TEXTS = {
 async def start_message_admin(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     if not user:
-        await callback.answer(NOT_REGISTERED_TEXTS["uz"], show_alert=True)
+        await callback.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]), show_alert=True)
         return
     language = user.language or "uz"
 
@@ -1109,8 +1109,8 @@ async def start_message_admin(callback: CallbackQuery, state: FSMContext):
 async def message_admin_received(message: Message, state: FSMContext, bot: Bot):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
-        await state.clear()
-        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        await state.clear() # Clear state if user is not registered
+        await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
 
@@ -1198,7 +1198,7 @@ async def language_changed_from_settings(callback: CallbackQuery, state: FSMCont
     new_language = callback.data.split("_")[1]
     user = await get_user_by_telegram_id(callback.from_user.id)
 
-    await update_user_language(user.id, new_language)
+    await set_user_language(user.id, new_language)
 
     await callback.message.edit_text(
         LANGUAGE_CHANGED_TEXT.get(new_language, LANGUAGE_CHANGED_TEXT["uz"]),
@@ -1383,7 +1383,7 @@ async def message_in_chat_handler(message: Message, state: FSMContext, bot: Bot)
 async def premium_main_menu(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
-        await message.answer(NOT_REGISTERED_TEXTS["uz"])
+        await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
 
@@ -1413,7 +1413,7 @@ async def premium_main_menu(message: Message, state: FSMContext):
 async def activate_boost_handler(callback: CallbackQuery):
     user = await get_user_by_telegram_id(callback.from_user.id)
     if not user:
-        await callback.answer(NOT_REGISTERED_TEXTS["uz"], show_alert=True)
+        await callback.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]), show_alert=True)
         return
     language = user.language or "uz"
 

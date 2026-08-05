@@ -37,6 +37,8 @@ EDIT_FIELD_PROMPTS = {
         "name": "Yangi ismingizni kiriting:",
         "bio": "O'zingiz haqingizda yangi ma'lumot kiriting (maksimum 500 belgi):",
         "city": "Yangi viloyatingizni tanlang:",
+        "city_selection": "Yangi shahringizni tanlang:",
+        "district": "Yangi tumaningizni tanlang:",
         "interests": "Qiziqishlaringizni qayta tanlang:",
         "photos": "Yangi rasmlaringizni yuboring (eskilar o'chiriladi, maksimum 5 ta). Rasmlar tayyor bo'lgach, '✅ Rasmlar tayyor' tugmasini bosing.",
     },
@@ -44,6 +46,8 @@ EDIT_FIELD_PROMPTS = {
         "name": "Введите ваше новое имя:",
         "bio": "Введите новую информацию о себе (максимум 500 символов):",
         "city": "Выберите ваш новый регион:",
+        "city_selection": "Выберите ваш новый город:",
+        "district": "Выберите ваш новый район:",
         "interests": "Выберите ваши интересы заново:",
         "photos": "Отправьте ваши новые фотографии (старые будут удалены, максимум 5). Когда закончите, нажмите '✅ Фотографии готовы'.",
     },
@@ -51,6 +55,8 @@ EDIT_FIELD_PROMPTS = {
         "name": "Enter your new name:",
         "bio": "Enter a new bio about yourself (max 500 characters):",
         "city": "Select your new region:",
+        "city_selection": "Select your new city:",
+        "district": "Select your new district:",
         "interests": "Re-select your interests:",
         "photos": "Send your new photos (old ones will be deleted, max 5). When done, press '✅ Photos done'.",
     },
@@ -232,13 +238,13 @@ async def edit_region_selected(callback: CallbackQuery, state: FSMContext):
     if is_tashkent_city_region(region_name):
         await state.set_state(EditingStates.editing_district)
         await callback.message.edit_text(
-            "Yangi tumaningizni tanlang:",
-            reply_markup=get_district_keyboard(region_name, language),
+            EDIT_FIELD_PROMPTS[language]["district"],
+            reply_markup=get_district_keyboard(region_name, language, back_callback="edit_back_to_region_selection"),
         )
     else:
         await callback.message.edit_text(
-            "Yangi shahringizni tanlang:",
-            reply_markup=get_city_keyboard(region_name, language),
+            EDIT_FIELD_PROMPTS[language]["city_selection"],
+            reply_markup=get_city_keyboard(region_name, language, back_callback="edit_back_to_region_selection"),
         )
     await callback.answer()
 
@@ -254,8 +260,8 @@ async def edit_city_selected(callback: CallbackQuery, state: FSMContext):
     await state.update_data(edit_city=city_name)
     await state.set_state(EditingStates.editing_district)
     await callback.message.edit_text(
-        "Yangi tumaningizni tanlang:",
-        reply_markup=get_district_keyboard(region_name, language),
+        EDIT_FIELD_PROMPTS[language]["district"],
+        reply_markup=get_district_keyboard(region_name, language, back_callback="edit_back_to_city_selection"),
     )
     await callback.answer()
 
@@ -286,9 +292,9 @@ async def edit_interests_start(callback: CallbackQuery, state: FSMContext):
     await state.set_state(EditingStates.editing_interests)
     await state.update_data(edit_interests=current_interests)
     await callback.message.delete()
-    await callback.message.answer(
+    await callback.message.answer( # The comment "Error 7: Add back_callback" was misleading, the back_callback is already there.
         EDIT_FIELD_PROMPTS[language]["interests"],
-        reply_markup=get_interests_keyboard(language, current_interests),
+        reply_markup=get_interests_keyboard(language, current_interests, back_callback="back_to_profile"),
     )
     await callback.answer()
 
@@ -307,7 +313,7 @@ async def edit_interest_selected(callback: CallbackQuery, state: FSMContext):
 
     await state.update_data(edit_interests=selected_interests)
     await callback.message.edit_reply_markup(
-        reply_markup=get_interests_keyboard(language, selected_interests)
+        reply_markup=get_interests_keyboard(language, selected_interests, back_callback="back_to_profile") # Error 7: Add back_callback
     )
     await callback.answer()
 
@@ -326,6 +332,48 @@ async def edit_interests_finish(callback: CallbackQuery, state: FSMContext):
     await update_user_profile_field(user.id, "interests", ",".join(selected_interests))
     await callback.message.delete()
     await callback.message.answer(FIELD_UPDATED_TEXTS[language])
+    await show_my_profile(callback.message, state)
+
+
+@router.callback_query(EditingStates.editing_city, F.data == "edit_back_to_region_selection")
+async def edit_back_to_region_selection(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    await state.set_state(EditingStates.editing_city)
+    await callback.message.edit_text(
+        EDIT_FIELD_PROMPTS[language]["city"],
+        reply_markup=get_region_keyboard(language),
+    )
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.editing_district, F.data == "edit_back_to_city_selection")
+async def edit_back_to_city_selection(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    data = await state.get_data()
+    region_name = data.get("edit_region")
+
+    if is_tashkent_city_region(region_name):
+        await state.set_state(EditingStates.editing_district)
+        await callback.message.edit_text(
+            EDIT_FIELD_PROMPTS[language]["district"],
+            reply_markup=get_district_keyboard(region_name, language, back_callback="edit_back_to_region_selection"),
+        )
+    else:
+        await state.set_state(EditingStates.editing_city)
+        await callback.message.edit_text(
+            EDIT_FIELD_PROMPTS[language]["city_selection"],
+            reply_markup=get_city_keyboard(region_name, language, back_callback="edit_back_to_region_selection"),
+        )
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.editing_interests, F.data == "back_to_profile")
+async def edit_interests_back_to_profile(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await show_my_profile(callback.message, state)
+    await callback.answer()
     await show_my_profile(callback.message, state)
 
 

@@ -9,7 +9,6 @@ from ai import generate_bio_with_ai
 from inline import (
     get_accept_terms_keyboard,
     get_age_keyboard,
-    get_back_only_keyboard,
     get_city_keyboard,
     get_district_keyboard,
     get_bio_request_keyboard,
@@ -562,7 +561,10 @@ async def city_entered(message: Message, state: FSMContext):
 
     await state.update_data(city=city)
 
-    await message.answer(DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"])) # DISTRICT_REQUEST_TEXTS was missing
+    await message.answer(
+        DISTRICT_REQUEST_TEXTS.get(language, DISTRICT_REQUEST_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, "reg_back_city_or_region"),
+    )
     await state.set_state(RegistrationStates.entering_district)
 
 

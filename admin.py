@@ -12,16 +12,12 @@ from inline import get_moderation_keyboard, get_user_management_keyboard, get_re
 from states import AdminStates
 from crud import (
     get_bot_statistics, get_user_by_telegram_id, get_unapproved_photo, get_all_active_user_telegram_ids, get_payment_statistics,
-    find_user_by_id_or_telegram_id, set_user_status, ban_user_with_duration, lift_user_ban, delete_user_data, auto_lift_expired_ban,
-    get_user_photos, get_pending_report, update_report_status, get_photo_by_id, get_user_by_id,
-    get_pending_payment, update_payment_status,
-    get_pending_verification_request,
-    update_verification_request_status,
-    create_admin_log, approve_photo, reject_photo,
-    get_report_by_id,
-    get_admin_logs,
-    update_user_profile_field,
-    is_admin_user, add_admin_by_telegram_id, remove_admin_by_telegram_id, get_dynamic_admins,
+    find_user_by_id_or_telegram_id, set_user_status, ban_user_with_duration, lift_user_ban, delete_user_data,
+    auto_lift_expired_ban, get_user_photos, get_pending_report, update_report_status, get_photo_by_id,
+    get_user_by_id, get_pending_payment, update_payment_status, get_pending_verification_request,
+    update_verification_request_status, create_admin_log, approve_photo, reject_photo, get_report_by_id,
+    get_admin_logs, update_user_profile_field, is_admin_user, add_admin_by_telegram_id, remove_admin_by_telegram_id,
+    get_dynamic_admins,
 )
 from models import UserStatus, ReportStatus, ActionType, VerificationStatus, PremiumPlan
 from menu import PROFILE_VIEW_TEXTS, PREMIUM_MAIN_TEXT
@@ -323,6 +319,12 @@ INVALID_DATE_FORMAT_TEXT = {
     "en": "Invalid date format. Please enter in `YYYY-MM-DD` format.",
 }
 
+INVALID_TELEGRAM_ID_TEXT = { # Error 1: Define INVALID_TELEGRAM_ID_TEXT
+    "uz": "Iltimos, faqat raqam (Telegram ID) yuboring.",
+    "ru": "Пожалуйста, отправьте только число (Telegram ID).",
+    "en": "Please send only a number (Telegram ID).",
+}
+
 FILTER_BY_ACTION_PROMPT = {
     "uz": "Harakat turi bo'yicha filtrlash uchun quyidagilardan birini tanlang:",
     "ru": "Для фильтрации по типу действия выберите один из следующих:",
@@ -341,7 +343,6 @@ ADMIN_PANEL_RETURN_TEXT = {
     "en": "Returning to admin panel:",
 }
 
-LOGS_PAGE_SIZE = 10
 
 
 @router.message(Command("admin"))
@@ -513,7 +514,7 @@ async def find_user_handler(message: Message, state: FSMContext):
     admin_user = await get_user_by_telegram_id(message.from_user.id)
     language = admin_user.language if admin_user else "uz"
 
-    if not message.text.strip().lstrip("-").isdigit():
+    if not message.text.strip().removeprefix('-').isdigit():
         await message.answer(INVALID_TELEGRAM_ID_TEXT)
         return
 
@@ -1289,10 +1290,20 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
     await callback.answer("❌ Profil rad etildi.")
 
     if callback.message.photo:
-        await callback.message.edit_caption(caption=f"{callback.message.caption}\n\n❌ RAD ETILDI", reply_markup=None)
+        # Check if caption is not None before appending
+        current_caption = callback.message.caption if callback.message.caption else ""
+        await callback.message.edit_caption(caption=f"{current_caption}\n\n❌ RAD ETILDI", reply_markup=None)
     else:
-        await callback.message.edit_text(f"{callback.message.text}\n\n❌ RAD ETILDI", reply_markup=None)
+        # Check if text is not None before appending
+        current_text = callback.message.text if callback.message.text else ""
+        await callback.message.edit_text(f"{current_text}\n\n❌ RAD ETILDI", reply_markup=None)
 
+    # Fix 2: Localize MANAGE_ADMINS_HEADER_TEXT
+MANAGE_ADMINS_HEADER_TEXT = {
+    "uz": "👮 <b>Adminlar ro'yxati</b>\n\nQo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
+    "ru": "👮 <b>Список администраторов</b>\n\nИспользуйте кнопки для добавления или удаления дополнительных администраторов.\n\n<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",
+    "en": "👮 <b>Admin List</b>\n\nUse the buttons to add or remove additional administrators.\n\n<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
+}
     user_lang = user.language or "uz"
     try:
         await bot.send_message(
@@ -1303,23 +1314,17 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
         logging.warning(f"Could not notify user {user.telegram_id} about profile rejection: {exc}")
 
 
-MANAGE_ADMINS_HEADER_TEXT = (
-    "👮 <b>Adminlar ro'yxati</b>\n\n"
-    "Qo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n"
-    "<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>"
-)
-ADD_ADMIN_PROMPT_TEXT = "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)"
-ADMIN_ADDED_TEXT = "✅ Admin muvaffaqiyatli qo'shildi."
-ADMIN_REMOVED_TEXT = "✅ Admin olib tashlandi."
-ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak."
-INVALID_TELEGRAM_ID_TEXT = "Iltimos, faqat raqam (Telegram ID) yuboring."
+ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "Отправьте Telegram ID нового администратора.\n(Пользователь должен быть зарегистрирован в боте, нажав /start.)", "en": "Send the Telegram ID of the new admin.\n(The user must have registered with the bot by pressing /start first.)"}
+ADMIN_ADDED_TEXT = {"uz": "✅ Admin muvaffaqiyatli qo'shildi.", "ru": "✅ Администратор успешно добавлен.", "en": "✅ Admin successfully added."}
+ADMIN_REMOVED_TEXT = {"uz": "✅ Admin olib tashlandi.", "ru": "✅ Администратор удален.", "en": "✅ Admin removed."}
+ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = {"uz": "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak.", "ru": "Пользователь не найден. Он должен быть зарегистрирован в боте, нажав /start.", "en": "User not found. They must have registered with the bot by pressing /start first."}
 
 
 async def show_manage_admins(message: Message, state: FSMContext):
+    admin_user = await get_user_by_telegram_id(message.from_user.id)
+    language = admin_user.language if admin_user else "uz"
     dynamic_admins = await get_dynamic_admins()
-    keyboard = get_manage_admins_keyboard(
-        "uz", [(admin.telegram_id, admin.name or str(admin.telegram_id)) for admin in dynamic_admins]
-    )
+    keyboard = get_manage_admins_keyboard(language, [(admin.telegram_id, admin.name or str(admin.telegram_id)) for admin in dynamic_admins])
     await message.answer(MANAGE_ADMINS_HEADER_TEXT, reply_markup=keyboard)
     await state.set_state(AdminStates.viewing_admins)
 
