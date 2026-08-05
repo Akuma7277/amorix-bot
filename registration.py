@@ -24,6 +24,7 @@ from inline import (
     get_ai_bio_confirmation_keyboard,
     get_profile_approval_keyboard,
     resolve_region_name,
+    get_back_only_keyboard,
     is_tashkent_city_region,
 )
 from reply import get_main_menu_keyboard

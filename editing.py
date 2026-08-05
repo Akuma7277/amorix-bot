@@ -13,6 +13,7 @@ from inline import (
     get_ai_bio_confirmation_keyboard,
     get_photo_upload_done_keyboard,
     is_tashkent_city_region,
+    get_back_only_keyboard,
     resolve_region_name,
     ALL_INTERESTS,
 )
