@@ -1269,6 +1269,18 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
         logging.warning(f"Could not notify user {user.telegram_id} about profile approval: {exc}")
 
 
+# Fix 2: Localize MANAGE_ADMINS_HEADER_TEXT
+MANAGE_ADMINS_HEADER_TEXT = {
+    "uz": "👮 <b>Adminlar ro'yxati</b>\n\nQo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
+    "ru": "👮 <b>Список администраторов</b>\n\nИспользуйте кнопки для добавления или удаления дополнительных администраторов.\n\n<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",
+    "en": "👮 <b>Admin List</b>\n\nUse the buttons to add or remove additional administrators.\n\n<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
+}
+
+ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "Отправьте Telegram ID нового администратора.\n(Пользователь должен быть зарегистрирован в боте, нажав /start.)", "en": "Send the Telegram ID of the new admin.\n(The user must have registered with the bot by pressing /start first.)"}
+ADMIN_ADDED_TEXT = {"uz": "✅ Admin muvaffaqiyatli qo'shildi.", "ru": "✅ Администратор успешно добавлен.", "en": "✅ Admin successfully added."}
+ADMIN_REMOVED_TEXT = {"uz": "✅ Admin olib tashlandi.", "ru": "✅ Администратор удален.", "en": "✅ Admin removed."}
+ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = {"uz": "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak.", "ru": "Пользователь не найден. Он должен быть зарегистрирован в боте, нажав /start.", "en": "User not found. They must have registered with the bot by pressing /start first."}
+
 @router.callback_query(F.data.startswith("reject_profile_"))
 async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
     if not await is_admin_user(callback.from_user.id):
@@ -1280,7 +1292,15 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
     if not user:
         await callback.answer(USER_NOT_FOUND_TEXT["uz"], show_alert=True)
         return
-
+    user_lang = user.language or "uz"
+    try:
+        await bot.send_message(
+            chat_id=user.telegram_id,
+            text=PROFILE_REJECTED_USER_TEXT.get(user_lang, PROFILE_REJECTED_USER_TEXT["uz"]),
+        )
+    except Exception as exc:
+        logging.warning(f"Could not notify user {user.telegram_id} about profile rejection: {exc}")
+    
     await update_user_profile_field(user_id, "profile_approval_status", "rejected")
     await create_admin_log(
         admin_id=callback.from_user.id,
@@ -1297,27 +1317,6 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
         # Check if text is not None before appending
         current_text = callback.message.text if callback.message.text else ""
         await callback.message.edit_text(f"{current_text}\n\n❌ RAD ETILDI", reply_markup=None)
-
-    # Fix 2: Localize MANAGE_ADMINS_HEADER_TEXT
-MANAGE_ADMINS_HEADER_TEXT = {
-    "uz": "👮 <b>Adminlar ro'yxati</b>\n\nQo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
-    "ru": "👮 <b>Список администраторов</b>\n\nИспользуйте кнопки для добавления или удаления дополнительных администраторов.\n\n<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",
-    "en": "👮 <b>Admin List</b>\n\nUse the buttons to add or remove additional administrators.\n\n<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
-}
-    user_lang = user.language or "uz"
-    try:
-        await bot.send_message(
-            chat_id=user.telegram_id,
-            text=PROFILE_REJECTED_USER_TEXT.get(user_lang, PROFILE_REJECTED_USER_TEXT["uz"]),
-        )
-    except Exception as exc:
-        logging.warning(f"Could not notify user {user.telegram_id} about profile rejection: {exc}")
-
-
-ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "Отправьте Telegram ID нового администратора.\n(Пользователь должен быть зарегистрирован в боте, нажав /start.)", "en": "Send the Telegram ID of the new admin.\n(The user must have registered with the bot by pressing /start first.)"}
-ADMIN_ADDED_TEXT = {"uz": "✅ Admin muvaffaqiyatli qo'shildi.", "ru": "✅ Администратор успешно добавлен.", "en": "✅ Admin successfully added."}
-ADMIN_REMOVED_TEXT = {"uz": "✅ Admin olib tashlandi.", "ru": "✅ Администратор удален.", "en": "✅ Admin removed."}
-ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = {"uz": "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak.", "ru": "Пользователь не найден. Он должен быть зарегистрирован в боте, нажав /start.", "en": "User not found. They must have registered with the bot by pressing /start first."}
 
 
 async def show_manage_admins(message: Message, state: FSMContext):
