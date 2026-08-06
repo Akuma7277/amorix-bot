@@ -1057,11 +1057,7 @@ async def format_log_message(logs: list, page: int, total_count: int, language: 
     if filters.get("log_filter_action"):
         filter_texts.append(f"Harakat: {filters['log_filter_action'].value}")
     
-    if filter_texts:
-        header += "<i>Faol filtrlar: " + ", ".join(filter_texts) + "</i>
 
-"
-    
     log_entries = []
     for log in logs:
         log_entries.append(
@@ -1075,8 +1071,7 @@ async def format_log_message(logs: list, page: int, total_count: int, language: 
             )
         )
     
-    full_text = header + "
-".join(log_entries)
+    full_text = header + "".join(log_entries)
     keyboard = get_logs_view_keyboard(language, page, total_pages)
     
     return full_text, keyboard
@@ -1237,9 +1232,9 @@ PROFILE_APPROVED_USER_TEXT = {
 }
 
 PROFILE_REJECTED_USER_TEXT = {
-    "uz": "❌ Afsuski, profilingiz administrator tomonidan rad etildi. Iltimos, "Mening profilim" bo'limida ma'lumotlaringizni tahrirlab qayta yuboring.",
+    "uz": "❌ Afsuski, profilingiz administrator tomonidan rad etildi. Iltimos, 'Mening profilim' bo'limida ma'lumotlaringizni tahrirlab qayta yuboring.",
     "ru": "❌ К сожалению, ваш профиль отклонен администратором. Пожалуйста, отредактируйте данные в разделе «Мой профиль» и отправьте снова.",
-    "en": "❌ Unfortunately, your profile was rejected by the administrator. Please edit your details under "My Profile" and resubmit.",
+    "en": '❌ Unfortunately, your profile was rejected by the administrator. Please edit your details under "My Profile" and resubmit.',
 }
 
 
@@ -1343,7 +1338,7 @@ async def show_manage_admins(message: Message, state: FSMContext):
 async def mandatory_channel_handler(message: Message, state: FSMContext):
     is_enabled = await get_setting("force_subscribe_channel") == "true"
     channel_id = await get_setting("subscribe_channel_id")
-text = f"Majburiy kanal holati: {'✅ Yoqilgan' if is_enabled else '❌ O''chirilgan'}\n"
+    text = f"Majburiy kanal holati: {'✅ Yoqilgan' if is_enabled else '❌ O''chirilgan'}\n"
     if is_enabled and channel_id:
         text += f"Kanal: {channel_id}"
 
@@ -1392,12 +1387,9 @@ async def manage_districts_handler(message: Message, state: FSMContext):
     districts_str = await get_setting("districts", "")
     districts = [d.strip() for d in districts_str.split(",") if d.strip()]
 
-    text = "Mavjud tumanlar:
-
-"
+    text = "Mavjud tumanlar:\n\n"
     if districts:
-        text += "
-".join(f"- {d}" for d in districts)
+        text += "\n".join(f"- {d}" for d in districts)
     else:
         text += "Tumanlar ro'yxati bo'sh."
 
