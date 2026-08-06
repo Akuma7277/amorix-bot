@@ -113,6 +113,15 @@ class User(Base):
     profile_approval_status = Column(String(20), nullable=True)
     # ADMIN_IDS (.env) dagi asosiy adminlardan tashqari, bot orqali qo'shilgan qo'shimcha adminlar uchun.
     is_admin = Column(Boolean, default=False)
+    height = Column(Float, nullable=True)  # new field
+    is_invisible = Column(Boolean, default=False)  # new field
+
+    @property
+    def is_premium(self) -> bool:
+        """Checks if the user has an active premium subscription."""
+        if self.premium_expires_at and self.premium_expires_at > func.now():
+            return True
+        return False
 
 class Photo(Base):
     __tablename__ = "photos"
@@ -171,6 +180,13 @@ class AdminLog(Base):
     target_user_id = Column(Integer, ForeignKey("users.id"))
     comment = Column(Text)
     created_at = Column(DateTime, server_default=func.now())
+
+
+class Setting(Base):
+    __tablename__ = "settings"
+    id = Column(Integer, primary_key=True)
+    key = Column(String(50), unique=True, nullable=False, index=True)
+    value = Column(Text, nullable=True)
 
 
 class BlockedUser(Base):

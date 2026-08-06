@@ -7,6 +7,7 @@ class RegistrationStates(StatesGroup):
     entering_name = State()
     entering_age = State()
     choosing_gender = State()
+    entering_height = State()
     choosing_looking_for = State()
     entering_city = State()
     choosing_city = State()
@@ -31,6 +32,13 @@ class MenuStates(StatesGroup):
     choosing_gift_type = State()
     entering_gift_message = State()
     confirming_gift = State()
+    # Advanced Search states
+    setting_min_age = State()
+    setting_max_age = State()
+    setting_region = State()
+    setting_min_height = State()
+    setting_max_height = State()
+    performing_advanced_search = State()
 
 class EditingStates(StatesGroup):
     choosing_field = State()
@@ -41,6 +49,7 @@ class EditingStates(StatesGroup):
     editing_district = State()
     editing_interests = State()
     editing_photos = State()
+    editing_height = State()
 
 
 class AdminStates(StatesGroup):

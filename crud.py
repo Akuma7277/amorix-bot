@@ -29,6 +29,7 @@ from models import (
     ProfileView, # Import ProfileView
     UserEvent,
     EventType,
+    Setting,
 )
 from engine import async_session_maker
 from config import ADMIN_IDS
@@ -133,6 +134,7 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
                 target_user.looking_for = LookingForGender[user_data["looking_for"]]
                 target_user.city = city
                 target_user.district = user_data.get("district")
+                target_user.height = user_data.get("height")
                 target_user.bio = user_data.get("bio")
                 target_user.interests = ",".join(user_data.get("interests", []))
                 target_user.language = user_data.get("language")
@@ -149,6 +151,7 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
                     looking_for=LookingForGender[user_data["looking_for"]],  # Enumga o'tkazish
                     city=city,
                     district=user_data.get("district"),
+                    height=user_data.get("height"),
                     bio=user_data.get("bio"),
                     interests=",".join(user_data.get("interests", [])),
                     language=user_data.get("language"),
@@ -302,22 +305,25 @@ async def get_match_by_id(match_id: int) -> Match | None:
         return None
 
 
-async def get_profiles_for_user(current_user: User, limit: int = 20) -> list[User]:
+async def get_profiles_for_user(
+    current_user: User, 
+    limit: int = 20,
+    min_age: int | None = None,
+    max_age: int | None = None,
+    region: str | None = None,
+    min_height: float | None = None,
+    max_height: float | None = None
+) -> list[User]:
     """
-    Fetches a list of suitable profiles for a given user.
+    Fetches a list of suitable profiles for a given user, with advanced filtering for premium users.
     """
     async with async_session_maker() as session:
-        # Get users that the current user has already liked
-        liked_user_ids_query = select(Like.to_user_id).where(
-            Like.from_user_id == current_user.id
-        )
+        # Get users that the current user has already liked or blocked
+        liked_user_ids_query = select(Like.to_user_id).where(Like.from_user_id == current_user.id)
         liked_user_ids_result = await session.execute(liked_user_ids_query)
         seen_user_ids = liked_user_ids_result.scalars().all()
-        
-        # Get users that the current user has blocked or has been blocked by
-        blocked_user_ids_query = select(BlockedUser.blocked_id).where(
-            BlockedUser.blocker_id == current_user.id
-        )
+
+        blocked_user_ids_query = select(BlockedUser.blocked_id).where(BlockedUser.blocker_id == current_user.id)
         blocked_by_user_ids_result = await session.execute(blocked_user_ids_query)
         blocked_user_ids = blocked_by_user_ids_result.scalars().all()
 
@@ -325,14 +331,22 @@ async def get_profiles_for_user(current_user: User, limit: int = 20) -> list[Use
         query = select(User).where(
             User.id != current_user.id,
             User.status == UserStatus.active,
-            User.id.notin_(seen_user_ids),
+            User.id.notin_(seen_user_ids + blocked_user_ids),
         )
-        query = query.where(User.id.notin_(blocked_user_ids)) # Exclude blocked users
+
+        # Filter out users in invisible mode, unless they liked the current user
+        liked_me_subquery = select(Like.from_user_id).where(Like.to_user_id == current_user.id).scalar_subquery()
+        query = query.where(
+            or_(
+                User.is_invisible.is_(False),
+                User.id.in_(liked_me_subquery)
+            )
+        )
 
         # Gender filtering
         if current_user.looking_for != LookingForGender.any:
             query = query.where(User.gender == UserGender[current_user.looking_for.name])
-
+        
         # Also filter based on the other person's preference
         query = query.where(
             or_(
@@ -341,19 +355,34 @@ async def get_profiles_for_user(current_user: User, limit: int = 20) -> list[Use
             )
         )
 
+        # --- Premium Filters ---
+        if current_user.is_premium:
+            if min_age:
+                query = query.where(User.age >= min_age)
+            if max_age:
+                query = query.where(User.age <= max_age)
+            if region:
+                query = query.where(User.city == region)
+            if min_height:
+                query = query.where(User.height >= min_height)
+            if max_height:
+                query = query.where(User.height <= max_height)
+
         # Ensure the user has at least one approved photo
         query = query.where(exists().where(and_(Photo.user_id == User.id, Photo.is_approved == True)))
 
-        # Only show profiles that are admin-approved. NULL means a legacy profile
-        # created before this feature existed, which is treated as already approved.
+        # Only show admin-approved profiles
         query = query.where(
             or_(User.profile_approval_status == "approved", User.profile_approval_status.is_(None))
         )
 
-        # Boosted profiles (active boost) are shown first, then random order
+        # --- Premium Sorting ---
+        # Profiles are ordered by: Boosted, then Premium, then randomly
         now = datetime.now()
         is_boosted = case((and_(User.boost_active_until.isnot(None), User.boost_active_until > now), 1), else_=0)
-        query = query.order_by(is_boosted.desc(), func.random()).limit(limit)
+        is_premium = case((User.premium_plan != PremiumPlan.basic, 1), else_=0)
+
+        query = query.order_by(is_boosted.desc(), is_premium.desc(), func.random()).limit(limit)
 
         result = await session.execute(query)
         return result.scalars().all()
@@ -659,6 +688,42 @@ async def get_all_admin_ids() -> list[int]:
     all_admin_ids.update(dynamic_admin_ids)
     
     return list(all_admin_ids)
+
+
+async def get_setting(key: str) -> str | None:
+    """Fetches a setting value by its key."""
+    try:
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(Setting.value).where(Setting.key == key)
+            )
+            return result.scalar_one_or_none()
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while fetching setting '{key}': {exc}")
+        return None
+
+
+async def set_setting(key: str, value: str | None):
+    """Creates or updates a setting."""
+    try:
+        async with async_session_maker() as session:
+            # Check if the setting already exists
+            result = await session.execute(
+                select(Setting).where(Setting.key == key)
+            )
+            setting = result.scalar_one_or_none()
+
+            if setting:
+                setting.value = value
+            else:
+                setting = Setting(key=key, value=value)
+                session.add(setting)
+
+            await session.commit()
+    except Exception as exc:
+        import logging
+        logging.warning(f"Database unavailable while setting setting '{key}': {exc}")
 
 
 
@@ -1406,3 +1471,36 @@ async def get_user_referrals(user_id: int) -> list[User]:
             select(User).where(User.referred_by_id == user_id)
         )
         return result.scalars().all()
+
+
+async def get_channel_check_settings() -> dict:
+    """Fetches channel subscription settings from the database."""
+    async with async_session_maker() as session:
+        keys = ["force_subscribe_channel", "subscribe_channel_id"]
+        result = await session.execute(
+            select(Setting).where(Setting.key.in_(keys))
+        )
+        settings = {s.key: s.value for s in result.scalars().all()}
+        
+        force_subscribe = settings.get("force_subscribe_channel", "false").lower() == "true"
+        channel_id = settings.get("subscribe_channel_id")
+        
+        return {
+            "force_subscribe": force_subscribe,
+            "channel_id": channel_id,
+        }
+
+
+async def set_setting(key: str, value: str):
+    """Creates or updates a setting in the database."""
+    async with async_session_maker() as session:
+        # Try to update first
+        stmt = update(Setting).where(Setting.key == key).values(value=value)
+        result = await session.execute(stmt)
+        
+        # If no rows were updated, insert a new one
+        if result.rowcount == 0:
+            new_setting = Setting(key=key, value=value)
+            session.add(new_setting)
+        
+        await session.commit()

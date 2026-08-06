@@ -24,6 +24,7 @@ from crud import (
     create_payment_record,
     get_users_who_liked_me, block_user, get_user_referrals, # Added for "Who Liked Me", User Blocking and Referral feature
     check_and_consume_like_quota, set_user_language, # Fix 12: Import set_user_language
+    mark_messages_as_read, # For read receipts
     activate_profile_boost,
     create_support_message,
     get_all_admin_ids,
@@ -38,7 +39,7 @@ from inline import ( # Fix 12: Import get_back_only_keyboard and Updated imports
     get_search_keyboard, get_match_keyboard, get_chats_keyboard, get_profile_view_keyboard, get_edit_profile_keyboard,
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
     get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard,
-    get_gift_type_keyboard, GIFT_BUTTON_TEXTS, get_back_only_keyboard,
+    get_gift_type_keyboard, GIFT_BUTTON_TEXTS, get_back_only_keyboard, get_advanced_search_keyboard,
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType # Import UserStatus and GiftType
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS # Import common texts
@@ -84,19 +85,22 @@ CONTACT_SUPPORT_TEXT = {
 
 SEARCH_PROFILE_TEXTS = {
     "uz": (
-        "<b>{name}</b>, {age}\n"
+        "<b>{name}</b>, {age} ({online_status})\n"
+        "<b>Bo'y:</b> {height} sm\n"
         "{city}, {district}\n\n"
         "<i>{bio}</i>{verification_checkmark}\n\n"
         "<b>Qiziqishlar:</b> {interests}"
     ),
     "ru": (
-        "<b>{name}</b>, {age}\n"
+        "<b>{name}</b>, {age} ({online_status})\n"
+        "<b>Рост:</b> {height} см\n"
         "{city}, {district}\n\n"
         "<i>{bio}</i>{verification_checkmark}\n\n"
         "<b>Интересы:</b> {interests}"
     ),
     "en": (
-        "<b>{name}</b>, {age}\n"
+        "<b>{name}</b>, {age} ({online_status})\n"
+        "<b>Height:</b> {height} cm\n"
         "{city}, {district}\n\n"
         "<i>{bio}</i>{verification_checkmark}\n\n"
         "<b>Interests:</b> {interests}"
@@ -222,6 +226,7 @@ PROFILE_VIEW_TEXTS = {
         "<b>👤 Mening profilim:</b>\n\n"
         "<b>Ism:</b> {name}\n"
         "<b>Yosh:</b> {age}\n"
+        "<b>Bo'y:</b> {height} sm\n"
         "<b>Jins:</b> {gender}\n"
         "<b>Kimni qidiryapti:</b> {looking_for}\n"
         "<b>Shahar:</b> {city}, {district}\n"
@@ -234,6 +239,7 @@ PROFILE_VIEW_TEXTS = {
         "<b>👤 Мой профиль:</b>\n\n"
         "<b>Имя:</b> {name}\n"
         "<b>Возраст:</b> {age}\n"
+        "<b>Рост:</b> {height} см\n"
         "<b>Пол:</b> {gender}\n"
         "<b>Ищет:</b> {looking_for}\n"
         "<b>Город:</b> {city}, {district}\n"
@@ -246,6 +252,7 @@ PROFILE_VIEW_TEXTS = {
         "<b>👤 My Profile:</b>\n\n"
         "<b>Name:</b> {name}\n"
         "<b>Age:</b> {age}\n"
+        "<b>Height:</b> {height} cm\n"
         "<b>Gender:</b> {gender}\n"
         "<b>Looking for:</b> {looking_for}\n"
         "<b>City:</b> {city}, {district}\n"
@@ -464,9 +471,11 @@ async def show_my_profile(message: Message, state: FSMContext):
         if key.strip() in ALL_INTERESTS
     ]
 
+    premium_badge = " ⭐" if has_active_premium(user) else ""
     profile_text = PROFILE_VIEW_TEXTS.get(language, PROFILE_VIEW_TEXTS["uz"]).format(
-        name=user.name,
+        name=f"{user.name}{premium_badge}",
         age=user.age,
+        height=user.height,
         gender=user.gender.value,  # Enum qiymatini olish
         looking_for=user.looking_for.value,  # Enum qiymatini olish
         city=user.city,
@@ -552,15 +561,21 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
         if key.strip() in ALL_INTERESTS
     ]
 
+    # Add premium badge and online status
+    premium_badge = " ⭐" if has_active_premium(profile_user) else ""
+    online_status = await get_online_status(profile_user)
+    
     verification_checkmark = " ✅" if profile_user.verification_status == VerificationStatus.verified else ""
     profile_text = SEARCH_PROFILE_TEXTS.get(language, SEARCH_PROFILE_TEXTS["uz"]).format(
-        name=profile_user.name,
+        name=f"{profile_user.name}{premium_badge}",
         age=profile_user.age,
+        height=profile_user.height,
         city=profile_user.city,
         district=profile_user.district,
         interests=", ".join(interest_names) if interest_names else "Yo'q",
         bio=profile_user.bio,
         verification_checkmark=verification_checkmark,
+        online_status=online_status
     )
 
     (message.message if isinstance(message, CallbackQuery) else message).answer_photo( # Fix 11: Handle Message | CallbackQuery type
@@ -682,6 +697,14 @@ async def start_search(message: Message, state: FSMContext):
         return
 
     language = user.language or "uz"
+
+    if has_active_premium(user):
+        await message.answer(
+            "Qidiruv turini tanlang:",
+            reply_markup=get_advanced_search_keyboard(language)
+        )
+        return
+
     await message.answer("🔍 Mos anketalar qidirilmoqda...", reply_markup=get_main_menu_keyboard(language))
 
     profiles = await get_profiles_for_user(user)
@@ -695,6 +718,156 @@ async def start_search(message: Message, state: FSMContext):
     await state.update_data(profiles=profile_ids, user_language=language)
 
     await show_next_profile(message, state)
+
+@router.callback_query(F.data == "advanced_search_no")
+async def regular_search_handler(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    await callback.message.edit_text("🔍 Mos anketalar qidirilmoqda...")
+
+    profiles = await get_profiles_for_user(user)
+
+    if not profiles:
+        await callback.message.answer(NO_PROFILES_TEXTS.get(language, NO_PROFILES_TEXTS["uz"]))
+        return
+
+    profile_ids = [p.id for p in profiles]
+    await state.set_state(MenuStates.searching)
+    await state.update_data(profiles=profile_ids, user_language=language)
+
+    await show_next_profile(callback.message, state)
+
+@router.callback_query(F.data == "advanced_search_yes")
+async def advanced_search_handler(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    await state.set_state(MenuStates.setting_min_age)
+    await callback.message.edit_text(
+        "Minimal yoshni kiriting:",
+        reply_markup=get_back_only_keyboard(language, "advanced_search_no")
+    )
+
+
+@router.message(MenuStates.setting_min_age, F.text)
+async def min_age_entered(message: Message, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    try:
+        min_age = int(message.text)
+        if not 18 <= min_age <= 99:
+            raise ValueError
+    except (ValueError, TypeError):
+        await message.answer("Yoshni to'g'ri raqamda kiriting (18-99).")
+        return
+
+    await state.update_data(min_age=min_age)
+    await state.set_state(MenuStates.setting_max_age)
+    await message.answer(
+        "Maksimal yoshni kiriting:",
+        reply_markup=get_back_only_keyboard(language, "advanced_search_yes")
+    )
+
+
+@router.message(MenuStates.setting_max_age, F.text)
+async def max_age_entered(message: Message, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    min_age = data.get("min_age")
+
+    try:
+        max_age = int(message.text)
+        if not min_age <= max_age <= 99:
+            raise ValueError
+    except (ValueError, TypeError):
+        await message.answer(f"Maksimal yosh minimal yoshdan ({min_age}) katta bo'lishi kerak.")
+        return
+
+    await state.update_data(max_age=max_age)
+    await state.set_state(MenuStates.setting_region)
+    await message.answer(
+        "Qaysi hudud bo'yicha qidirasiz? (masalan, Toshkent)",
+        reply_markup=get_region_keyboard(language, "setting_max_age") # Assuming get_region_keyboard has a back button
+    )
+
+
+@router.callback_query(MenuStates.setting_region, F.data.startswith("region_"))
+async def region_entered(callback: CallbackQuery, state: FSMContext):
+    region = callback.data.split("_")[1]
+    await state.update_data(region=region)
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await state.set_state(MenuStates.setting_min_height)
+    await callback.message.edit_text(
+        "Minimal bo'yni kiriting (sm):",
+        reply_markup=get_back_only_keyboard(language, "setting_region")
+    )
+    await callback.answer()
+
+
+@router.message(MenuStates.setting_min_height, F.text)
+async def min_height_entered(message: Message, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    try:
+        min_height = float(message.text.replace(",", "."))
+        if not 100 < min_height < 250:
+            raise ValueError
+    except (ValueError, TypeError):
+        await message.answer("Bo'yni to'g'ri raqamda kiriting (100-250).")
+        return
+
+    await state.update_data(min_height=min_height)
+    await state.set_state(MenuStates.setting_max_height)
+    await message.answer(
+        "Maksimal bo'yni kiriting (sm):",
+        reply_markup=get_back_only_keyboard(language, "setting_min_height")
+    )
+
+
+@router.message(MenuStates.setting_max_height, F.text)
+async def max_height_entered(message: Message, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+    min_height = data.get("min_height")
+
+    try:
+        max_height = float(message.text.replace(",", "."))
+        if not min_height <= max_height < 250:
+            raise ValueError
+    except (ValueError, TypeError):
+        await message.answer(f"Maksimal bo'y minimal bo'ydan ({min_height}) katta bo'lishi kerak.")
+        return
+
+    await state.update_data(max_height=max_height)
+    
+    await message.answer("🔍 Kengaytirilgan qidiruv natijalari qidirilmoqda...")
+
+    user = await get_user_by_telegram_id(message.from_user.id)
+    search_filters = {
+        "min_age": data.get("min_age"),
+        "max_age": data.get("max_age"),
+        "region": data.get("region"),
+        "min_height": data.get("min_height"),
+        "max_height": data.get("max_height"),
+    }
+    
+    profiles = await get_profiles_for_user(user, **search_filters)
+
+    if not profiles:
+        await message.answer(NO_PROFILES_TEXTS.get(language, NO_PROFILES_TEXTS["uz"]))
+        await state.clear()
+        return
+
+    profile_ids = [p.id for p in profiles]
+    await state.set_state(MenuStates.searching)
+    await state.update_data(profiles=profile_ids, user_language=language)
+
+    await show_next_profile(message, state)
+
+
 
 
 @router.callback_query(MenuStates.searching, F.data == "skip_profile")
@@ -1159,10 +1332,14 @@ async def hide_profile_handler(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
 
-    await update_user_profile_field(user.id, "status", UserStatus.inactive)
+    if not has_active_premium(user):
+        await callback.answer(PREMIUM_REQUIRED_TEXTS.get(language, PREMIUM_REQUIRED_TEXTS["uz"]), show_alert=True)
+        return
+
+    await update_user_profile_field(user.id, "is_invisible", True)
     await callback.message.edit_text(
         PROFILE_HIDDEN_TEXT.get(language, PROFILE_HIDDEN_TEXT["uz"]),
-        reply_markup=get_settings_keyboard(language, is_profile_hidden=True, verification_status=user.verification_status.name)
+        reply_markup=get_settings_keyboard(language, is_invisible=True, verification_status=user.verification_status.name)
     )
     await callback.answer()
 
@@ -1172,10 +1349,10 @@ async def show_profile_handler(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
 
-    await update_user_profile_field(user.id, "status", UserStatus.active)
+    await update_user_profile_field(user.id, "is_invisible", False)
     await callback.message.edit_text(
         PROFILE_SHOWN_TEXT.get(language, PROFILE_SHOWN_TEXT["uz"]),
-        reply_markup=get_settings_keyboard(language, is_profile_hidden=False, verification_status=user.verification_status.name)
+        reply_markup=get_settings_keyboard(language, is_invisible=False, verification_status=user.verification_status.name)
     )
     await callback.answer()
 
@@ -1331,6 +1508,10 @@ async def open_chat_handler(callback: CallbackQuery, state: FSMContext):
         await callback.answer("Bu suhbat topilmadi yoki faol emas.", show_alert=True)
         return
 
+    # Read receipts for premium users
+    if has_active_premium(current_user):
+        await mark_messages_as_read(match_id, current_user.id)
+
     partner_db_id = match.user1_id if match.user1_id != current_user.id else match.user2_id
     partner = await get_user_by_id(partner_db_id)
     verification_checkmark = " ✅" if partner.verification_status == VerificationStatus.verified else ""
@@ -1367,6 +1548,14 @@ async def message_in_chat_handler(message: Message, state: FSMContext, bot: Bot)
     partner_telegram_id = data.get("partner_telegram_id")
     match_id = data.get("match_id")
     current_user_id = data.get("current_user_id")
+
+    # Typing status for premium users
+    current_user = await get_user_by_telegram_id(message.from_user.id)
+    if has_active_premium(current_user):
+        try:
+            await bot.send_chat_action(chat_id=partner_telegram_id, action="typing")
+        except Exception:
+            pass  # Ignore if action fails
 
     await create_chat_message(match_id=match_id, sender_id=current_user_id, text=message.text)
 

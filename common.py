@@ -3,9 +3,11 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, TelegramObject, Update
 from aiogram.fsm.context import FSMContext
  
-from crud import get_user_by_telegram_id, auto_lift_expired_ban
+from aiogram.enums import ChatMemberStatus
+
+from crud import get_user_by_telegram_id, auto_lift_expired_ban, get_channel_check_settings
 from states import RegistrationStates
-from inline import get_language_keyboard
+from inline import get_language_keyboard, get_subscribe_keyboard
 from reply import get_main_menu_keyboard
 from models import UserStatus
 
@@ -61,6 +63,12 @@ BANNED_USER_PERMANENT_TEXTS = {
     "en": "🚫 You have been permanently banned from using the bot.",
 }
 
+MUST_SUBSCRIBE_TEXTS = {
+    "uz": "Botdan to'liq foydalanish uchun, iltimos, bizning kanalimizga obuna bo'ling. Keyin \"✅ Obuna bo'ldim\" tugmasini bosing.",
+    "ru": "Чтобы получить полный доступ к боту, пожалуйста, подпишитесь на наш канал. Затем нажмите кнопку \"✅ Я подписался\".",
+    "en": "To get full access to the bot, please subscribe to our channel. Then press the \"✅ I'm subscribed\" button.",
+}
+
 
 class BanCheckMiddleware(BaseMiddleware):
     """Bloklangan foydalanuvchilarning istalgan handlerga yetib borishini to'xtatadi."""
@@ -102,6 +110,68 @@ class BanCheckMiddleware(BaseMiddleware):
         else:
             await reply_target.answer(text, show_alert=True)
         return None
+
+
+class ChannelCheckMiddleware(BaseMiddleware):
+    """Kanalga obunani tekshiradigan middleware."""
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        if not isinstance(event, Update):
+            return await handler(event, data)
+
+        telegram_user = None
+        reply_target = None
+        if event.message:
+            telegram_user = event.message.from_user
+            reply_target = event.message
+        elif event.callback_query:
+            telegram_user = event.callback_query.from_user
+            reply_target = event.callback_query
+
+        if telegram_user is None:
+            return await handler(event, data)
+
+        # /start komandasini o'tkazib yuborish
+        if event.message and event.message.text and event.message.text.startswith('/start'):
+            return await handler(event, data)
+
+        settings = await get_channel_check_settings()
+        if not settings or not settings.get("force_subscribe"):
+            return await handler(event, data)
+
+        channel_id = settings.get("channel_id")
+        if not channel_id:
+            return await handler(event, data)
+
+        try:
+            member = await data["bot"].get_chat_member(chat_id=channel_id, user_id=telegram_user.id)
+            if member.status in [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR]:
+                return await handler(event, data)
+        except Exception:
+            # Agar kanal topilmasa yoki botda yetarli huquq bo'lmasa, cheklovni o'tkazib yuboramiz
+            return await handler(event, data)
+
+        user = await get_user_by_telegram_id(telegram_user.id)
+        language = user.language if user else "uz"
+        text = MUST_SUBSCRIBE_TEXTS.get(language, MUST_SUBSCRIBE_TEXTS["uz"])
+        
+        # getting channel link
+        try:
+            chat = await data["bot"].get_chat(channel_id)
+            invite_link = chat.invite_link
+            if event.message:
+                await reply_target.answer(text, reply_markup=get_subscribe_keyboard(language, invite_link))
+            else:
+                await reply_target.message.answer(text, reply_markup=get_subscribe_keyboard(language, invite_link))
+                await reply_target.answer()
+            return None
+        except Exception:
+            if event.message:
+                await reply_target.answer(text)
+            else:
+                await reply_target.message.answer(text)
+                await reply_target.answer()
+            return None
+
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):

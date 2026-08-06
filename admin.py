@@ -17,7 +17,7 @@ from crud import (
     get_user_by_id, get_pending_payment, update_payment_status, get_pending_verification_request,
     update_verification_request_status, create_admin_log, approve_photo, reject_photo, get_report_by_id,
     get_admin_logs, update_user_profile_field, is_admin_user, add_admin_by_telegram_id, remove_admin_by_telegram_id,
-    get_dynamic_admins,
+    get_dynamic_admins, set_setting,
 )
 from models import UserStatus, ReportStatus, ActionType, VerificationStatus, PremiumPlan
 from menu import PROFILE_VIEW_TEXTS, PREMIUM_MAIN_TEXT
@@ -1355,7 +1355,7 @@ async def add_admin_received(message: Message, state: FSMContext):
         return
 
     await create_admin_log(
-        admin_id=message.from_user.id,
+        admin_id=callback.from_user.id,
         action=ActionType.add_admin,
         target_user_id=new_admin.id,
         comment=f"Telegram ID: {telegram_id}",
@@ -1378,3 +1378,48 @@ async def remove_admin_handler(callback: CallbackQuery, state: FSMContext):
     await callback.answer(ADMIN_REMOVED_TEXT)
     await callback.message.delete()
     await show_manage_admins(callback.message, state)
+
+
+CHANNEL_CHECK_SET_SUCCESS_TEXT = {
+    "uz": "✅ Kanalga majburiy obuna sozlamalari o'rnatildi.",
+    "ru": "✅ Настройки принудительной подписки на канал установлены.",
+    "en": "✅ Forced channel subscription settings have been set.",
+}
+
+CHANNEL_CHECK_SET_USAGE_TEXT = {
+    "uz": "Noto'g'ri format. Foydalanish: /set_channel_check <on|off> [@channel_id]",
+    "ru": "Неверный формат. Используйте: /set_channel_check <on|off> [@channel_id]",
+    "en": "Invalid format. Usage: /set_channel_check <on|off> [@channel_id]",
+}
+
+@router.message(Command("set_channel_check"))
+async def set_channel_check_handler(message: Message):
+    """Handles the /set_channel_check command for admins."""
+    if not await is_admin_user(message.from_user.id):
+        user = await get_user_by_telegram_id(message.from_user.id)
+        language = user.language if user else "uz"
+        await message.answer(UNAUTHORIZED_ACCESS_TEXT[language])
+        return
+
+    parts = message.text.split()
+    if len(parts) < 2:
+        await message.answer(CHANNEL_CHECK_SET_USAGE_TEXT["uz"])
+        return
+
+    status = parts[1].lower()
+    channel_id = parts[2] if len(parts) > 2 else None
+
+    if status not in ["on", "off"]:
+        await message.answer(CHANNEL_CHECK_SET_USAGE_TEXT["uz"])
+        return
+
+    if status == "on" and not channel_id:
+        await message.answer(CHANNEL_CHECK_SET_USAGE_TEXT["uz"])
+        return
+        
+    await set_setting("force_subscribe_channel", str(status == "on").lower())
+    if channel_id:
+        await set_setting("subscribe_channel_id", channel_id)
+
+    await message.answer(CHANNEL_CHECK_SET_SUCCESS_TEXT["uz"])
+

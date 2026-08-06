@@ -674,11 +674,11 @@ SETTINGS_BUTTON_TEXTS = {
 }
 
 
-def get_settings_keyboard(language: str = "uz", is_profile_hidden: bool = False, verification_status: str = "not_verified"):
+def get_settings_keyboard(language: str = "uz", is_invisible: bool = False, verification_status: str = "not_verified"):
     texts = SETTINGS_BUTTON_TEXTS.get(language, SETTINGS_BUTTON_TEXTS["uz"])
     buttons = []
 
-    if is_profile_hidden:
+    if is_invisible:
         buttons.append([InlineKeyboardButton(text=texts["show_profile"], callback_data="settings_show_profile")])
     else:
         buttons.append([InlineKeyboardButton(text=texts["hide_profile"], callback_data="settings_hide_profile")])
@@ -739,9 +739,21 @@ def get_premium_plans_keyboard(language: str = "uz"):
 
 
 PREMIUM_DASHBOARD_BUTTON_TEXTS = {
-    "uz": {"boost": "🚀 Profilni Boost qilish (30 daq.)"},
-    "ru": {"boost": "🚀 Буст профиля (30 мин.)"},
-    "en": {"boost": "🚀 Boost profile (30 min.)"},
+    "uz": {
+        "boost": "🚀 Profilni Boost qilish (30 daq.)",
+        "who_viewed_me": "👀 Mening profilimni kim ko'rdi",
+        "back_to_main_menu": "⬅️ Asosiy menyuga"
+    },
+    "ru": {
+        "boost": "🚀 Буст профиля (30 мин.)",
+        "who_viewed_me": "👀 Кто смотрел мой профиль",
+        "back_to_main_menu": "⬅️ В главное меню"
+    },
+    "en": {
+        "boost": "🚀 Boost profile (30 min.)",
+        "who_viewed_me": "👀 Who viewed my profile",
+        "back_to_main_menu": "⬅️ Back to main menu"
+    },
 }
 
 
@@ -749,6 +761,8 @@ def get_premium_dashboard_keyboard(language: str = "uz"):
     texts = PREMIUM_DASHBOARD_BUTTON_TEXTS.get(language, PREMIUM_DASHBOARD_BUTTON_TEXTS["uz"])
     buttons = [
         [InlineKeyboardButton(text=texts["boost"], callback_data="activate_boost")],
+        [InlineKeyboardButton(text=texts["who_viewed_me"], callback_data="who_viewed_me")],
+        [InlineKeyboardButton(text=texts["back_to_main_menu"], callback_data="premium_back_to_main_menu")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -893,4 +907,38 @@ def get_manage_admins_keyboard(language: str, admins: list[tuple[int, str]]):
         for telegram_id, name in admins
     ]
     buttons.append([InlineKeyboardButton(text=texts["add"], callback_data="admin_add_new")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+SUBSCRIBE_KEYBOARD_TEXTS = {
+    "uz": {"subscribe": "Kanalga o'tish", "check": "✅ Obuna bo'ldim"},
+    "ru": {"subscribe": "Перейти на канал", "check": "✅ Я подписался"},
+    "en": {"subscribe": "Go to channel", "check": "✅ I'm subscribed"},
+}
+
+
+def get_subscribe_keyboard(language: str, channel_link: str):
+    """Creates the keyboard for the 'must subscribe' message."""
+    texts = SUBSCRIBE_KEYBOARD_TEXTS.get(language, SUBSCRIBE_KEYBOARD_TEXTS["uz"])
+    buttons = [
+        [InlineKeyboardButton(text=texts["subscribe"], url=channel_link)],
+        [InlineKeyboardButton(text=texts["check"], callback_data="check_subscription")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+ADVANCED_SEARCH_KEYBOARD_TEXTS = {
+    "uz": {"advanced": "Kengaytirilgan qidiruv", "regular": "Oddiy qidiruv"},
+    "ru": {"advanced": "Расширенный поиск", "regular": "Обычный поиск"},
+    "en": {"advanced": "Advanced search", "regular": "Regular search"},
+}
+
+
+def get_advanced_search_keyboard(language: str):
+    """Asks premium users if they want to use advanced search."""
+    texts = ADVANCED_SEARCH_KEYBOARD_TEXTS.get(language, ADVANCED_SEARCH_KEYBOARD_TEXTS["uz"])
+    buttons = [
+        [InlineKeyboardButton(text=texts["advanced"], callback_data="advanced_search_yes")],
+        [InlineKeyboardButton(text=texts["regular"], callback_data="advanced_search_no")],
+    ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

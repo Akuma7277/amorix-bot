@@ -16,7 +16,7 @@ from redis.asyncio.client import Redis
 from sqlalchemy import inspect as sa_inspect, text
 
 from config import BOT_TOKEN, REDIS_HOST, REDIS_PORT
-from common import router as common_router, BanCheckMiddleware
+from common import router as common_router, BanCheckMiddleware, ChannelCheckMiddleware
 from registration import router as registration_router
 from menu import router as menu_router
 from editing import router as editing_router
@@ -230,6 +230,7 @@ async def main() -> None:
     dp = Dispatcher(storage=storage)
 
     dp.update.outer_middleware(BanCheckMiddleware())
+    dp.update.outer_middleware(ChannelCheckMiddleware())
 
     dp.include_router(common_router)
     dp.include_router(registration_router)

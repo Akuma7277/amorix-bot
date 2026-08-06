@@ -93,6 +93,18 @@ GENDER_REQUEST_TEXTS = {
     "en": "Got it. Now, please select your gender.",
 }
 
+HEIGHT_REQUEST_TEXTS = {
+    "uz": "Bo'yingizni santimetrda kiriting (masalan, 175).",
+    "ru": "Введите ваш рост в сантиметрах (например, 175).",
+    "en": "Enter your height in centimeters (e.g., 175).",
+}
+
+HEIGHT_INVALID_TEXTS = {
+    "uz": "Bo'yingizni to'g'ri raqamda kiriting (masalan, 175).",
+    "ru": "Введите ваш рост корректным числом (например, 175).",
+    "en": "Please enter your height as a valid number (e.g., 175).",
+}
+
 LOOKING_FOR_REQUEST_TEXTS = {
     "uz": "Kimni qidiryapsiz?",
     "ru": "Кого вы ищете?",
@@ -188,6 +200,7 @@ PROFILE_PREVIEW_TEXTS = {
         "<b>Sizning profilingiz:</b>\n\n"
         "<b>Ism:</b> {name}\n"
         "<b>Yosh:</b> {age}\n"
+        "<b>Bo'y:</b> {height} sm\n"
         "<b>Shahar:</b> {city}, {district}\n"
         "<b>Qiziqishlar:</b> {interests}\n\n"
         "<b>Bio:</b>\n{bio}\n\n"
@@ -197,6 +210,7 @@ PROFILE_PREVIEW_TEXTS = {
         "<b>Ваш профиль:</b>\n\n"
         "<b>Имя:</b> {name}\n"
         "<b>Возраст:</b> {age}\n"
+        "<b>Рост:</b> {height} см\n"
         "<b>Город:</b> {city}, {district}\n"
         "<b>Интересы:</b> {interests}\n\n"
         "<b>О себе:</b>\n{bio}\n\n"
@@ -206,6 +220,7 @@ PROFILE_PREVIEW_TEXTS = {
         "<b>Your profile:</b>\n\n"
         "<b>Name:</b> {name}\n"
         "<b>Age:</b> {age}\n"
+        "<b>Height:</b> {height} cm\n"
         "<b>City:</b> {city}, {district}\n"
         "<b>Interests:</b> {interests}\n\n"
         "<b>Bio:</b>\n{bio}\n\n"
@@ -423,14 +438,14 @@ async def gender_chosen(callback: CallbackQuery, state: FSMContext):
     language = data.get("language", "uz")
 
     await callback.message.edit_text(
-        text=LOOKING_FOR_REQUEST_TEXTS.get(language, LOOKING_FOR_REQUEST_TEXTS["uz"]),
-        reply_markup=get_looking_for_keyboard(language, back_callback="reg_back_gender"),
+        text=HEIGHT_REQUEST_TEXTS.get(language, HEIGHT_REQUEST_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, back_callback="reg_back_gender"),
     )
     await callback.answer()
-    await state.set_state(RegistrationStates.choosing_looking_for)
+    await state.set_state(RegistrationStates.entering_height)
 
 
-@router.callback_query(RegistrationStates.choosing_looking_for, F.data == "reg_back_gender")
+@router.callback_query(RegistrationStates.entering_height, F.data == "reg_back_gender")
 async def back_to_gender(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     language = data.get("language", "uz")
@@ -441,6 +456,41 @@ async def back_to_gender(callback: CallbackQuery, state: FSMContext):
     )
     await callback.answer()
     await state.set_state(RegistrationStates.choosing_gender)
+
+
+@router.message(RegistrationStates.entering_height, F.text)
+async def height_entered(message: Message, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    try:
+        height = float(message.text.replace(",", "."))
+        if not 100 < height < 250:
+            raise ValueError
+    except (ValueError, TypeError):
+        await message.answer(HEIGHT_INVALID_TEXTS.get(language, HEIGHT_INVALID_TEXTS["uz"]))
+        return
+
+    await state.update_data(height=height)
+
+    await message.answer(
+        text=LOOKING_FOR_REQUEST_TEXTS.get(language, LOOKING_FOR_REQUEST_TEXTS["uz"]),
+        reply_markup=get_looking_for_keyboard(language, back_callback="reg_back_height"),
+    )
+    await state.set_state(RegistrationStates.choosing_looking_for)
+
+
+@router.callback_query(RegistrationStates.choosing_looking_for, F.data == "reg_back_height")
+async def back_to_height(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=HEIGHT_REQUEST_TEXTS.get(language, HEIGHT_REQUEST_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, back_callback="reg_back_gender"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.entering_height)
 
 
 @router.callback_query(
@@ -468,7 +518,7 @@ async def back_to_looking_for(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         text=LOOKING_FOR_REQUEST_TEXTS.get(language, LOOKING_FOR_REQUEST_TEXTS["uz"]),
-        reply_markup=get_looking_for_keyboard(language, back_callback="reg_back_gender"),
+        reply_markup=get_looking_for_keyboard(language, back_callback="reg_back_height"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.choosing_looking_for)
@@ -683,6 +733,7 @@ async def generate_bio_handler(callback: CallbackQuery, state: FSMContext):
     ai_user_data = {
         "name": data.get("name"),
         "age": data.get("age"),
+        "height": data.get("height"),
         "city": data.get("city") or data.get("region"),
         "interests_names": interest_names,
     }
@@ -839,6 +890,7 @@ async def photos_done(callback: CallbackQuery, state: FSMContext):
     caption_text = PROFILE_PREVIEW_TEXTS.get(language, PROFILE_PREVIEW_TEXTS["uz"]).format(
         name=data.get("name"),
         age=data.get("age"),
+        height=data.get("height"),
         city=data.get("city"),
         district=data.get("district"),
         interests=", ".join(interest_names),
