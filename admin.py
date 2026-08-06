@@ -1034,9 +1034,7 @@ async def approve_payment_handler(callback: CallbackQuery, state: FSMContext, bo
             try:
                 await bot.send_message(
                     chat_id=user.telegram_id,
-                    text=PAYMENT_APPROVED_TEXT + f"
-
-{PREMIUM_MAIN_TEXT.get(user_lang, PREMIUM_MAIN_TEXT['uz'])}",
+                    text=PAYMENT_APPROVED_TEXT + "\n\n" + PREMIUM_MAIN_TEXT.get(user_lang, PREMIUM_MAIN_TEXT['uz']),
                 )
             except Exception as exc:
                 logging.warning(f"Could not notify user {user.telegram_id} about premium activation: {exc}")
@@ -1266,13 +1264,9 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
     await callback.answer("✅ Profil tasdiqlandi.")
 
     if callback.message.photo:
-        await callback.message.edit_caption(caption=f"{callback.message.caption}
-
-✅ TASDIQLANDI", reply_markup=None)
+        await callback.message.edit_caption(caption=f"{callback.message.caption}\n\n✅ TASDIQLANDI", reply_markup=None)
     else:
-        await callback.message.edit_text(f"{callback.message.text}
-
-✅ TASDIQLANDI", reply_markup=None)
+        await callback.message.edit_text(f"{callback.message.text}\n\n✅ TASDIQLANDI", reply_markup=None)
 
     user_lang = user.language or "uz"
     try:
@@ -1327,15 +1321,11 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
     if callback.message.photo:
         # Check if caption is not None before appending
         current_caption = callback.message.caption if callback.message.caption else ""
-        await callback.message.edit_caption(caption=f"{current_caption}
-
-❌ RAD ETILDI", reply_markup=None)
+        await callback.message.edit_caption(caption=f"{current_caption}\n\n❌ RAD ETILDI", reply_markup=None)
     else:
         # Check if text is not None before appending
         current_text = callback.message.text if callback.message.text else ""
-        await callback.message.edit_text(f"{current_text}
-
-❌ RAD ETILDI", reply_markup=None)
+        await callback.message.edit_text(f"{current_text}\n\n❌ RAD ETILDI", reply_markup=None)
 
 
 async def show_manage_admins(message: Message, state: FSMContext):
@@ -1353,9 +1343,7 @@ async def show_manage_admins(message: Message, state: FSMContext):
 async def mandatory_channel_handler(message: Message, state: FSMContext):
     is_enabled = await get_setting("force_subscribe_channel") == "true"
     channel_id = await get_setting("subscribe_channel_id")
-
-    text = f"Majburiy kanal holati: {'✅ Yoqilgan' if is_enabled else '❌ O''chirilgan'}
-"
+text = f"Majburiy kanal holati: {'✅ Yoqilgan' if is_enabled else '❌ O''chirilgan'}\n"
     if is_enabled and channel_id:
         text += f"Kanal: {channel_id}"
 
