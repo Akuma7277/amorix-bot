@@ -58,6 +58,8 @@ ADMIN_MENU_BUTTONS = {
         "tariffs_payments": "💰 Tarif/to'lovlar",
         "logs": "📝 Loglar",
         "manage_admins": "👮 Adminlarni boshqarish",
+        "mandatory_channel": "📎 Majburiy kanal",
+        "districts": "🏘️ Tumanlar",
     },
     "ru": {
         "statistics": "📊 Статистика",
@@ -70,6 +72,8 @@ ADMIN_MENU_BUTTONS = {
         "tariffs_payments": "💰 Тарифы/платежи",
         "logs": "📝 Логи",
         "manage_admins": "👮 Управление админами",
+        "mandatory_channel": "📎 Обязательный канал",
+        "districts": "🏘️ Районы",
     },
     "en": {
         "statistics": "📊 Statistics",
@@ -82,6 +86,8 @@ ADMIN_MENU_BUTTONS = {
         "tariffs_payments": "💰 Tariffs/Payments",
         "logs": "📝 Logs",
         "manage_admins": "👮 Manage Admins",
+        "mandatory_channel": "📎 Mandatory Channel",
+        "districts": "🏘️ Districts",
     },
 }
 
@@ -95,5 +101,6 @@ def get_admin_main_menu_keyboard(language: str = "uz") -> ReplyKeyboardMarkup:
         [KeyboardButton(text=texts["verification_moderation"]), KeyboardButton(text=texts["payment_moderation"])],
         [KeyboardButton(text=texts["broadcast"]), KeyboardButton(text=texts["tariffs_payments"])],
         [KeyboardButton(text=texts["logs"]), KeyboardButton(text=texts["manage_admins"])],
+        [KeyboardButton(text=texts["mandatory_channel"]), KeyboardButton(text=texts["districts"])],
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)

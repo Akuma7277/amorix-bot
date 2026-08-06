@@ -72,6 +72,10 @@ class AdminStates(StatesGroup):
     entering_log_date = State()
     viewing_admins = State()
     waiting_for_admin_id_to_add = State()
+    setting_channel = State()
+    managing_districts = State()
+    waiting_for_district_to_add = State()
+    waiting_for_district_to_remove = State()
 
 
 class SettingsStates(StatesGroup):

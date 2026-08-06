@@ -17,13 +17,17 @@ from crud import (
     get_user_by_id, get_pending_payment, update_payment_status, get_pending_verification_request,
     update_verification_request_status, create_admin_log, approve_photo, reject_photo, get_report_by_id,
     get_admin_logs, update_user_profile_field, is_admin_user, add_admin_by_telegram_id, remove_admin_by_telegram_id,
-    get_dynamic_admins, set_setting,
+    get_dynamic_admins, set_setting, get_setting,
 )
 from models import UserStatus, ReportStatus, ActionType, VerificationStatus, PremiumPlan
 from menu import PROFILE_VIEW_TEXTS, PREMIUM_MAIN_TEXT
 from registration import ALL_INTERESTS
 
+# ... (rest of the file) ...
+
 router = Router()
+
+LOGS_PAGE_SIZE = 10
 
 UNAUTHORIZED_ACCESS_TEXT = {
     "uz": "Sizda admin paneliga kirish huquqi yo'q.",
@@ -1328,6 +1332,119 @@ async def show_manage_admins(message: Message, state: FSMContext):
     await state.set_state(AdminStates.viewing_admins)
 
 
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["uz"]["mandatory_channel"])
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["ru"]["mandatory_channel"])
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["en"]["mandatory_channel"])
+async def mandatory_channel_handler(message: Message, state: FSMContext):
+    is_enabled = await get_setting("force_subscribe_channel") == "true"
+    channel_id = await get_setting("subscribe_channel_id")
+
+    text = f"Majburiy kanal holati: {'✅ Yoqilgan' if is_enabled else '❌ O''chirilgan'}\n"
+    if is_enabled and channel_id:
+        text += f"Kanal: {channel_id}"
+
+    buttons = [
+        [InlineKeyboardButton(text="Yoqish/O'zgartirish", callback_data="set_channel_on")],
+        [InlineKeyboardButton(text="O'chirish", callback_data="set_channel_off")],
+        [InlineKeyboardButton(text="Ortga", callback_data="admin_back_to_main_menu")]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await message.answer(text, reply_markup=keyboard)
+    await state.set_state(AdminStates.setting_channel)
+
+
+@router.callback_query(AdminStates.setting_channel, F.data == "set_channel_on")
+async def set_channel_on_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text("Majburiy obuna uchun kanalning userneymini kiriting (masalan, @kanal_nomi).")
+    await state.set_state(AdminStates.waiting_for_channel_id)
+    await callback.answer()
+
+
+@router.message(AdminStates.waiting_for_channel_id, F.text)
+async def channel_id_received_handler(message: Message, state: FSMContext):
+    channel_id = message.text
+    if not channel_id.startswith('@'):
+        await message.answer("Kanal userneymi @ belgisi bilan boshlanishi kerak.")
+        return
+
+    await set_setting("force_subscribe_channel", "true")
+    await set_setting("subscribe_channel_id", channel_id)
+
+    await message.answer(f"Majburiy kanal {channel_id} ga o'rnatildi va yoqildi.")
+    await state.set_state(AdminStates.main_menu)
+
+@router.callback_query(AdminStates.setting_channel, F.data == "set_channel_off")
+async def set_channel_off_handler(callback: CallbackQuery, state: FSMContext):
+    await set_setting("force_subscribe_channel", "false")
+    await callback.message.edit_text("Majburiy obuna o'chirildi.")
+    await state.set_state(AdminStates.main_menu)
+    await callback.answer()
+
+
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["uz"]["districts"])
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["ru"]["districts"])
+@router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["en"]["districts"])
+async def manage_districts_handler(message: Message, state: FSMContext):
+    districts_str = await get_setting("districts", "")
+    districts = [d.strip() for d in districts_str.split(",") if d.strip()]
+
+    text = "Mavjud tumanlar:\n\n"
+    if districts:
+        text += "\n".join(f"- {d}" for d in districts)
+    else:
+        text += "Tumanlar ro'yxati bo'sh."
+
+    buttons = [
+        [InlineKeyboardButton(text="Qo'shish", callback_data="add_district")],
+        [InlineKeyboardButton(text="O'chirish", callback_data="remove_district")],
+        [InlineKeyboardButton(text="Ortga", callback_data="admin_back_to_main_menu")]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await message.answer(text, reply_markup=keyboard)
+    await state.set_state(AdminStates.managing_districts)
+
+@router.callback_query(AdminStates.managing_districts, F.data == "add_district")
+async def add_district_prompt_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text("Yangi tuman nomini kiriting:")
+    await state.set_state(AdminStates.waiting_for_district_to_add)
+    await callback.answer()
+
+@router.message(AdminStates.waiting_for_district_to_add, F.text)
+async def add_district_received_handler(message: Message, state: FSMContext):
+    new_district = message.text.strip()
+    districts_str = await get_setting("districts", "")
+    districts = [d.strip() for d in districts_str.split(",") if d.strip()]
+
+    if new_district not in districts:
+        districts.append(new_district)
+        await set_setting("districts", ",".join(districts))
+        await message.answer(f"'{new_district}' tumani qo'shildi.")
+    else:
+        await message.answer(f"'{new_district}' tumani ro'yxatda mavjud.")
+
+    await state.set_state(AdminStates.main_menu)
+
+@router.callback_query(AdminStates.managing_districts, F.data == "remove_district")
+async def remove_district_prompt_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text("O'chirish uchun tuman nomini kiriting:")
+    await state.set_state(AdminStates.waiting_for_district_to_remove)
+    await callback.answer()
+
+@router.message(AdminStates.waiting_for_district_to_remove, F.text)
+async def remove_district_received_handler(message: Message, state: FSMContext):
+    district_to_remove = message.text.strip()
+    districts_str = await get_setting("districts", "")
+    districts = [d.strip() for d in districts_str.split(",") if d.strip()]
+
+    if district_to_remove in districts:
+        districts.remove(district_to_remove)
+        await set_setting("districts", ",".join(districts))
+        await message.answer(f"'{district_to_remove}' tumani o'chirildi.")
+    else:
+        await message.answer(f"'{district_to_remove}' tumani ro'yxatda topilmadi.")
+
+    await state.set_state(AdminStates.main_menu)
+
 @router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["uz"]["manage_admins"])
 @router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["ru"]["manage_admins"])
 @router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["en"]["manage_admins"])
@@ -1355,7 +1472,7 @@ async def add_admin_received(message: Message, state: FSMContext):
         return
 
     await create_admin_log(
-        admin_id=callback.from_user.id,
+        admin_id=message.from_user.id,
         action=ActionType.add_admin,
         target_user_id=new_admin.id,
         comment=f"Telegram ID: {telegram_id}",
