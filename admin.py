@@ -37,45 +37,27 @@ UNAUTHORIZED_ACCESS_TEXT = {
 
 STATISTICS_TEXT = {
     "uz": (
-        "📊 <b>Bot statistikasi:</b>
-
-"
-        "Jami foydalanuvchilar: {total_users}
-"
-        "Bugun ro'yxatdan o'tganlar: {registered_today}
-"
-        "Faol foydalanuvchilar: {active_users}
-"
-        "Jami matchlar: {total_matches}
-"
+        "📊 <b>Bot statistikasi:</b>\n\n"
+        "Jami foydalanuvchilar: {total_users}\n"
+        "Bugun ro'yxatdan o'tganlar: {registered_today}\n"
+        "Faol foydalanuvchilar: {active_users}\n"
+        "Jami matchlar: {total_matches}\n"
         "Premium foydalanuvchilar: {premium_users}"
     ),
     "ru": (
-        "📊 <b>Статистика бота:</b>
-
-"
-        "Всего пользователей: {total_users}
-"
-        "Зарегистрировано сегодня: {registered_today}
-"
-        "Активных пользователей: {active_users}
-"
-        "Всего совпадений: {total_matches}
-"
+        "📊 <b>Статистика бота:</b>\n\n"
+        "Всего пользователей: {total_users}\n"
+        "Зарегистрировано сегодня: {registered_today}\n"
+        "Активных пользователей: {active_users}\n"
+        "Всего совпадений: {total_matches}\n"
         "Премиум пользователи: {premium_users}"
     ),
     "en": (
-        "📊 <b>Bot Statistics:</b>
-
-"
-        "Total users: {total_users}
-"
-        "Registered today: {registered_today}
-"
-        "Active users: {active_users}
-"
-        "Total matches: {total_matches}
-"
+        "📊 <b>Bot Statistics:</b>\n\n"
+        "Total users: {total_users}\n"
+        "Registered today: {registered_today}\n"
+        "Active users: {active_users}\n"
+        "Total matches: {total_matches}\n"
         "Premium users: {premium_users}"
     ),
 }
@@ -87,12 +69,9 @@ NO_PHOTOS_TO_MODERATE_TEXT = {
 }
 
 PHOTO_MODERATION_CAPTION = {
-    "uz": "Foydalanuvchi: {user_name} (ID: {user_id})
-Telegram ID: `{telegram_id}`",
-    "ru": "Пользователь: {user_name} (ID: {user_id})
-Telegram ID: `{telegram_id}`",
-    "en": "User: {user_name} (ID: {user_id})
-Telegram ID: `{telegram_id}`",
+    "uz": "Foydalanuvchi: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
+    "ru": "Пользователь: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
+    "en": "User: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
 }
 
 PHOTO_APPROVED_TEXT = {
@@ -159,52 +138,28 @@ PROFILE_DELETED_NOTICE_TEXT = {
 
 REPORT_DETAILS_TEXT = {
     "uz": (
-        "<b>❗️ Yangi shikoyat</b>
-
-"
-        "<b>Shikoyatchi:</b> {reporter_name} (ID: {reporter_id})
-"
-        "<b>Ayblanuvchi:</b> {reported_name} (ID: {reported_id})
-"
-        "<b>Sana:</b> {report_date}
-
-"
-        "<b>Kategoriya:</b> {category}
-"
-        "<b>Tavsif:</b>
-{description}"
+        "<b>❗️ Yangi shikoyat</b>\n\n"
+        "<b>Shikoyatchi:</b> {reporter_name} (ID: {reporter_id})\n"
+        "<b>Ayblanuvchi:</b> {reported_name} (ID: {reported_id})\n"
+        "<b>Sana:</b> {report_date}\n\n"
+        "<b>Kategoriya:</b> {category}\n"
+        "<b>Tavsif:</b>\n{description}"
     ),
     "ru": (
-        "<b>❗️ Новая жалоба</b>
-
-"
-        "<b>Жалобщик:</b> {reporter_name} (ID: {reporter_id})
-"
-        "<b>Обвиняемый:</b> {reported_name} (ID: {reported_id})
-"
-        "<b>Дата:</b> {report_date}
-
-"
-        "<b>Категория:</b> {category}
-"
-        "<b>Описание:</b>
-{description}"
+        "<b>❗️ Новая жалоба</b>\n\n"
+        "<b>Жалобщик:</b> {reporter_name} (ID: {reporter_id})\n"
+        "<b>Обвиняемый:</b> {reported_name} (ID: {reported_id})\n"
+        "<b>Дата:</b> {report_date}\n\n"
+        "<b>Категория:</b> {category}\n"
+        "<b>Описание:</b>\n{description}"
     ),
     "en": (
-        "<b>❗️ New Report</b>
-
-"
-        "<b>Reporter:</b> {reporter_name} (ID: {reporter_id})
-"
-        "<b>Reported:</b> {reported_name} (ID: {reported_id})
-"
-        "<b>Date:</b> {report_date}
-
-"
-        "<b>Category:</b> {category}
-"
-        "<b>Description:</b>
-{description}"
+        "<b>❗️ New Report</b>\n\n"
+        "<b>Reporter:</b> {reporter_name} (ID: {reporter_id})\n"
+        "<b>Reported:</b> {reported_name} (ID: {reported_id})\n"
+        "<b>Date:</b> {report_date}\n\n"
+        "<b>Category:</b> {category}\n"
+        "<b>Description:</b>\n{description}"
     ),
 }
 
@@ -225,18 +180,9 @@ BROADCAST_MESSAGE_PROMPT = {
 }
 
 BROADCAST_CONFIRMATION_TEXT = {
-    "uz": "Ushbu xabarni {user_count} ta foydalanuvchiga yuborishni tasdiqlaysizmi?
-
-<b>Xabar:</b>
-{message_text}",
-    "ru": "Вы подтверждаете отправку этого сообщения {user_count} пользователям?
-
-<b>Сообщение:</b>
-{message_text}",
-    "en": "Do you confirm sending this message to {user_count} users?
-
-<b>Message:</b>
-{message_text}",
+    "uz": "Ushbu xabarni {user_count} ta foydalanuvchiga yuborishni tasdiqlaysizmi?\n\n<b>Xabar:</b>\n{message_text}",
+    "ru": "Вы подтверждаете отправку этого сообщения {user_count} пользователям?\n\n<b>Сообщение:</b>\n{message_text}",
+    "en": "Do you confirm sending this message to {user_count} users?\n\n<b>Message:</b>\n{message_text}",
 }
 
 BROADCAST_SENT_SUCCESS = {
@@ -253,47 +199,29 @@ BROADCAST_CANCELLED = {
 
 TARIFFS_PAYMENTS_TEXT = {
     "uz": (
-        "💰 <b>Tariflar va to'lovlar statistikasi:</b>
-
-"
-        "Jami premium obunalar: {total_premium_subscriptions}
-"
-        "Faol obunalar: {active_subscriptions}
-"
+        "💰 <b>Tariflar va to'lovlar statistikasi:</b>\n\n"
+        "Jami premium obunalar: {total_premium_subscriptions}\n"
+        "Faol obunalar: {active_subscriptions}\n"
         "Jami tushum (yakunlangan to'lovlar): {total_revenue} UZS"
     ),
     "ru": (
-        "💰 <b>Статистика тарифов и платежей:</b>
-
-"
-        "Всего премиум подписок: {total_premium_subscriptions}
-"
-        "Активных подписок: {active_subscriptions}
-"
+        "💰 <b>Статистика тарифов и платежей:</b>\n\n"
+        "Всего премиум подписок: {total_premium_subscriptions}\n"
+        "Активных подписок: {active_subscriptions}\n"
         "Общий доход (завершенные платежи): {total_revenue} UZS"
     ),
     "en": (
-        "💰 <b>Tariffs and Payments Statistics:</b>
-
-"
-        "Total premium subscriptions: {total_premium_subscriptions}
-"
-        "Active subscriptions: {active_subscriptions}
-"
+        "💰 <b>Tariffs and Payments Statistics:</b>\n\n"
+        "Total premium subscriptions: {total_premium_subscriptions}\n"
+        "Active subscriptions: {active_subscriptions}\n"
         "Total revenue (completed payments): {total_revenue} UZS"
     ),
 }
 
 VERIFICATION_MODERATION_CAPTION = {
-    "uz": "Foydalanuvchi: {user_name} (ID: {user_id})
-Telegram ID: `{telegram_id}`
-So'rov yuborilgan sana: {request_date}",
-    "ru": "Пользователь: {user_name} (ID: {user_id})
-Telegram ID: `{telegram_id}`
-Дата запроса: {request_date}",
-    "en": "User: {user_name} (ID: {user_id})
-Telegram ID: `{telegram_id}`
-Request date: {request_date}",
+    "uz": "Foydalanuvchi: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nSo'rov yuborilgan sana: {request_date}",
+    "ru": "Пользователь: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nДата запроса: {request_date}",
+    "en": "User: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nRequest date: {request_date}",
 }
 
 NO_VERIFICATIONS_TO_MODERATE_TEXT = {
@@ -319,48 +247,27 @@ USER_NOTIFIED_REJECTED_TEXT = {
 
 PAYMENT_MODERATION_TEXT = {
     "uz": (
-        "<b>💳 Yangi to'lov so'rovi</b>
-
-"
-        "<b>Foydalanuvchi:</b> {user_name} (ID: {user_id})
-"
-        "<b>Telegram ID:</b> `{telegram_id}`
-"
-        "<b>Sana:</b> {payment_date}
-
-"
-        "<b>Tarif:</b> {plan_name}
-"
+        "<b>💳 Yangi to'lov so'rovi</b>\n\n"
+        "<b>Foydalanuvchi:</b> {user_name} (ID: {user_id})\n"
+        "<b>Telegram ID:</b> `{telegram_id}`\n"
+        "<b>Sana:</b> {payment_date}\n\n"
+        "<b>Tarif:</b> {plan_name}\n"
         "<b>Summa:</b> {amount} UZS"
     ),
     "ru": (
-        "<b>💳 Новый запрос на оплату</b>
-
-"
-        "<b>Пользователь:</b> {user_name} (ID: {user_id})
-"
-        "<b>Telegram ID:</b> `{telegram_id}`
-"
-        "<b>Дата:</b> {payment_date}
-
-"
-        "<b>Тариф:</b> {plan_name}
-"
+        "<b>💳 Новый запрос на оплату</b>\n\n"
+        "<b>Пользователь:</b> {user_name} (ID: {user_id})\n"
+        "<b>Telegram ID:</b> `{telegram_id}`\n"
+        "<b>Дата:</b> {payment_date}\n\n"
+        "<b>Тариф:</b> {plan_name}\n"
         "<b>Сумма:</b> {amount} UZS"
     ),
     "en": (
-        "<b>💳 New Payment Request</b>
-
-"
-        "<b>User:</b> {user_name} (ID: {user_id})
-"
-        "<b>Telegram ID:</b> `{telegram_id}`
-"
-        "<b>Date:</b> {payment_date}
-
-"
-        "<b>Plan:</b> {plan_name}
-"
+        "<b>💳 New Payment Request</b>\n\n"
+        "<b>User:</b> {user_name} (ID: {user_id})\n"
+        "<b>Telegram ID:</b> `{telegram_id}`\n"
+        "<b>Date:</b> {payment_date}\n\n"
+        "<b>Plan:</b> {plan_name}\n"
         "<b>Amount:</b> {amount} UZS"
     ),
 }
@@ -381,36 +288,15 @@ USER_NOTIFIED_PAYMENT_REJECTED_TEXT = {
 }
 
 LOGS_HEADER_TEXT = {
-    "uz": "📝 <b>Admin Harakatlari Loglari (Sahifa {current_page}/{total_pages})</b>
-
-",
-    "ru": "📝 <b>Логи Действий Администраторов (Страница {current_page}/{total_pages})</b>
-
-",
-    "en": "📝 <b>Admin Action Logs (Page {current_page}/{total_pages})</b>
-
-",
+    "uz": "📝 <b>Admin Harakatlari Loglari (Sahifa {current_page}/{total_pages})</b>\n\n",
+    "ru": "📝 <b>Логи Действий Администраторов (Страница {current_page}/{total_pages})</b>\n\n",
+    "en": "📝 <b>Admin Action Logs (Page {current_page}/{total_pages})</b>\n\n",
 }
 
 LOG_ENTRY_TEXT = {
-    "uz": "<b>ID:</b> {log_id} | <b>Sana:</b> {date}
-<b>Admin ID:</b> {admin_id}
-<b>Harakat:</b> {action}
-<b>Target User ID:</b> {target_user_id}
-<b>Izoh:</b> {comment}
-",
-    "ru": "<b>ID:</b> {log_id} | <b>Дата:</b> {date}
-<b>ID Админа:</b> {admin_id}
-<b>Действие:</b> {action}
-<b>ID Целевого Пользователя:</b> {target_user_id}
-<b>Комментарий:</b> {comment}
-",
-    "en": "<b>ID:</b> {log_id} | <b>Date:</b> {date}
-<b>Admin ID:</b> {admin_id}
-<b>Action:</b> {action}
-<b>Target User ID:</b> {target_user_id}
-<b>Comment:</b> {comment}
-",
+    "uz": "<b>ID:</b> {log_id} | <b>Sana:</b> {date}\n<b>Admin ID:</b> {admin_id}\n<b>Harakat:</b> {action}\n<b>Target User ID:</b> {target_user_id}\n<b>Izoh:</b> {comment}\n",
+    "ru": "<b>ID:</b> {log_id} | <b>Дата:</b> {date}\n<b>ID Админа:</b> {admin_id}\n<b>Действие:</b> {action}\n<b>ID Целевого Пользователя:</b> {target_user_id}\n<b>Комментарий:</b> {comment}\n",
+    "en": "<b>ID:</b> {log_id} | <b>Date:</b> {date}\n<b>Admin ID:</b> {admin_id}\n<b>Action:</b> {action}\n<b>Target User ID:</b> {target_user_id}\n<b>Comment:</b> {comment}\n",
 }
 
 NO_LOGS_TEXT = {
@@ -1400,27 +1286,12 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
 
 # Fix 2: Localize MANAGE_ADMINS_HEADER_TEXT
 MANAGE_ADMINS_HEADER_TEXT = {
-    "uz": "👮 <b>Adminlar ro'yxati</b>
-
-Qo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.
-
-<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
-    "ru": "👮 <b>Список администраторов</b>
-
-Используйте кнопки для добавления или удаления дополнительных администраторов.
-
-<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",
-    "en": "👮 <b>Admin List</b>
-
-Use the buttons to add or remove additional administrators.
-
-<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
+    "uz": "👮 <b>Adminlar ro'yxati</b>\n\nQo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
+    "ru": "👮 <b>Список администраторов</b>\n\nИспользуйте кнопки для добавления или удаления дополнительных администраторов.\n\n<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",
+    "en": "👮 <b>Admin List</b>\n\nUse the buttons to add or remove additional administrators.\n\n<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
 }
 
-ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.
-(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "Отправьте Telegram ID нового администратора.
-(Пользователь должен быть зарегистрирован в боте, нажав /start.)", "en": "Send the Telegram ID of the new admin.
-(The user must have registered with the bot by pressing /start first.)"}
+ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "Отправьте Telegram ID нового администратора.\n(Пользователь должен быть зарегистрирован в боте, нажав /start.)", "en": "Send the Telegram ID of the new admin.\n(The user must have registered with the bot by pressing /start first.)"}
 ADMIN_ADDED_TEXT = {"uz": "✅ Admin muvaffaqiyatli qo'shildi.", "ru": "✅ Администратор успешно добавлен.", "en": "✅ Admin successfully added."}
 ADMIN_REMOVED_TEXT = {"uz": "✅ Admin olib tashlandi.", "ru": "✅ Администратор удален.", "en": "✅ Admin removed."}
 ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = {"uz": "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak.", "ru": "Пользователь не найден. Он должен быть зарегистрирован в боте, нажав /start.", "en": "User not found. They must have registered with the bot by pressing /start first."}
