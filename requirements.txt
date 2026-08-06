@@ -6,3 +6,4 @@ aiosqlite
 redis>=4.0
 apscheduler
 openai>=1.0
+psycopg[binary]
