@@ -162,8 +162,12 @@ if DATABASE_URL and _database_host_is_resolvable(DATABASE_URL):
     except Exception:
         logging.warning("DATABASE_URL formatini aniqlab bo'lmadi.")
 
+    _db_url = make_url(DATABASE_URL)
+    if not _db_url.drivername.endswith("asyncpg"):
+        _db_url = _db_url._replace(drivername="postgresql+asyncpg")
+
     engine = create_async_engine(
-        DATABASE_URL,
+        _db_url,
         echo=False,
         pool_pre_ping=True,
     )
