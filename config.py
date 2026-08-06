@@ -29,7 +29,7 @@ def build_database_url() -> str | None:
     postgres_password = os.getenv("POSTGRES_PASSWORD") or os.getenv("PGPASSWORD") or "postgres"
     postgres_port = os.getenv("POSTGRES_PORT") or os.getenv("PGPORT") or "5432"
     postgres_db = os.getenv("POSTGRES_DB") or os.getenv("PGDATABASE") or "kairyx_db"
-    return f"postgresql+psycopg://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
+    return f"postgresql+asyncpg://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
 
 
 def parse_admin_ids(value: str | None) -> list[int]:
