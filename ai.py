@@ -44,6 +44,12 @@ AI_NOT_CONFIGURED_TEXT = {
     "en": "Sorry, the AI assistant is not configured at the moment.",
 }
 
+AI_QUOTA_ERROR_TEXTS = {
+    "uz": "Afsuski, AI xizmatida vaqtinchalik muammo yuz berdi. Iltimos, birozdan so'ng qayta urinib ko'ring.",
+    "ru": "К сожалению, в работе AI-сервиса возникла временная проблема. Пожалуйста, попробуйте позже.",
+    "en": "Unfortunately, there was a temporary issue with the AI service. Please try again later.",
+}
+
 async def generate_bio_with_ai(user_data: dict, language: str = "uz") -> str | None:
     """Generates a user bio using an AI model based on user data."""
     if not client:
@@ -66,6 +72,12 @@ async def generate_bio_with_ai(user_data: dict, language: str = "uz") -> str | N
         )
         generated_bio = response.choices[0].message.content.strip()
         return generated_bio
+    except openai.APIStatusError as e:
+        if e.status_code == 429:
+            logging.error(f"AI bio generation failed due to insufficient quota: {e}")
+            return AI_QUOTA_ERROR_TEXTS.get(language, AI_QUOTA_ERROR_TEXTS["uz"])
+        logging.error(f"AI bio generation failed with API error: {e}")
+        return None
     except Exception as e:
         logging.error(f"AI bio generation failed: {e}")
         return None

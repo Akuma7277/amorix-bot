@@ -38,9 +38,9 @@ from inline import ( # Fix 12: Import get_back_only_keyboard and Updated imports
     get_search_keyboard, get_match_keyboard, get_chats_keyboard, get_profile_view_keyboard, get_edit_profile_keyboard,
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
     get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard,
-    get_gift_type_keyboard, GIFT_BUTTON_TEXTS, get_back_only_keyboard
+    get_gift_type_keyboard, GIFT_BUTTON_TEXTS, get_back_only_keyboard,
 )
-from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan # Import UserStatus
+from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType # Import UserStatus and GiftType
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS # Import common texts
 
 # Using RegistrationStates to clear state is not ideal, but works.
