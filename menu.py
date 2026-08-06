@@ -30,10 +30,12 @@ from crud import (
     get_all_admin_ids,
     DAILY_LIKE_LIMITS,
     DAILY_SUPER_LIKE_LIMITS,
+    DAILY_SUPER_LIKE_LIMITS, get_online_status, # Added get_online_status
     BOOST_DURATION_MINUTES,
     create_gift,
 )
 from states import MenuStates, EditingStates, ReportingStates, SettingsStates, VerificationStates, PremiumStates
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton # Added for gift_message_entered
 from inline import ALL_INTERESTS # Qiziqishlar nomlarini olish uchun
 from inline import ( # Fix 12: Import get_back_only_keyboard and Updated imports for gift feature
     get_search_keyboard, get_match_keyboard, get_chats_keyboard, get_profile_view_keyboard, get_edit_profile_keyboard,
@@ -42,6 +44,7 @@ from inline import ( # Fix 12: Import get_back_only_keyboard and Updated imports
     get_gift_type_keyboard, GIFT_BUTTON_TEXTS, get_back_only_keyboard, get_advanced_search_keyboard,
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType # Import UserStatus and GiftType
+from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType, User # Import UserStatus and GiftType
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS # Import common texts
 
 # Using RegistrationStates to clear state is not ideal, but works.
@@ -454,6 +457,7 @@ async def show_my_profile(message: Message, state: FSMContext):
     await state.clear()  # Har ehtimolga qarshi FSM holatini tozalash
 
     user = await get_user_by_telegram_id(message.from_user.id)
+    user = await get_user_by_telegram_id(message.from_user.id) # Fix 11: language variable was not defined
     if not user:
         language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
@@ -473,11 +477,13 @@ async def show_my_profile(message: Message, state: FSMContext):
     ]
 
     premium_badge = " ⭐" if has_active_premium(user) else ""
+    online_status = await get_online_status(user) # Fix 10: Added online_status
     profile_text = PROFILE_VIEW_TEXTS.get(language, PROFILE_VIEW_TEXTS["uz"]).format(
         name=f"{user.name}{premium_badge}",
         age=user.age,
         height=user.height,
         gender=user.gender.value,  # Enum qiymatini olish
+        online_status=online_status, # Fix 10: Added online_status
         looking_for=user.looking_for.value,  # Enum qiymatini olish
         city=user.city,
         district=user.district,

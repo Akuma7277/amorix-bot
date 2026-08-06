@@ -690,18 +690,19 @@ async def get_all_admin_ids() -> list[int]:
     return list(all_admin_ids)
 
 
-async def get_setting(key: str) -> str | None:
-    """Fetches a setting value by its key."""
+async def get_setting(key: str, default: str | None = None) -> str | None:
+    """Fetches a setting value by its key, returning a default if not found."""
     try:
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Setting.value).where(Setting.key == key)
             )
-            return result.scalar_one_or_none()
+            value = result.scalar_one_or_none()
+            return value if value is not None else default
     except Exception as exc:
         import logging
         logging.warning(f"Database unavailable while fetching setting '{key}': {exc}")
-        return None
+        return default
 
 
 async def set_setting(key: str, value: str | None):
