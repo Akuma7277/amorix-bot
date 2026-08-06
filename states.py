@@ -73,6 +73,7 @@ class AdminStates(StatesGroup):
     viewing_admins = State()
     waiting_for_admin_id_to_add = State()
     setting_channel = State()
+    waiting_for_channel_id = State()
     managing_districts = State()
     waiting_for_district_to_add = State()
     waiting_for_district_to_remove = State()

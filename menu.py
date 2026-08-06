@@ -455,6 +455,7 @@ async def show_my_profile(message: Message, state: FSMContext):
 
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
+        language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
 
@@ -638,6 +639,7 @@ async def show_next_liked_profile(message: Message | CallbackQuery, state: FSMCo
 async def show_who_liked_me(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
+        language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
@@ -693,6 +695,7 @@ async def skip_liked_profile_handler(callback: CallbackQuery, state: FSMContext)
 async def start_search(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
+        language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
 
@@ -1182,6 +1185,7 @@ async def gift_confirm_send_handler(callback: CallbackQuery, state: FSMContext, 
 async def show_referral_info(message: Message, state: FSMContext, bot: Bot):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
+        language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
@@ -1205,6 +1209,7 @@ async def show_referral_info(message: Message, state: FSMContext, bot: Bot):
 async def help_main_menu(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
+        language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
@@ -1269,6 +1274,7 @@ MESSAGE_ADMIN_SENT_TEXTS = {
 async def start_message_admin(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     if not user:
+        language = callback.from_user.language_code
         await callback.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]), show_alert=True)
         return
     language = user.language or "uz"
@@ -1283,6 +1289,7 @@ async def message_admin_received(message: Message, state: FSMContext, bot: Bot):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
         await state.clear() # Clear state if user is not registered
+        language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
@@ -1572,6 +1579,7 @@ async def message_in_chat_handler(message: Message, state: FSMContext, bot: Bot)
 async def premium_main_menu(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     if not user:
+        language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
         return
     language = user.language or "uz"
