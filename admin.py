@@ -37,27 +37,45 @@ UNAUTHORIZED_ACCESS_TEXT = {
 
 STATISTICS_TEXT = {
     "uz": (
-        "📊 <b>Bot statistikasi:</b>\n\n"
-        "Jami foydalanuvchilar: {total_users}\n"
-        "Bugun ro'yxatdan o'tganlar: {registered_today}\n"
-        "Faol foydalanuvchilar: {active_users}\n"
-        "Jami matchlar: {total_matches}\n"
+        "📊 <b>Bot statistikasi:</b>
+
+"
+        "Jami foydalanuvchilar: {total_users}
+"
+        "Bugun ro'yxatdan o'tganlar: {registered_today}
+"
+        "Faol foydalanuvchilar: {active_users}
+"
+        "Jami matchlar: {total_matches}
+"
         "Premium foydalanuvchilar: {premium_users}"
     ),
     "ru": (
-        "📊 <b>Статистика бота:</b>\n\n"
-        "Всего пользователей: {total_users}\n"
-        "Зарегистрировано сегодня: {registered_today}\n"
-        "Активных пользователей: {active_users}\n"
-        "Всего совпадений: {total_matches}\n"
+        "📊 <b>Статистика бота:</b>
+
+"
+        "Всего пользователей: {total_users}
+"
+        "Зарегистрировано сегодня: {registered_today}
+"
+        "Активных пользователей: {active_users}
+"
+        "Всего совпадений: {total_matches}
+"
         "Премиум пользователи: {premium_users}"
     ),
     "en": (
-        "📊 <b>Bot Statistics:</b>\n\n"
-        "Total users: {total_users}\n"
-        "Registered today: {registered_today}\n"
-        "Active users: {active_users}\n"
-        "Total matches: {total_matches}\n"
+        "📊 <b>Bot Statistics:</b>
+
+"
+        "Total users: {total_users}
+"
+        "Registered today: {registered_today}
+"
+        "Active users: {active_users}
+"
+        "Total matches: {total_matches}
+"
         "Premium users: {premium_users}"
     ),
 }
@@ -69,9 +87,12 @@ NO_PHOTOS_TO_MODERATE_TEXT = {
 }
 
 PHOTO_MODERATION_CAPTION = {
-    "uz": "Foydalanuvchi: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
-    "ru": "Пользователь: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
-    "en": "User: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
+    "uz": "Foydalanuvchi: {user_name} (ID: {user_id})
+Telegram ID: `{telegram_id}`",
+    "ru": "Пользователь: {user_name} (ID: {user_id})
+Telegram ID: `{telegram_id}`",
+    "en": "User: {user_name} (ID: {user_id})
+Telegram ID: `{telegram_id}`",
 }
 
 PHOTO_APPROVED_TEXT = {
@@ -138,28 +159,52 @@ PROFILE_DELETED_NOTICE_TEXT = {
 
 REPORT_DETAILS_TEXT = {
     "uz": (
-        "<b>❗️ Yangi shikoyat</b>\n\n"
-        "<b>Shikoyatchi:</b> {reporter_name} (ID: {reporter_id})\n"
-        "<b>Ayblanuvchi:</b> {reported_name} (ID: {reported_id})\n"
-        "<b>Sana:</b> {report_date}\n\n"
-        "<b>Kategoriya:</b> {category}\n"
-        "<b>Tavsif:</b>\n{description}"
+        "<b>❗️ Yangi shikoyat</b>
+
+"
+        "<b>Shikoyatchi:</b> {reporter_name} (ID: {reporter_id})
+"
+        "<b>Ayblanuvchi:</b> {reported_name} (ID: {reported_id})
+"
+        "<b>Sana:</b> {report_date}
+
+"
+        "<b>Kategoriya:</b> {category}
+"
+        "<b>Tavsif:</b>
+{description}"
     ),
     "ru": (
-        "<b>❗️ Новая жалоба</b>\n\n"
-        "<b>Жалобщик:</b> {reporter_name} (ID: {reporter_id})\n"
-        "<b>Обвиняемый:</b> {reported_name} (ID: {reported_id})\n"
-        "<b>Дата:</b> {report_date}\n\n"
-        "<b>Категория:</b> {category}\n"
-        "<b>Описание:</b>\n{description}"
+        "<b>❗️ Новая жалоба</b>
+
+"
+        "<b>Жалобщик:</b> {reporter_name} (ID: {reporter_id})
+"
+        "<b>Обвиняемый:</b> {reported_name} (ID: {reported_id})
+"
+        "<b>Дата:</b> {report_date}
+
+"
+        "<b>Категория:</b> {category}
+"
+        "<b>Описание:</b>
+{description}"
     ),
     "en": (
-        "<b>❗️ New Report</b>\n\n"
-        "<b>Reporter:</b> {reporter_name} (ID: {reporter_id})\n"
-        "<b>Reported:</b> {reported_name} (ID: {reported_id})\n"
-        "<b>Date:</b> {report_date}\n\n"
-        "<b>Category:</b> {category}\n"
-        "<b>Description:</b>\n{description}"
+        "<b>❗️ New Report</b>
+
+"
+        "<b>Reporter:</b> {reporter_name} (ID: {reporter_id})
+"
+        "<b>Reported:</b> {reported_name} (ID: {reported_id})
+"
+        "<b>Date:</b> {report_date}
+
+"
+        "<b>Category:</b> {category}
+"
+        "<b>Description:</b>
+{description}"
     ),
 }
 
@@ -180,9 +225,18 @@ BROADCAST_MESSAGE_PROMPT = {
 }
 
 BROADCAST_CONFIRMATION_TEXT = {
-    "uz": "Ushbu xabarni {user_count} ta foydalanuvchiga yuborishni tasdiqlaysizmi?\n\n<b>Xabar:</b>\n{message_text}",
-    "ru": "Вы подтверждаете отправку этого сообщения {user_count} пользователям?\n\n<b>Сообщение:</b>\n{message_text}",
-    "en": "Do you confirm sending this message to {user_count} users?\n\n<b>Message:</b>\n{message_text}",
+    "uz": "Ushbu xabarni {user_count} ta foydalanuvchiga yuborishni tasdiqlaysizmi?
+
+<b>Xabar:</b>
+{message_text}",
+    "ru": "Вы подтверждаете отправку этого сообщения {user_count} пользователям?
+
+<b>Сообщение:</b>
+{message_text}",
+    "en": "Do you confirm sending this message to {user_count} users?
+
+<b>Message:</b>
+{message_text}",
 }
 
 BROADCAST_SENT_SUCCESS = {
@@ -199,29 +253,47 @@ BROADCAST_CANCELLED = {
 
 TARIFFS_PAYMENTS_TEXT = {
     "uz": (
-        "💰 <b>Tariflar va to'lovlar statistikasi:</b>\n\n"
-        "Jami premium obunalar: {total_premium_subscriptions}\n"
-        "Faol obunalar: {active_subscriptions}\n"
+        "💰 <b>Tariflar va to'lovlar statistikasi:</b>
+
+"
+        "Jami premium obunalar: {total_premium_subscriptions}
+"
+        "Faol obunalar: {active_subscriptions}
+"
         "Jami tushum (yakunlangan to'lovlar): {total_revenue} UZS"
     ),
     "ru": (
-        "💰 <b>Статистика тарифов и платежей:</b>\n\n"
-        "Всего премиум подписок: {total_premium_subscriptions}\n"
-        "Активных подписок: {active_subscriptions}\n"
+        "💰 <b>Статистика тарифов и платежей:</b>
+
+"
+        "Всего премиум подписок: {total_premium_subscriptions}
+"
+        "Активных подписок: {active_subscriptions}
+"
         "Общий доход (завершенные платежи): {total_revenue} UZS"
     ),
     "en": (
-        "💰 <b>Tariffs and Payments Statistics:</b>\n\n"
-        "Total premium subscriptions: {total_premium_subscriptions}\n"
-        "Active subscriptions: {active_subscriptions}\n"
+        "💰 <b>Tariffs and Payments Statistics:</b>
+
+"
+        "Total premium subscriptions: {total_premium_subscriptions}
+"
+        "Active subscriptions: {active_subscriptions}
+"
         "Total revenue (completed payments): {total_revenue} UZS"
     ),
 }
 
 VERIFICATION_MODERATION_CAPTION = {
-    "uz": "Foydalanuvchi: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nSo'rov yuborilgan sana: {request_date}",
-    "ru": "Пользователь: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nДата запроса: {request_date}",
-    "en": "User: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nRequest date: {request_date}",
+    "uz": "Foydalanuvchi: {user_name} (ID: {user_id})
+Telegram ID: `{telegram_id}`
+So'rov yuborilgan sana: {request_date}",
+    "ru": "Пользователь: {user_name} (ID: {user_id})
+Telegram ID: `{telegram_id}`
+Дата запроса: {request_date}",
+    "en": "User: {user_name} (ID: {user_id})
+Telegram ID: `{telegram_id}`
+Request date: {request_date}",
 }
 
 NO_VERIFICATIONS_TO_MODERATE_TEXT = {
@@ -247,27 +319,48 @@ USER_NOTIFIED_REJECTED_TEXT = {
 
 PAYMENT_MODERATION_TEXT = {
     "uz": (
-        "<b>💳 Yangi to'lov so'rovi</b>\n\n"
-        "<b>Foydalanuvchi:</b> {user_name} (ID: {user_id})\n"
-        "<b>Telegram ID:</b> `{telegram_id}`\n"
-        "<b>Sana:</b> {payment_date}\n\n"
-        "<b>Tarif:</b> {plan_name}\n"
+        "<b>💳 Yangi to'lov so'rovi</b>
+
+"
+        "<b>Foydalanuvchi:</b> {user_name} (ID: {user_id})
+"
+        "<b>Telegram ID:</b> `{telegram_id}`
+"
+        "<b>Sana:</b> {payment_date}
+
+"
+        "<b>Tarif:</b> {plan_name}
+"
         "<b>Summa:</b> {amount} UZS"
     ),
     "ru": (
-        "<b>💳 Новый запрос на оплату</b>\n\n"
-        "<b>Пользователь:</b> {user_name} (ID: {user_id})\n"
-        "<b>Telegram ID:</b> `{telegram_id}`\n"
-        "<b>Дата:</b> {payment_date}\n\n"
-        "<b>Тариф:</b> {plan_name}\n"
+        "<b>💳 Новый запрос на оплату</b>
+
+"
+        "<b>Пользователь:</b> {user_name} (ID: {user_id})
+"
+        "<b>Telegram ID:</b> `{telegram_id}`
+"
+        "<b>Дата:</b> {payment_date}
+
+"
+        "<b>Тариф:</b> {plan_name}
+"
         "<b>Сумма:</b> {amount} UZS"
     ),
     "en": (
-        "<b>💳 New Payment Request</b>\n\n"
-        "<b>User:</b> {user_name} (ID: {user_id})\n"
-        "<b>Telegram ID:</b> `{telegram_id}`\n"
-        "<b>Date:</b> {payment_date}\n\n"
-        "<b>Plan:</b> {plan_name}\n"
+        "<b>💳 New Payment Request</b>
+
+"
+        "<b>User:</b> {user_name} (ID: {user_id})
+"
+        "<b>Telegram ID:</b> `{telegram_id}`
+"
+        "<b>Date:</b> {payment_date}
+
+"
+        "<b>Plan:</b> {plan_name}
+"
         "<b>Amount:</b> {amount} UZS"
     ),
 }
@@ -288,15 +381,36 @@ USER_NOTIFIED_PAYMENT_REJECTED_TEXT = {
 }
 
 LOGS_HEADER_TEXT = {
-    "uz": "📝 <b>Admin Harakatlari Loglari (Sahifa {current_page}/{total_pages})</b>\n\n",
-    "ru": "📝 <b>Логи Действий Администраторов (Страница {current_page}/{total_pages})</b>\n\n",
-    "en": "📝 <b>Admin Action Logs (Page {current_page}/{total_pages})</b>\n\n",
+    "uz": "📝 <b>Admin Harakatlari Loglari (Sahifa {current_page}/{total_pages})</b>
+
+",
+    "ru": "📝 <b>Логи Действий Администраторов (Страница {current_page}/{total_pages})</b>
+
+",
+    "en": "📝 <b>Admin Action Logs (Page {current_page}/{total_pages})</b>
+
+",
 }
 
 LOG_ENTRY_TEXT = {
-    "uz": "<b>ID:</b> {log_id} | <b>Sana:</b> {date}\n<b>Admin ID:</b> {admin_id}\n<b>Harakat:</b> {action}\n<b>Target User ID:</b> {target_user_id}\n<b>Izoh:</b> {comment}\n",
-    "ru": "<b>ID:</b> {log_id} | <b>Дата:</b> {date}\n<b>ID Админа:</b> {admin_id}\n<b>Действие:</b> {action}\n<b>ID Целевого Пользователя:</b> {target_user_id}\n<b>Комментарий:</b> {comment}\n",
-    "en": "<b>ID:</b> {log_id} | <b>Date:</b> {date}\n<b>Admin ID:</b> {admin_id}\n<b>Action:</b> {action}\n<b>Target User ID:</b> {target_user_id}\n<b>Comment:</b> {comment}\n",
+    "uz": "<b>ID:</b> {log_id} | <b>Sana:</b> {date}
+<b>Admin ID:</b> {admin_id}
+<b>Harakat:</b> {action}
+<b>Target User ID:</b> {target_user_id}
+<b>Izoh:</b> {comment}
+",
+    "ru": "<b>ID:</b> {log_id} | <b>Дата:</b> {date}
+<b>ID Админа:</b> {admin_id}
+<b>Действие:</b> {action}
+<b>ID Целевого Пользователя:</b> {target_user_id}
+<b>Комментарий:</b> {comment}
+",
+    "en": "<b>ID:</b> {log_id} | <b>Date:</b> {date}
+<b>Admin ID:</b> {admin_id}
+<b>Action:</b> {action}
+<b>Target User ID:</b> {target_user_id}
+<b>Comment:</b> {comment}
+",
 }
 
 NO_LOGS_TEXT = {
@@ -518,8 +632,10 @@ async def find_user_handler(message: Message, state: FSMContext):
     admin_user = await get_user_by_telegram_id(message.from_user.id)
     language = admin_user.language if admin_user else "uz"
 
-    if not message.text.strip().removeprefix('-').isdigit():
-        await message.answer(INVALID_TELEGRAM_ID_TEXT)
+    try:
+        int(message.text.strip())
+    except ValueError:
+        await message.answer(INVALID_TELEGRAM_ID_TEXT[language])
         return
 
     user_to_view = await find_user_by_id_or_telegram_id(message.text)
@@ -1032,7 +1148,9 @@ async def approve_payment_handler(callback: CallbackQuery, state: FSMContext, bo
             try:
                 await bot.send_message(
                     chat_id=user.telegram_id,
-                    text=PAYMENT_APPROVED_TEXT + f"\n\n{PREMIUM_MAIN_TEXT.get(user_lang, PREMIUM_MAIN_TEXT['uz'])}",
+                    text=PAYMENT_APPROVED_TEXT + f"
+
+{PREMIUM_MAIN_TEXT.get(user_lang, PREMIUM_MAIN_TEXT['uz'])}",
                 )
             except Exception as exc:
                 logging.warning(f"Could not notify user {user.telegram_id} about premium activation: {exc}")
@@ -1056,7 +1174,9 @@ async def format_log_message(logs: list, page: int, total_count: int, language: 
         filter_texts.append(f"Harakat: {filters['log_filter_action'].value}")
     
     if filter_texts:
-        header += "<i>Faol filtrlar: " + ", ".join(filter_texts) + "</i>\n\n"
+        header += "<i>Faol filtrlar: " + ", ".join(filter_texts) + "</i>
+
+"
     
     log_entries = []
     for log in logs:
@@ -1071,7 +1191,8 @@ async def format_log_message(logs: list, page: int, total_count: int, language: 
             )
         )
     
-    full_text = header + "\n".join(log_entries)
+    full_text = header + "
+".join(log_entries)
     keyboard = get_logs_view_keyboard(language, page, total_pages)
     
     return full_text, keyboard
@@ -1232,9 +1353,9 @@ PROFILE_APPROVED_USER_TEXT = {
 }
 
 PROFILE_REJECTED_USER_TEXT = {
-    "uz": "❌ Afsuski, profilingiz administrator tomonidan rad etildi. Iltimos, \"Mening profilim\" bo'limida ma'lumotlaringizni tahrirlab qayta yuboring.",
+    "uz": "❌ Afsuski, profilingiz administrator tomonidan rad etildi. Iltimos, "Mening profilim" bo'limida ma'lumotlaringizni tahrirlab qayta yuboring.",
     "ru": "❌ К сожалению, ваш профиль отклонен администратором. Пожалуйста, отредактируйте данные в разделе «Мой профиль» и отправьте снова.",
-    "en": "❌ Unfortunately, your profile was rejected by the administrator. Please edit your details under \"My Profile\" and resubmit.",
+    "en": "❌ Unfortunately, your profile was rejected by the administrator. Please edit your details under "My Profile" and resubmit.",
 }
 
 
@@ -1259,9 +1380,13 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
     await callback.answer("✅ Profil tasdiqlandi.")
 
     if callback.message.photo:
-        await callback.message.edit_caption(caption=f"{callback.message.caption}\n\n✅ TASDIQLANDI", reply_markup=None)
+        await callback.message.edit_caption(caption=f"{callback.message.caption}
+
+✅ TASDIQLANDI", reply_markup=None)
     else:
-        await callback.message.edit_text(f"{callback.message.text}\n\n✅ TASDIQLANDI", reply_markup=None)
+        await callback.message.edit_text(f"{callback.message.text}
+
+✅ TASDIQLANDI", reply_markup=None)
 
     user_lang = user.language or "uz"
     try:
@@ -1275,12 +1400,27 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
 
 # Fix 2: Localize MANAGE_ADMINS_HEADER_TEXT
 MANAGE_ADMINS_HEADER_TEXT = {
-    "uz": "👮 <b>Adminlar ro'yxati</b>\n\nQo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
-    "ru": "👮 <b>Список администраторов</b>\n\nИспользуйте кнопки для добавления или удаления дополнительных администраторов.\n\n<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",
-    "en": "👮 <b>Admin List</b>\n\nUse the buttons to add or remove additional administrators.\n\n<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
+    "uz": "👮 <b>Adminlar ro'yxati</b>
+
+Qo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.
+
+<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
+    "ru": "👮 <b>Список администраторов</b>
+
+Используйте кнопки для добавления или удаления дополнительных администраторов.
+
+<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",
+    "en": "👮 <b>Admin List</b>
+
+Use the buttons to add or remove additional administrators.
+
+<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
 }
 
-ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "Отправьте Telegram ID нового администратора.\n(Пользователь должен быть зарегистрирован в боте, нажав /start.)", "en": "Send the Telegram ID of the new admin.\n(The user must have registered with the bot by pressing /start first.)"}
+ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.
+(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "Отправьте Telegram ID нового администратора.
+(Пользователь должен быть зарегистрирован в боте, нажав /start.)", "en": "Send the Telegram ID of the new admin.
+(The user must have registered with the bot by pressing /start first.)"}
 ADMIN_ADDED_TEXT = {"uz": "✅ Admin muvaffaqiyatli qo'shildi.", "ru": "✅ Администратор успешно добавлен.", "en": "✅ Admin successfully added."}
 ADMIN_REMOVED_TEXT = {"uz": "✅ Admin olib tashlandi.", "ru": "✅ Администратор удален.", "en": "✅ Admin removed."}
 ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = {"uz": "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak.", "ru": "Пользователь не найден. Он должен быть зарегистрирован в боте, нажав /start.", "en": "User not found. They must have registered with the bot by pressing /start first."}
@@ -1316,11 +1456,15 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
     if callback.message.photo:
         # Check if caption is not None before appending
         current_caption = callback.message.caption if callback.message.caption else ""
-        await callback.message.edit_caption(caption=f"{current_caption}\n\n❌ RAD ETILDI", reply_markup=None)
+        await callback.message.edit_caption(caption=f"{current_caption}
+
+❌ RAD ETILDI", reply_markup=None)
     else:
         # Check if text is not None before appending
         current_text = callback.message.text if callback.message.text else ""
-        await callback.message.edit_text(f"{current_text}\n\n❌ RAD ETILDI", reply_markup=None)
+        await callback.message.edit_text(f"{current_text}
+
+❌ RAD ETILDI", reply_markup=None)
 
 
 async def show_manage_admins(message: Message, state: FSMContext):
@@ -1328,7 +1472,7 @@ async def show_manage_admins(message: Message, state: FSMContext):
     language = admin_user.language if admin_user else "uz"
     dynamic_admins = await get_dynamic_admins()
     keyboard = get_manage_admins_keyboard(language, [(admin.telegram_id, admin.name or str(admin.telegram_id)) for admin in dynamic_admins])
-    await message.answer(MANAGE_ADMINS_HEADER_TEXT, reply_markup=keyboard)
+    await message.answer(MANAGE_ADMINS_HEADER_TEXT[language], reply_markup=keyboard)
     await state.set_state(AdminStates.viewing_admins)
 
 
@@ -1339,7 +1483,8 @@ async def mandatory_channel_handler(message: Message, state: FSMContext):
     is_enabled = await get_setting("force_subscribe_channel") == "true"
     channel_id = await get_setting("subscribe_channel_id")
 
-    text = f"Majburiy kanal holati: {'✅ Yoqilgan' if is_enabled else '❌ O''chirilgan'}\n"
+    text = f"Majburiy kanal holati: {'✅ Yoqilgan' if is_enabled else '❌ O''chirilgan'}
+"
     if is_enabled and channel_id:
         text += f"Kanal: {channel_id}"
 
@@ -1388,9 +1533,12 @@ async def manage_districts_handler(message: Message, state: FSMContext):
     districts_str = await get_setting("districts", "")
     districts = [d.strip() for d in districts_str.split(",") if d.strip()]
 
-    text = "Mavjud tumanlar:\n\n"
+    text = "Mavjud tumanlar:
+
+"
     if districts:
-        text += "\n".join(f"- {d}" for d in districts)
+        text += "
+".join(f"- {d}" for d in districts)
     else:
         text += "Tumanlar ro'yxati bo'sh."
 
@@ -1454,21 +1602,25 @@ async def manage_admins_start(message: Message, state: FSMContext):
 
 @router.callback_query(AdminStates.viewing_admins, F.data == "admin_add_new")
 async def prompt_add_admin(callback: CallbackQuery, state: FSMContext):
+    admin_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = admin_user.language if admin_user else "uz"
     await state.set_state(AdminStates.waiting_for_admin_id_to_add)
-    await callback.message.edit_text(ADD_ADMIN_PROMPT_TEXT, reply_markup=None)
+    await callback.message.edit_text(ADD_ADMIN_PROMPT_TEXT[language], reply_markup=None)
     await callback.answer()
 
 
 @router.message(AdminStates.waiting_for_admin_id_to_add, F.text)
 async def add_admin_received(message: Message, state: FSMContext):
+    admin_user = await get_user_by_telegram_id(message.from_user.id)
+    language = admin_user.language if admin_user else "uz"
     if not message.text.strip().lstrip("-").isdigit():
-        await message.answer(INVALID_TELEGRAM_ID_TEXT)
+        await message.answer(INVALID_TELEGRAM_ID_TEXT[language])
         return
 
     telegram_id = int(message.text.strip())
     new_admin = await add_admin_by_telegram_id(telegram_id)
     if not new_admin:
-        await message.answer(ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT)
+        await message.answer(ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT[language])
         return
 
     await create_admin_log(
@@ -1477,7 +1629,7 @@ async def add_admin_received(message: Message, state: FSMContext):
         target_user_id=new_admin.id,
         comment=f"Telegram ID: {telegram_id}",
     )
-    await message.answer(ADMIN_ADDED_TEXT)
+    await message.answer(ADMIN_ADDED_TEXT[language])
     await show_manage_admins(message, state)
 
 
@@ -1485,6 +1637,8 @@ async def add_admin_received(message: Message, state: FSMContext):
 async def remove_admin_handler(callback: CallbackQuery, state: FSMContext):
     telegram_id = int(callback.data.split("_")[-1])
     removed_admin = await remove_admin_by_telegram_id(telegram_id)
+    admin_user = await get_user_by_telegram_id(callback.from_user.id)
+    language = admin_user.language if admin_user else "uz"
     if removed_admin:
         await create_admin_log(
             admin_id=callback.from_user.id,
@@ -1492,7 +1646,7 @@ async def remove_admin_handler(callback: CallbackQuery, state: FSMContext):
             target_user_id=removed_admin.id,
             comment=f"Telegram ID: {telegram_id}",
         )
-    await callback.answer(ADMIN_REMOVED_TEXT)
+    await callback.answer(ADMIN_REMOVED_TEXT[language])
     await callback.message.delete()
     await show_manage_admins(callback.message, state)
 
@@ -1540,3 +1694,77 @@ async def set_channel_check_handler(message: Message):
 
     await message.answer(CHANNEL_CHECK_SET_SUCCESS_TEXT["uz"])
 
+@router.message(Command("addadmin"))
+async def add_admin_command(message: Message):
+    if not await is_admin_user(message.from_user.id):
+        user = await get_user_by_telegram_id(message.from_user.id)
+        language = "uz"
+        if user:
+            language = user.language
+        await message.answer(UNAUTHORIZED_ACCESS_TEXT.get(language, "Sizda admin paneliga kirish huquqi yo'q."))
+        return
+
+    parts = message.text.split()
+    if len(parts) < 2:
+        await message.answer("Foydalanish: /addadmin <telegram_id>")
+        return
+
+    try:
+        telegram_id = int(parts[1])
+    except ValueError:
+        await message.answer("Telegram ID raqam bo'lishi kerak.")
+        return
+
+    new_admin = await add_admin_by_telegram_id(telegram_id)
+    if not new_admin:
+        await message.answer(ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT.get("uz"))
+        return
+
+    await create_admin_log(
+        admin_id=message.from_user.id,
+        action=ActionType.add_admin,
+        target_user_id=new_admin.id,
+        comment=f"Telegram ID: {telegram_id}",
+    )
+    await message.answer(ADMIN_ADDED_TEXT.get("uz"))
+
+
+@router.message(Command("deladmin"))
+async def del_admin_command(message: Message):
+    if not await is_admin_user(message.from_user.id):
+        user = await get_user_by_telegram_id(message.from_user.id)
+        language = "uz"
+        if user:
+            language = user.language
+        await message.answer(UNAUTHORIZED_ACCESS_TEXT.get(language, "Sizda admin paneliga kirish huquqi yo'q."))
+        return
+
+    parts = message.text.split()
+    if len(parts) < 2:
+        await message.answer("Foydalanish: /deladmin <telegram_id>")
+        return
+
+    try:
+        telegram_id = int(parts[1])
+    except ValueError:
+        await message.answer("Telegram ID raqam bo'lishi kerak.")
+        return
+
+    # Prevent removing primary admins
+    from config import ADMIN_IDS
+    if telegram_id in ADMIN_IDS:
+        await message.answer("Asosiy adminni bu buyruq bilan o'chirib bo'lmaydi.")
+        return
+
+    removed_admin = await remove_admin_by_telegram_id(telegram_id)
+    if not removed_admin:
+        await message.answer("Bunday admin topilmadi yoki u asosiy admin emas.")
+        return
+
+    await create_admin_log(
+        admin_id=message.from_user.id,
+        action=ActionType.remove_admin,
+        target_user_id=removed_admin.id,
+        comment=f"Telegram ID: {telegram_id}",
+    )
+    await message.answer(ADMIN_REMOVED_TEXT.get("uz"))

@@ -969,10 +969,10 @@ async def auto_lift_expired_ban(user: User) -> User:
 
 async def find_user_by_id_or_telegram_id(identifier: str) -> User | None:
     """Finds a user by their DB ID or Telegram ID."""
-    if not identifier.isdigit():
+    try:
+        user_id = int(identifier)
+    except (ValueError, TypeError):
         return None
-
-    user_id = int(identifier)
 
     async with async_session_maker() as session:
         # Search by Telegram ID first, as it's more common for admins to have
