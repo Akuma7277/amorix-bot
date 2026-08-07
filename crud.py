@@ -318,20 +318,16 @@ async def get_profiles_for_user(
     Fetches a list of suitable profiles for a given user, with advanced filtering for premium users.
     """
     async with async_session_maker() as session:
-        # Get users that the current user has already liked or blocked
-        liked_user_ids_query = select(Like.to_user_id).where(Like.from_user_id == current_user.id)
-        liked_user_ids_result = await session.execute(liked_user_ids_query)
-        seen_user_ids = liked_user_ids_result.scalars().all()
-
-        blocked_user_ids_query = select(BlockedUser.blocked_id).where(BlockedUser.blocker_id == current_user.id)
-        blocked_by_user_ids_result = await session.execute(blocked_user_ids_query)
-        blocked_user_ids = blocked_by_user_ids_result.scalars().all()
+        # Use a subquery to get all user IDs to exclude (liked or blocked)
+        seen_or_blocked_subquery = select(Like.to_user_id).where(Like.from_user_id == current_user.id).union_all(
+            select(BlockedUser.blocked_id).where(BlockedUser.blocker_id == current_user.id)
+        ).scalar_subquery()
 
         # Base query to find other users
         query = select(User).where(
             User.id != current_user.id,
             User.status == UserStatus.active,
-            User.id.notin_(seen_user_ids + blocked_user_ids),
+            User.id.notin_(seen_or_blocked_subquery),
         )
 
         # Filter out users in invisible mode, unless they liked the current user

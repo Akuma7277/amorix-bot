@@ -714,12 +714,15 @@ async def start_search(message: Message, state: FSMContext):
         )
         return
 
-    await message.answer("🔍 Mos anketalar qidirilmoqda...", reply_markup=get_main_menu_keyboard(language))
+    await message.answer("🔍 Mos anketalar qidirilmoqda...", reply_markup=ReplyKeyboardRemove())
 
     profiles = await get_profiles_for_user(user)
 
     if not profiles:
-        await message.answer(NO_PROFILES_TEXTS.get(language, NO_PROFILES_TEXTS["uz"]))
+        await message.answer(
+            NO_PROFILES_TEXTS.get(language, NO_PROFILES_TEXTS["uz"]),
+            reply_markup=get_main_menu_keyboard(language)
+            )
         return
 
     profile_ids = [p.id for p in profiles]
