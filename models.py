@@ -1,4 +1,5 @@
 import enum
+from datetime import datetime
 from sqlalchemy import (
     create_engine,
     Column,
@@ -119,7 +120,7 @@ class User(Base):
     @property
     def is_premium(self) -> bool:
         """Checks if the user has an active premium subscription."""
-        if self.premium_expires_at and self.premium_expires_at > func.now():
+        if self.premium_expires_at and self.premium_expires_at > datetime.now():
             return True
         return False
 
