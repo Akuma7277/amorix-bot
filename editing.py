@@ -22,6 +22,8 @@ from states import EditingStates
 from registration import (
     HEIGHT_INVALID_TEXTS,
     NAME_INVALID_TEXTS,
+    AGE_INVALID_TEXTS,
+    AGE_TOO_YOUNG_TEXTS,
     BIO_TOO_LONG_TEXTS,
     AI_BIO_GENERATING_TEXTS,
     AI_BIO_RESULT_TEXTS,
@@ -37,6 +39,7 @@ router = Router()
 EDIT_FIELD_PROMPTS = {
     "uz": {
         "name": "Yangi ismingizni kiriting:",
+        "age": "Yangi yoshingizni kiriting:",
         "bio": "O'zingiz haqingizda yangi ma'lumot kiriting (maksimum 500 belgi):",
         "city": "Yangi viloyatingizni tanlang:",
         "city_selection": "Yangi shahringizni tanlang:",
@@ -47,6 +50,7 @@ EDIT_FIELD_PROMPTS = {
     },
     "ru": {
         "name": "Введите ваше новое имя:",
+        "age": "Введите ваш новый возраст:",
         "bio": "Введите новую информацию о себе (максимум 500 символов):",
         "city": "Выберите ваш новый регион:",
         "city_selection": "Выберите ваш новый город:",
@@ -57,6 +61,7 @@ EDIT_FIELD_PROMPTS = {
     },
     "en": {
         "name": "Enter your new name:",
+        "age": "Enter your new age:",
         "bio": "Enter a new bio about yourself (max 500 characters):",
         "city": "Select your new region:",
         "city_selection": "Select your new city:",
@@ -110,6 +115,37 @@ async def edit_name_finish(message: Message, state: FSMContext):
         return
 
     await update_user_profile_field(user.id, "name", new_name)
+    await message.answer(FIELD_UPDATED_TEXTS[language])
+    await state.clear()
+    await show_my_profile(message, state)
+
+
+# --- Edit Age ---
+@router.callback_query(EditingStates.choosing_field, F.data == "edit_field_age")
+async def edit_age_start(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    await state.set_state(EditingStates.editing_age)
+    await callback.message.delete()
+    await callback.message.answer(EDIT_FIELD_PROMPTS[language]["age"])
+    await callback.answer()
+
+
+@router.message(EditingStates.editing_age, F.text)
+async def edit_age_finish(message: Message, state: FSMContext):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language or "uz"
+
+    if not message.text.isdigit():
+        await message.answer(AGE_INVALID_TEXTS.get(language, AGE_INVALID_TEXTS["uz"]))
+        return
+
+    new_age = int(message.text)
+    if new_age < 18:
+        await message.answer(AGE_TOO_YOUNG_TEXTS.get(language, AGE_TOO_YOUNG_TEXTS["uz"]))
+        return
+
+    await update_user_profile_field(user.id, "age", new_age)
     await message.answer(FIELD_UPDATED_TEXTS[language])
     await state.clear()
     await show_my_profile(message, state)
@@ -362,7 +398,7 @@ async def edit_height_finish(message: Message, state: FSMContext):
 
     try:
         new_height = float(message.text.replace(",", "."))
-        if not 100 < new_height < 250:
+        if not 100 <= new_height <= 250:
             raise ValueError
     except (ValueError, TypeError):
         await message.answer(HEIGHT_INVALID_TEXTS.get(language, HEIGHT_INVALID_TEXTS["uz"]))
@@ -413,7 +449,6 @@ async def edit_interests_back_to_profile(callback: CallbackQuery, state: FSMCont
     await callback.message.delete()
     await show_my_profile(callback.message, state)
     await callback.answer()
-    await show_my_profile(callback.message, state)
 
 
 # --- Edit Photos ---

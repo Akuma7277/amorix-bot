@@ -474,7 +474,7 @@ async def height_entered(message: Message, state: FSMContext):
 
     try:
         height = float(message.text.replace(",", "."))
-        if not 100 < height < 250:
+        if not 100 <= height <= 250:
             raise ValueError
     except (ValueError, TypeError):
         await message.answer(HEIGHT_INVALID_TEXTS.get(language, HEIGHT_INVALID_TEXTS["uz"]))

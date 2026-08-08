@@ -42,6 +42,9 @@ from crud import (
     get_all_admin_ids,
     get_online_status,
     create_gift,
+    DAILY_LIKE_LIMITS,
+    DAILY_SUPER_LIKE_LIMITS,
+    BOOST_DURATION_MINUTES,
 )
 from states import MenuStates, EditingStates, ReportingStates, SettingsStates, VerificationStates, PremiumStates
 from inline import ALL_INTERESTS # Qiziqishlar nomlarini olish uchun
@@ -50,10 +53,12 @@ from inline import (
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
     get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard,
     get_gift_type_keyboard, get_back_only_keyboard, get_advanced_search_keyboard, get_region_keyboard,
+    GIFT_BUTTON_TEXTS,
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType, EventType
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS, ICEBREAKER_QUESTIONS, SECURITY_INFO_TEXTS
 from models import RelationshipIntent
+from registration import EDIT_PROFILE_TEXTS
 
 # Using RegistrationStates to clear state is not ideal, but works.
 # Let's keep it for now. from app.states import RegistrationStates

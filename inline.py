@@ -457,6 +457,7 @@ def get_chats_keyboard(language: str = "uz", chats: list[tuple[int, str, Verific
 EDIT_PROFILE_BUTTON_TEXTS = {
     "uz": {
         "name": "Ism",
+        "age": "Yosh",
         "bio": "Bio",
         "city": "Shahar",
         "interests": "Qiziqishlar",
@@ -467,6 +468,7 @@ EDIT_PROFILE_BUTTON_TEXTS = {
     "ru": {
         "name": "Имя",
         "bio": "О себе",
+        "age": "Возраст",
         "city": "Город",
         "interests": "Интересы",
         "photos": "Фотографии",
@@ -476,6 +478,7 @@ EDIT_PROFILE_BUTTON_TEXTS = {
     "en": {
         "name": "Name",
         "bio": "Bio",
+        "age": "Age",
         "city": "City",
         "interests": "Interests",
         "photos": "Photos",
@@ -489,6 +492,7 @@ def get_edit_profile_keyboard(language: str = "uz"):
     texts = EDIT_PROFILE_BUTTON_TEXTS.get(language, EDIT_PROFILE_BUTTON_TEXTS["uz"])
     buttons = [
         [InlineKeyboardButton(text=texts["name"], callback_data="edit_field_name")],
+        [InlineKeyboardButton(text=texts["age"], callback_data="edit_field_age")],
         [InlineKeyboardButton(text=texts["bio"], callback_data="edit_field_bio")],
         [InlineKeyboardButton(text=texts["city"], callback_data="edit_field_city")],
         [InlineKeyboardButton(text=texts["interests"], callback_data="edit_field_interests")],

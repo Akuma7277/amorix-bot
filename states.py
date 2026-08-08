@@ -44,6 +44,7 @@ class MenuStates(StatesGroup):
 class EditingStates(StatesGroup):
     choosing_field = State()
     editing_name = State()
+    editing_age = State()
     editing_bio = State()
     confirming_ai_bio = State()
     editing_city = State()
