@@ -102,8 +102,11 @@ async def edit_name_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.set_state(EditingStates.editing_name)
-    await callback.message.delete()
-    await callback.message.answer(EDIT_FIELD_PROMPTS[language]["name"])
+    prompt = EDIT_FIELD_PROMPTS[language]["name"]
+    if callback.message.photo:
+        await callback.message.edit_caption(caption=prompt, reply_markup=None)
+    else:
+        await callback.message.edit_text(prompt, reply_markup=None)
     await callback.answer()
 
 
@@ -129,8 +132,11 @@ async def edit_age_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.set_state(EditingStates.editing_age)
-    await callback.message.delete()
-    await callback.message.answer(EDIT_FIELD_PROMPTS[language]["age"])
+    prompt = EDIT_FIELD_PROMPTS[language]["age"]
+    if callback.message.photo:
+        await callback.message.edit_caption(caption=prompt, reply_markup=None)
+    else:
+        await callback.message.edit_text(prompt, reply_markup=None)
     await callback.answer()
 
 
@@ -160,11 +166,12 @@ async def edit_bio_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.set_state(EditingStates.editing_bio)
-    await callback.message.delete()
-    await callback.message.answer(
-        EDIT_FIELD_PROMPTS[language]["bio"],
-        reply_markup=get_bio_request_keyboard(language, back_callback="back_to_profile")
-    )
+    prompt = EDIT_FIELD_PROMPTS[language]["bio"]
+    keyboard = get_bio_request_keyboard(language, back_callback="back_to_profile")
+    if callback.message.photo:
+        await callback.message.edit_caption(caption=prompt, reply_markup=keyboard)
+    else:
+        await callback.message.edit_text(prompt, reply_markup=keyboard)
     await callback.answer()
 
 
@@ -267,11 +274,12 @@ async def edit_city_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.set_state(EditingStates.editing_city)
-    await callback.message.delete()
-    await callback.message.answer(
-        EDIT_FIELD_PROMPTS[language]["city"],
-        reply_markup=get_region_keyboard(language),
-    )
+    prompt = EDIT_FIELD_PROMPTS[language]["city"]
+    keyboard = get_region_keyboard(language)
+    if callback.message.photo:
+        await callback.message.edit_caption(caption=prompt, reply_markup=keyboard)
+    else:
+        await callback.message.edit_text(prompt, reply_markup=keyboard)
     await callback.answer()
 
 
@@ -389,8 +397,11 @@ async def edit_height_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.set_state(EditingStates.editing_height)
-    await callback.message.delete()
-    await callback.message.answer(EDIT_FIELD_PROMPTS[language]["height"])
+    prompt = EDIT_FIELD_PROMPTS[language]["height"]
+    if callback.message.photo:
+        await callback.message.edit_caption(caption=prompt, reply_markup=None)
+    else:
+        await callback.message.edit_text(prompt, reply_markup=None)
     await callback.answer()
 
 
