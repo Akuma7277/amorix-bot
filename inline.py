@@ -503,6 +503,72 @@ def get_edit_profile_keyboard(language: str = "uz"):
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
+EDIT_PHOTO_VIEW_BUTTON_TEXTS = {
+    "uz": {
+        "make_primary": "✅ Asosiy qilish",
+        "delete": "🗑 O'chirish",
+        "add": "➕ Yangi rasm qo'shish",
+        "back": "⬅️ Orqaga",
+        "prev": "<",
+        "next": ">",
+        "counter": "{current}/{total}",
+    },
+    "ru": {
+        "make_primary": "✅ Сделать основной",
+        "delete": "🗑 Удалить",
+        "add": "➕ Добавить новое фото",
+        "back": "⬅️ Назад",
+        "prev": "<",
+        "next": ">",
+        "counter": "{current}/{total}",
+    },
+    "en": {
+        "make_primary": "✅ Make Primary",
+        "delete": "🗑 Delete",
+        "add": "➕ Add New Photo",
+        "back": "⬅️ Back",
+        "prev": "<",
+        "next": ">",
+        "counter": "{current}/{total}",
+    },
+}
+
+def get_photo_management_keyboard(language: str, photo_id: int, current_index: int, total_photos: int, is_primary: bool):
+    texts = EDIT_PHOTO_VIEW_BUTTON_TEXTS.get(language, EDIT_PHOTO_VIEW_BUTTON_TEXTS["uz"])
+    buttons = []
+    
+    # Navigation row
+    nav_row = []
+    if total_photos > 1:
+        nav_row.append(InlineKeyboardButton(text=texts["prev"], callback_data=f"manage_photo_nav_prev"))
+        nav_row.append(InlineKeyboardButton(text=texts["counter"].format(current=current_index + 1, total=total_photos), callback_data="noop")) # noop = no operation
+        nav_row.append(InlineKeyboardButton(text=texts["next"], callback_data=f"manage_photo_nav_next"))
+    if nav_row:
+        buttons.append(nav_row)
+
+    # Action row
+    action_row = []
+    if not is_primary:
+        action_row.append(InlineKeyboardButton(text=texts["make_primary"], callback_data=f"set_primary_{photo_id}"))
+    
+    # Can only delete if it's not the last photo
+    if total_photos > 1:
+        action_row.append(InlineKeyboardButton(text=texts["delete"], callback_data=f"delete_photo_prompt_{photo_id}"))
+    if action_row:
+        buttons.append(action_row)
+
+    # Add and Back row
+    add_back_row = []
+    if total_photos < 5:
+        add_back_row.append(InlineKeyboardButton(text=texts["add"], callback_data="add_photo"))
+    
+    # This button goes back to the main profile view, not the edit menu.
+    add_back_row.append(InlineKeyboardButton(text=texts["back"], callback_data="back_to_profile"))
+    buttons.append(add_back_row)
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
 PROFILE_VIEW_BUTTON_TEXTS = {
     "uz": {"edit": "✏️ Tahrirlash"},
     "ru": {"edit": "✏️ Редактировать"},

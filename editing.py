@@ -1,11 +1,14 @@
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InlineKeyboardMarkup, InlineKeyboardButton
 
 from ai import generate_bio_with_ai
-from crud import get_user_by_telegram_id, update_user_profile_field, update_user_photos
+from crud import get_user_by_telegram_id, update_user_profile_field, get_user_photos, set_primary_photo, delete_photo, add_photo
 from inline import (
     get_region_keyboard,
+    get_photo_management_keyboard,
     get_city_keyboard,
     get_district_keyboard,
     get_interests_keyboard,
@@ -18,7 +21,7 @@ from inline import (
     ALL_INTERESTS,
 )
 from menu import show_my_profile
-from states import EditingStates
+from states import EditingStates, MenuStates
 from registration import (
     HEIGHT_INVALID_TEXTS,
     NAME_INVALID_TEXTS,
@@ -85,7 +88,7 @@ PHOTOS_MODERATION_NOTICE = {
 }
 
 
-@router.callback_query(EditingStates.choosing_field, F.data == "back_to_profile")
+@router.callback_query(StateFilter(EditingStates, MenuStates), F.data == "back_to_profile")
 async def back_to_profile_view(callback: CallbackQuery, state: FSMContext):
     """Handles returning to the main profile view from the edit menu."""
     await callback.message.delete()
@@ -451,52 +454,157 @@ async def edit_interests_back_to_profile(callback: CallbackQuery, state: FSMCont
     await callback.answer()
 
 
-# --- Edit Photos ---
+# --- Photo Management ---
+
+async def show_photo_management_view(message: Message, state: FSMContext, user_id: int, photo_index: int = 0):
+    user = await get_user_by_telegram_id(user_id)
+    language = user.language or "uz"
+    photos = await get_user_photos(user.id)
+
+    if not photos:
+        await state.set_state(EditingStates.adding_photo)
+        prompt_text = "Sizda hali rasm yo'q. Iltimos, kamida bitta rasm yuboring (maksimum 5 ta)."
+        await message.answer(prompt_text, reply_markup=get_back_only_keyboard(language, "back_to_profile"))
+        return
+
+    photo_index = photo_index % len(photos)
+    await state.update_data(photo_management_index=photo_index)
+
+    current_photo = photos[photo_index]
+    is_primary = current_photo.order == 1
+    total_photos = len(photos)
+
+    caption = PHOTOS_MODERATION_NOTICE[language] if not current_photo.is_approved else f"Rasm {current_photo.order}"
+    
+    keyboard = get_photo_management_keyboard(
+        language=language,
+        photo_id=current_photo.id,
+        current_index=photo_index,
+        total_photos=total_photos,
+        is_primary=is_primary
+    )
+
+    try:
+        await message.edit_media(
+            media=InputMediaPhoto(media=current_photo.file_id, caption=caption),
+            reply_markup=keyboard
+        )
+    except TelegramBadRequest:
+        await message.delete()
+        await message.answer_photo(
+            photo=current_photo.file_id,
+            caption=caption,
+            reply_markup=keyboard
+        )
+
+
 @router.callback_query(EditingStates.choosing_field, F.data == "edit_field_photos")
 async def edit_photos_start(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(EditingStates.editing_photos)
+    await callback.message.delete()
+    await show_photo_management_view(callback.message, state, callback.from_user.id)
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.editing_photos, F.data.startswith("manage_photo_nav_"))
+async def manage_photo_nav_handler(callback: CallbackQuery, state: FSMContext):
+    direction = callback.data.split("_")[-1]
+    data = await state.get_data()
+    current_index = data.get("photo_management_index", 0)
+    
+    if direction == "next":
+        current_index += 1
+    else:
+        current_index -= 1
+    
+    await show_photo_management_view(callback.message, state, callback.from_user.id, photo_index=current_index)
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.editing_photos, F.data.startswith("set_primary_"))
+async def set_primary_photo_handler(callback: CallbackQuery, state: FSMContext):
+    photo_id = int(callback.data.split("_")[-1])
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    
+    success = await set_primary_photo(user.id, photo_id)
+    if success:
+        await callback.answer("✅ Asosiy rasm o'zgartirildi.")
+        data = await state.get_data()
+        current_index = data.get("photo_management_index", 0)
+        await show_photo_management_view(callback.message, state, user.id, photo_index=current_index)
+    else:
+        await callback.answer("❌ Xatolik yuz berdi.", show_alert=True)
+
+
+@router.callback_query(EditingStates.editing_photos, F.data == "add_photo")
+async def add_photo_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
-    await state.set_state(EditingStates.editing_photos)
-    await state.update_data(edit_photos=[]) # Start with an empty list
-    await callback.message.delete() # Delete the profile view
+    await state.set_state(EditingStates.adding_photo)
+    await callback.message.delete()
     await callback.message.answer(
-        EDIT_FIELD_PROMPTS[language]["photos"],
-        reply_markup=get_photo_upload_done_keyboard(language),
+        "Yangi rasm yuboring:",
+        reply_markup=get_back_only_keyboard(language, "back_to_photo_management")
     )
     await callback.answer()
 
 
-@router.message(EditingStates.editing_photos, F.photo)
-async def edit_photo_uploaded(message: Message, state: FSMContext):
+@router.message(EditingStates.adding_photo, F.photo)
+async def add_photo_finish(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
     language = user.language or "uz"
-    data = await state.get_data()
-    uploaded_photos = data.get("edit_photos", [])
-
-    if len(uploaded_photos) >= 5:
+    
+    new_photo = await add_photo(user.id, message.photo[-1].file_id)
+    
+    if new_photo:
+        await message.answer(f"{PHOTO_UPLOAD_SUCCESS_TEXTS[language]}\n{PHOTOS_MODERATION_NOTICE[language]}")
+    else:
         await message.answer(PHOTO_LIMIT_EXCEEDED_TEXTS[language])
-        return
-
-    file_id = message.photo[-1].file_id
-    uploaded_photos.append(file_id)
-    await state.update_data(edit_photos=uploaded_photos)
-
-    await message.answer(PHOTO_UPLOAD_SUCCESS_TEXTS[language])
+        
+    await state.set_state(EditingStates.editing_photos)
+    photos = await get_user_photos(user.id)
+    await show_photo_management_view(message, state, user.id, photo_index=len(photos)-1)
 
 
-@router.callback_query(EditingStates.editing_photos, F.data == "photos_done")
-async def edit_photos_finish(callback: CallbackQuery, state: FSMContext):
-    user = await get_user_by_telegram_id(callback.from_user.id)
-    language = user.language or "uz"
+@router.callback_query(StateFilter(EditingStates.adding_photo, EditingStates.deleting_photo_confirmation), F.data == "back_to_photo_management")
+async def back_to_photo_management_handler(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(EditingStates.editing_photos)
+    if callback.message.text:
+        await callback.message.delete()
     data = await state.get_data()
-    new_photos = data.get("edit_photos", [])
+    current_index = data.get("photo_management_index", 0)
+    await show_photo_management_view(callback.message, state, callback.from_user.id, photo_index=current_index)
+    await callback.answer()
 
-    if not new_photos:
-        await callback.answer(PHOTO_MIN_ERROR_TEXTS[language], show_alert=True)
-        return
 
-    await update_user_photos(user.id, new_photos)
-    await callback.message.answer(FIELD_UPDATED_TEXTS[language])
-    await callback.message.answer(PHOTOS_MODERATION_NOTICE[language])
-    await state.clear()
-    await show_my_profile(callback.message, state)
+@router.callback_query(EditingStates.editing_photos, F.data.startswith("delete_photo_prompt_"))
+async def delete_photo_prompt_handler(callback: CallbackQuery, state: FSMContext):
+    photo_id = int(callback.data.split("_")[-1])
+    
+    confirm_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Ha, o'chirish", callback_data=f"delete_photo_confirm_{photo_id}"),
+            InlineKeyboardButton(text="❌ Yo'q", callback_data="back_to_photo_management")
+        ]
+    ])
+    
+    await state.set_state(EditingStates.deleting_photo_confirmation)
+    await callback.message.edit_reply_markup(reply_markup=confirm_keyboard)
+    await callback.answer("Shu rasmni o'chirishni tasdiqlaysizmi?")
+
+
+@router.callback_query(EditingStates.deleting_photo_confirmation, F.data.startswith("delete_photo_confirm_"))
+async def delete_photo_confirm_handler(callback: CallbackQuery, state: FSMContext):
+    photo_id = int(callback.data.split("_")[-1])
+    
+    success = await delete_photo(photo_id)
+    
+    await state.set_state(EditingStates.editing_photos)
+    if success:
+        await callback.answer("🗑 Rasm o'chirildi.")
+        await show_photo_management_view(callback.message, state, callback.from_user.id, photo_index=0)
+    else:
+        await callback.answer("❌ Yagona rasmni o'chirib bo'lmaydi.", show_alert=True)
+        data = await state.get_data()
+        current_index = data.get("photo_management_index", 0)
+        await show_photo_management_view(callback.message, state, callback.from_user.id, photo_index=current_index)

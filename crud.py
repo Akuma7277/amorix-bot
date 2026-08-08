@@ -1076,28 +1076,6 @@ async def update_user_photos(user_id: int, new_photo_file_ids: list[str]):
         await session.commit()
 
 
-async def set_primary_photo(user_id: int, photo_id: int) -> bool:
-    """Sets a specific photo as the user's primary (first) photo."""
-    async with async_session_maker() as session:
-        # First, find the target photo and ensure it belongs to the user and is approved
-        target_photo = await session.get(Photo, photo_id)
-        if not target_photo or target_photo.user_id != user_id or not target_photo.is_approved:
-            return False
-        
-        # Set all other photos for this user to have order > 1
-        await session.execute(
-            update(Photo)
-            .where(and_(Photo.user_id == user_id, Photo.id != photo_id))
-            .values(order=Photo.order + 1)
-        )
-        
-        # Set the target photo's order to 1
-        target_photo.order = 1
-        
-        await session.commit()
-        return True
-
-
 async def create_report(reporter_id: int, reported_id: int, category: ReportCategory, description: str) -> Report:
     """Creates a new report in the database."""
     async with async_session_maker() as session:
@@ -1110,6 +1088,73 @@ async def create_report(reporter_id: int, reported_id: int, category: ReportCate
         session.add(new_report)
         await session.commit()
         return new_report
+
+
+async def add_photo(user_id: int, file_id: str) -> Photo | None:
+    """Adds a new photo for the user, respecting the 5-photo limit."""
+    async with async_session_maker() as session:
+        current_photo_count = await session.scalar(
+            select(func.count(Photo.id)).where(Photo.user_id == user_id)
+        )
+        if current_photo_count >= 5:
+            return None  # Limit reached
+
+        max_order = await session.scalar(
+            select(func.max(Photo.order)).where(Photo.user_id == user_id)
+        )
+        new_order = (max_order or 0) + 1
+
+        new_photo = Photo(
+            user_id=user_id,
+            file_id=file_id,
+            order=new_order,
+            is_approved=False,  # New photos always need moderation
+        )
+        session.add(new_photo)
+        await session.commit()
+        await session.refresh(new_photo)
+        return new_photo
+
+
+async def set_primary_photo(user_id: int, photo_id: int) -> bool:
+    """Sets a specific photo as the user's primary (first) photo."""
+    async with async_session_maker() as session:
+        # Ensure the target photo exists and belongs to the user
+        target_photo = await session.get(Photo, photo_id)
+        if not target_photo or target_photo.user_id != user_id:
+            return False
+
+        # Get all photos for the user, ensuring the target photo is first in a temporary list
+        all_photos_result = await session.execute(
+            select(Photo).where(Photo.user_id == user_id).order_by(
+                case((Photo.id == photo_id, 0), else_=1),
+                Photo.order
+            )
+        )
+        all_photos = all_photos_result.scalars().all()
+
+        # Re-assign order numbers sequentially
+        for i, photo in enumerate(all_photos):
+            photo.order = i + 1
+
+        await session.commit()
+        return True
+
+
+async def delete_photo(photo_id: int) -> bool:
+    """Deletes a single photo by its ID, but only if it's not the last one."""
+    async with async_session_maker() as session:
+        photo_to_delete = await session.get(Photo, photo_id)
+        if not photo_to_delete: return False
+        user_id = photo_to_delete.user_id
+        photos_count = await session.scalar(select(func.count(Photo.id)).where(Photo.user_id == user_id))
+        if photos_count <= 1: return False
+        await session.delete(photo_to_delete)
+        await session.commit()
+        # Re-ordering is now handled by a subsequent call to set_primary_photo or by simply letting gaps exist.
+        # For simplicity, we will re-order after deletion to keep things clean.
+        await set_primary_photo(user_id, (await get_user_photos(user_id))[0].id)
+        return True
 
 
 async def get_unapproved_photo() -> Photo | None:
@@ -1148,16 +1193,6 @@ async def reject_photo(photo_id: int) -> bool:
         await session.execute(delete(Photo).where(Photo.id == photo_id))
         await session.commit()
         return True
-
-
-async def delete_photo(photo_id: int) -> bool:
-    """Deletes a single photo by its ID."""
-    async with async_session_maker() as session:
-        result = await session.execute(
-            delete(Photo).where(Photo.id == photo_id)
-        )
-        await session.commit()
-        return result.rowcount > 0
 
 
 async def get_pending_report() -> Report | None:

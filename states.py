@@ -51,6 +51,8 @@ class EditingStates(StatesGroup):
     editing_district = State()
     editing_interests = State()
     editing_photos = State()
+    adding_photo = State()
+    deleting_photo_confirmation = State()
     editing_height = State()
 
 
