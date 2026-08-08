@@ -63,6 +63,51 @@ BANNED_USER_PERMANENT_TEXTS = {
     "en": "🚫 You have been permanently banned from using the bot.",
 }
 
+SECURITY_INFO_TEXTS = {
+    "uz": (
+        "🛡️ <b>Xavfsiz tanishuv qoidalari</b>\n\n"
+        "• Karta raqamingiz, SMS kodlaringiz va parollaringizni hech kimga yubormang.\n"
+        "• Birinchi uchrashuvni jamoat joyida (kafe, park) o'tkazing.\n"
+        "• Shubhali holatda yoki nomaqbul xatti-harakat kuzatsangiz, foydalanuvchini darhol bloklang va shikoyat qiling."
+    ),
+    "ru": (
+        "🛡️ <b>Правила безопасных знакомств</b>\n\n"
+        "• Никогда не отправляйте номер своей карты, SMS-коды и пароли.\n"
+        "• Первую встречу проводите в общественном месте (кафе, парк).\n"
+        "• В случае подозрительной ситуации или неприемлемого поведения немедленно заблокируйте пользователя и подайте жалобу."
+    ),
+    "en": (
+        "🛡️ <b>Safe Dating Rules</b>\n\n"
+        "• Never send your card number, SMS codes, or passwords.\n"
+        "• Hold the first meeting in a public place (cafe, park).\n"
+        "• In case of suspicious activity or inappropriate behavior, block the user immediately and file a report."
+    ),
+}
+
+ICEBREAKER_QUESTIONS = {
+    "uz": [
+        "Dam olish kunini qanday o‘tkazishni yoqtirasiz?",
+        "Sizni oxirgi marta nima ilhomlantirdi?",
+        "Birga borishni xohlagan joyingiz qayer?",
+        "Hayotingizdagi eng kulgili voqea qaysi?",
+        "Agar istalgan joyga sayohat qila olganingizda, qayerga borardingiz?",
+    ],
+    "ru": [
+        "Как вы любите проводить выходные?",
+        "Что вдохновило вас в последний раз?",
+        "Куда бы вы хотели отправиться вместе?",
+        "Какой самый смешной случай был в вашей жизни?",
+        "Если бы вы могли путешествовать куда угодно, куда бы вы поехали?",
+    ],
+    "en": [
+        "How do you like to spend your weekends?",
+        "What inspired you recently?",
+        "Where would you like to travel together?",
+        "What's the funniest thing that has ever happened to you?",
+        "If you could travel anywhere, where would you go?",
+    ],
+}
+
 MUST_SUBSCRIBE_TEXTS = {
     "uz": "Botdan to'liq foydalanish uchun, iltimos, bizning kanalimizga obuna bo'ling. Keyin \"✅ Obuna bo'ldim\" tugmasini bosing.",
     "ru": "Чтобы получить полный доступ к боту, пожалуйста, подпишитесь на наш канал. Затем нажмите кнопку \"✅ Я подписался\".",

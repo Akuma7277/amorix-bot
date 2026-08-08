@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
-from models import UserStatus, ReportCategory, VerificationStatus, PremiumPlan, ActionType, GiftType
+from models import UserStatus, ReportCategory, VerificationStatus, PremiumPlan, ActionType, GiftType, RelationshipIntent
 
 
 UZBEK_REGIONS = {
@@ -130,6 +130,41 @@ def get_looking_for_keyboard(language: str = "uz", back_callback: str | None = N
         ],
         [InlineKeyboardButton(text=texts["any"], callback_data="looking_for_any")],
     ]
+    if back_callback:
+        buttons.append(_back_button_row(language, back_callback))
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+RELATIONSHIP_INTENT_TEXTS = {
+    "uz": {
+        "serious": "Jiddiy munosabat",
+        "marriage": "Nikohga tayyorgarlik",
+        "friendship": "Do‘stlik va suhbat",
+        "explore": "Yangi insonlar bilan tanishish",
+        "private": "Niyatimni yashiraman",
+    },
+    "ru": {
+        "serious": "Серьезные отношения",
+        "marriage": "Подготовка к браку",
+        "friendship": "Дружба и общение",
+        "explore": "Знакомство с новыми людьми",
+        "private": "Скрою свои намерения",
+    },
+    "en": {
+        "serious": "Serious relationship",
+        "marriage": "Preparing for marriage",
+        "friendship": "Friendship and conversation",
+        "explore": "Meeting new people",
+        "private": "I'll hide my intentions",
+    },
+}
+
+
+def get_relationship_intent_keyboard(language: str = "uz", back_callback: str | None = None):
+    texts = RELATIONSHIP_INTENT_TEXTS.get(language, RELATIONSHIP_INTENT_TEXTS["uz"])
+    buttons = []
+    for intent in RelationshipIntent:
+        buttons.append([InlineKeyboardButton(text=texts[intent.name], callback_data=f"intent_{intent.name}")])
     if back_callback:
         buttons.append(_back_button_row(language, back_callback))
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -350,11 +385,19 @@ CHAT_BUTTON_TEXTS = {
     "en": "💬 Start Chat",
 }
 
+ICEBREAKER_BUTTON_TEXTS = {
+    "uz": "✨ Suhbatni oson boshlash",
+    "ru": "✨ Легко начать разговор",
+    "en": "✨ Easy start to a conversation",
+}
+
 
 def get_match_keyboard(language: str = "uz", match_id: int = 0):
-    text = CHAT_BUTTON_TEXTS.get(language, CHAT_BUTTON_TEXTS["uz"])
+    chat_text = CHAT_BUTTON_TEXTS.get(language, CHAT_BUTTON_TEXTS["uz"])
+    icebreaker_text = ICEBREAKER_BUTTON_TEXTS.get(language, ICEBREAKER_BUTTON_TEXTS["uz"])
     buttons = [
-        [InlineKeyboardButton(text=text, callback_data=f"start_chat_{match_id}")]
+        [InlineKeyboardButton(text=chat_text, callback_data=f"start_chat_{match_id}")],
+        [InlineKeyboardButton(text=icebreaker_text, callback_data=f"icebreaker_{match_id}")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -418,6 +461,7 @@ EDIT_PROFILE_BUTTON_TEXTS = {
         "city": "Shahar",
         "interests": "Qiziqishlar",
         "photos": "Rasmlar",
+        "height": "Bo'y",
         "back": "⬅️ Orqaga",
     },
     "ru": {
@@ -426,6 +470,7 @@ EDIT_PROFILE_BUTTON_TEXTS = {
         "city": "Город",
         "interests": "Интересы",
         "photos": "Фотографии",
+        "height": "Рост",
         "back": "⬅️ Назад",
     },
     "en": {
@@ -434,6 +479,7 @@ EDIT_PROFILE_BUTTON_TEXTS = {
         "city": "City",
         "interests": "Interests",
         "photos": "Photos",
+        "height": "Height",
         "back": "⬅️ Back",
     },
 }
@@ -447,6 +493,7 @@ def get_edit_profile_keyboard(language: str = "uz"):
         [InlineKeyboardButton(text=texts["city"], callback_data="edit_field_city")],
         [InlineKeyboardButton(text=texts["interests"], callback_data="edit_field_interests")],
         [InlineKeyboardButton(text=texts["photos"], callback_data="edit_field_photos")],
+        [InlineKeyboardButton(text=texts["height"], callback_data="edit_field_height")],
         [InlineKeyboardButton(text=texts["back"], callback_data="back_to_profile")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -459,11 +506,43 @@ PROFILE_VIEW_BUTTON_TEXTS = {
 }
 
 
-def get_profile_view_keyboard(language: str = "uz"):
+COMPLETE_PROFILE_BUTTON_TEXTS = {
+    "uz": {
+        "add_photos": "📸 Rasm qo'shish",
+        "add_bio": "📝 Bio qo'shish",
+        "add_interests": "🎯 Qiziqishlarni qo'shish",
+        "add_height": "📏 Bo'yni kiritish",
+        "verify_account": "✅ Verifikatsiyadan o'tish",
+    },
+    "ru": {
+        "add_photos": "📸 Добавить фото",
+        "add_bio": "📝 Добавить био",
+        "add_interests": "🎯 Добавить интересы",
+        "add_height": "📏 Указать рост",
+        "verify_account": "✅ Пройти верификацию",
+    },
+    "en": {
+        "add_photos": "📸 Add photos",
+        "add_bio": "📝 Add bio",
+        "add_interests": "🎯 Add interests",
+        "add_height": "📏 Add height",
+        "verify_account": "✅ Get verified",
+    },
+}
+
+
+def get_profile_view_keyboard(language: str = "uz", next_step: tuple[str, str] | None = None):
     texts = PROFILE_VIEW_BUTTON_TEXTS.get(language, PROFILE_VIEW_BUTTON_TEXTS["uz"])
     buttons = [
         [InlineKeyboardButton(text=texts["edit"], callback_data="edit_profile_menu")]
     ]
+
+    if next_step:
+        action_callback, text_key = next_step
+        button_texts = COMPLETE_PROFILE_BUTTON_TEXTS.get(language, COMPLETE_PROFILE_BUTTON_TEXTS["uz"])
+        button_text = button_texts.get(text_key, "To'ldirish")
+        buttons.insert(0, [InlineKeyboardButton(text=button_text, callback_data=action_callback)])
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -741,16 +820,19 @@ def get_premium_plans_keyboard(language: str = "uz"):
 PREMIUM_DASHBOARD_BUTTON_TEXTS = {
     "uz": {
         "boost": "🚀 Profilni Boost qilish (30 daq.)",
+        "who_liked_me": "👀 Meni yoqtirganlar",
         "who_viewed_me": "👀 Mening profilimni kim ko'rdi",
         "back_to_main_menu": "⬅️ Asosiy menyuga"
     },
     "ru": {
         "boost": "🚀 Буст профиля (30 мин.)",
+        "who_liked_me": "👀 Кто меня лайкнул",
         "who_viewed_me": "👀 Кто смотрел мой профиль",
         "back_to_main_menu": "⬅️ В главное меню"
     },
     "en": {
         "boost": "🚀 Boost profile (30 min.)",
+        "who_liked_me": "👀 Who liked me",
         "who_viewed_me": "👀 Who viewed my profile",
         "back_to_main_menu": "⬅️ Back to main menu"
     },
@@ -761,6 +843,7 @@ def get_premium_dashboard_keyboard(language: str = "uz"):
     texts = PREMIUM_DASHBOARD_BUTTON_TEXTS.get(language, PREMIUM_DASHBOARD_BUTTON_TEXTS["uz"])
     buttons = [
         [InlineKeyboardButton(text=texts["boost"], callback_data="activate_boost")],
+        [InlineKeyboardButton(text=texts["who_liked_me"], callback_data="who_liked_me")],
         [InlineKeyboardButton(text=texts["who_viewed_me"], callback_data="who_viewed_me")],
         [InlineKeyboardButton(text=texts["back_to_main_menu"], callback_data="premium_back_to_main_menu")]
     ]

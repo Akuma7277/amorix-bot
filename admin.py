@@ -323,7 +323,7 @@ INVALID_DATE_FORMAT_TEXT = {
     "en": "Invalid date format. Please enter in `YYYY-MM-DD` format.",
 }
 
-INVALID_TELEGRAM_ID_TEXT = { # Error 1: Define INVALID_TELEGRAM_ID_TEXT
+INVALID_TELEGRAM_ID_TEXT = {
     "uz": "Iltimos, faqat raqam (Telegram ID) yuboring.",
     "ru": "Пожалуйста, отправьте только число (Telegram ID).",
     "en": "Please send only a number (Telegram ID).",
@@ -1273,7 +1273,6 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
         logging.warning(f"Could not notify user {user.telegram_id} about profile approval: {exc}")
 
 
-# Fix 2: Localize MANAGE_ADMINS_HEADER_TEXT
 MANAGE_ADMINS_HEADER_TEXT = {
     "uz": "👮 <b>Adminlar ro'yxati</b>\n\nQo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
     "ru": "👮 <b>Список администраторов</b>\n\nИспользуйте кнопки для добавления или удаления дополнительных администраторов.\n\n<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",

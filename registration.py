@@ -17,6 +17,7 @@ from inline import (
     get_looking_for_keyboard,
     get_interests_keyboard,
     ALL_INTERESTS,
+    get_relationship_intent_keyboard,
     get_photo_upload_done_keyboard,
     get_region_keyboard,
     get_review_keyboard,
@@ -111,6 +112,12 @@ LOOKING_FOR_REQUEST_TEXTS = {
     "en": "Who are you looking for?",
 }
 
+INTENT_REQUEST_TEXTS = {
+    "uz": "Maqsadingizni tanlang. Bu sizga mos suhbatdosh topishga yordam beradi.",
+    "ru": "Выберите вашу цель. Это поможет найти вам подходящего собеседника.",
+    "en": "Choose your intent. This will help find a suitable match for you.",
+}
+
 CITY_REQUEST_TEXTS = {
     "uz": "Ajoyib! Endi viloyatingizni tanlang.",
     "ru": "Отлично! Теперь выберите ваш регион.",
@@ -202,6 +209,7 @@ PROFILE_PREVIEW_TEXTS = {
         "<b>Yosh:</b> {age}\n"
         "<b>Bo'y:</b> {height} sm\n"
         "<b>Shahar:</b> {city}, {district}\n"
+        "<b>Niyat:</b> {relationship_intent}\n"
         "<b>Qiziqishlar:</b> {interests}\n\n"
         "<b>Bio:</b>\n{bio}\n\n"
         "Ma'lumotlar to'g'riligini tasdiqlang."
@@ -222,6 +230,7 @@ PROFILE_PREVIEW_TEXTS = {
         "<b>Age:</b> {age}\n"
         "<b>Height:</b> {height} cm\n"
         "<b>City:</b> {city}, {district}\n"
+        "<b>Intent:</b> {relationship_intent}\n"
         "<b>Interests:</b> {interests}\n\n"
         "<b>Bio:</b>\n{bio}\n\n"
         "Please confirm that the information is correct."
@@ -504,12 +513,40 @@ async def looking_for_chosen(callback: CallbackQuery, state: FSMContext):
     language = data.get("language", "uz")
 
     await callback.message.edit_text(
+        text=INTENT_REQUEST_TEXTS.get(language, INTENT_REQUEST_TEXTS["uz"]),
+        reply_markup=get_relationship_intent_keyboard(language, back_callback="reg_back_looking_for"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_intent)
+
+
+@router.callback_query(RegistrationStates.choosing_intent, F.data == "reg_back_looking_for")
+async def back_to_looking_for_from_intent(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=LOOKING_FOR_REQUEST_TEXTS.get(language, LOOKING_FOR_REQUEST_TEXTS["uz"]),
+        reply_markup=get_looking_for_keyboard(language, back_callback="reg_back_height"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_looking_for)
+
+
+@router.callback_query(RegistrationStates.choosing_intent, F.data.startswith("intent_"))
+async def intent_chosen(callback: CallbackQuery, state: FSMContext):
+    intent = callback.data.split("_")[1]
+    await state.update_data(relationship_intent=intent)
+
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
         text=CITY_REQUEST_TEXTS.get(language, CITY_REQUEST_TEXTS["uz"]),
-        reply_markup=get_region_keyboard(language, back_callback="reg_back_looking_for"),
+        reply_markup=get_region_keyboard(language, back_callback="reg_back_intent"),
     )
     await callback.answer()
     await state.set_state(RegistrationStates.entering_city)
-
 
 @router.callback_query(RegistrationStates.entering_city, F.data == "reg_back_looking_for")
 async def back_to_looking_for(callback: CallbackQuery, state: FSMContext):
@@ -522,6 +559,19 @@ async def back_to_looking_for(callback: CallbackQuery, state: FSMContext):
     )
     await callback.answer()
     await state.set_state(RegistrationStates.choosing_looking_for)
+
+
+@router.callback_query(RegistrationStates.entering_city, F.data == "reg_back_intent")
+async def back_to_intent(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    language = data.get("language", "uz")
+
+    await callback.message.edit_text(
+        text=INTENT_REQUEST_TEXTS.get(language, INTENT_REQUEST_TEXTS["uz"]),
+        reply_markup=get_relationship_intent_keyboard(language, back_callback="reg_back_looking_for"),
+    )
+    await callback.answer()
+    await state.set_state(RegistrationStates.choosing_intent)
 
 
 @router.callback_query(RegistrationStates.entering_city, F.data.startswith("region_"))
@@ -886,6 +936,13 @@ async def photos_done(callback: CallbackQuery, state: FSMContext):
     # Qiziqishlar nomlarini olish
     interest_keys = data.get("interests", [])
     interest_names = [ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]['uz']) for key in interest_keys]
+    
+    from inline import RELATIONSHIP_INTENT_TEXTS
+    intent_key = data.get("relationship_intent")
+    intent_text = "Noma'lum"
+    if intent_key:
+        lang_intents = RELATIONSHIP_INTENT_TEXTS.get(language, RELATIONSHIP_INTENT_TEXTS["uz"])
+        intent_text = lang_intents.get(intent_key, "Noma'lum")
 
     caption_text = PROFILE_PREVIEW_TEXTS.get(language, PROFILE_PREVIEW_TEXTS["uz"]).format(
         name=data.get("name"),
@@ -893,6 +950,7 @@ async def photos_done(callback: CallbackQuery, state: FSMContext):
         height=data.get("height"),
         city=data.get("city"),
         district=data.get("district"),
+        relationship_intent=intent_text,
         interests=", ".join(interest_names),
         bio=data.get("bio"),
     )

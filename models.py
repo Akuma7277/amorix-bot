@@ -28,6 +28,13 @@ class LookingForGender(enum.Enum):
     female = "Ayol"
     any = "Farqi yo'q"
 
+class RelationshipIntent(enum.Enum):
+    serious = "Jiddiy munosabat"
+    marriage = "Nikohga tayyorgarlik"
+    friendship = "Do‘stlik va suhbat"
+    explore = "Yangi insonlar bilan tanishish"
+    private = "Niyatimni yashiraman"
+
 class UserStatus(enum.Enum):
     active = "Faol"
     inactive = "Nofaol"
@@ -116,6 +123,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     height = Column(Float, nullable=True)  # new field
     is_invisible = Column(Boolean, default=False)  # new field
+    relationship_intent = Column(Enum(RelationshipIntent), nullable=True)
 
     @property
     def is_premium(self) -> bool:
@@ -282,6 +290,8 @@ class EventType(enum.Enum):
     match = "Moslik (match)"
     chat_message = "Xabar yuborish"
     premium_purchase = "Premium sotib olish"
+    block = "Foydalanuvchini bloklash"
+    report = "Shikoyat yuborish"
 
 
 class UserEvent(Base):

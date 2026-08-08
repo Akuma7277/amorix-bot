@@ -29,7 +29,9 @@ from models import (
     ProfileView, # Import ProfileView
     UserEvent,
     EventType,
+    UserGender, LookingForGender, # Added for compatibility score
     Setting,
+    RelationshipIntent,
 )
 from engine import async_session_maker
 from config import ADMIN_IDS
@@ -94,13 +96,44 @@ async def check_and_consume_like_quota(user_id: int, is_super_like: bool = False
         return True, None
 
 
+async def is_boost_active(user_id: int) -> bool:
+    """Checks if a user's profile boost is currently active."""
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        if not user or not user.boost_active_until:
+            return False
+        return user.boost_active_until > datetime.now()
+
+
+async def get_boost_remaining_minutes(user_id: int) -> int:
+    """Returns the remaining minutes for a user's active boost."""
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        if not user or not user.boost_active_until or user.boost_active_until <= datetime.now():
+            return 0
+        remaining_time = user.boost_active_until - datetime.now()
+        return int(remaining_time.total_seconds() / 60)
+
+
 async def activate_profile_boost(user_id: int) -> datetime | None:
-    """Activates a temporary profile boost for premium users. Returns the expiry timestamp."""
+    """
+    Activates a temporary profile boost for premium users.
+    Returns the expiry timestamp if successful, None otherwise.
+    If boost is already active, returns the existing expiry timestamp.
+    """
     try:
         async with async_session_maker() as session:
             user = await session.get(User, user_id)
             if not user:
                 return None
+
+            # Check if user has active premium
+            if not (user.premium_plan != PremiumPlan.basic and user.premium_expires_at and user.premium_expires_at > datetime.now()):
+                return None # Not a premium user
+
+            # If boost is already active, return the current expiry time
+            if user.boost_active_until and user.boost_active_until > datetime.now():
+                return user.boost_active_until
 
             expires_at = datetime.now() + timedelta(minutes=BOOST_DURATION_MINUTES)
             user.boost_active_until = expires_at
@@ -110,8 +143,6 @@ async def activate_profile_boost(user_id: int) -> datetime | None:
         import logging
         logging.warning(f"Database unavailable while activating boost: {exc}")
         return None
-
-
 async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
     """
     Foydalanuvchi ma'lumotlarini va rasmlarini ma'lumotlar bazasiga saqlaydi.
@@ -137,6 +168,7 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
                 target_user.height = user_data.get("height")
                 target_user.bio = user_data.get("bio")
                 target_user.interests = ",".join(user_data.get("interests", []))
+                target_user.relationship_intent = RelationshipIntent[user_data["relationship_intent"]] if user_data.get("relationship_intent") else None
                 target_user.language = user_data.get("language")
                 target_user.status = UserStatus.active
                 target_user.profile_approval_status = "pending"
@@ -154,6 +186,7 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
                     height=user_data.get("height"),
                     bio=user_data.get("bio"),
                     interests=",".join(user_data.get("interests", [])),
+                    relationship_intent=RelationshipIntent[user_data["relationship_intent"]] if user_data.get("relationship_intent") else None,
                     language=user_data.get("language"),
                     # Yangi profil har doim admin tasdig'ini kutadi.
                     profile_approval_status="pending",
@@ -293,6 +326,238 @@ async def get_online_status(user: User) -> str:
         return user.last_activity.strftime("%Y-%m-%d")
 
 
+def calculate_profile_completion(user: User, photo_count: int) -> int:
+    """Calculates the profile completion percentage."""
+    score = 0
+    if user.name:
+        score += 15
+    if photo_count > 0:
+        score += 25
+    if user.bio:
+        score += 20
+    if user.interests:
+        score += 15
+    if user.city or user.district:
+        score += 10
+    if user.height:
+        score += 5
+    if user.verification_status == VerificationStatus.verified:
+        score += 10
+
+    return max(0, min(100, score))
+
+
+def get_trust_badges(user: User, photo_count: int, completion: int, language: str = "uz") -> list[str]:
+    """Generates a list of trust badges for the user."""
+
+    BADGE_TEXTS = {
+        "uz": {
+            "telegram": "✅ Telegram",
+            "verified": "🛡️ Tasdiqlangan",
+            "has_photo": "📸 Foto mavjud",
+            "full_profile": "⭐ To‘liq profil",
+        },
+        "ru": {
+            "telegram": "✅ Telegram",
+            "verified": "🛡️ Подтвержден",
+            "has_photo": "📸 Фото доступно",
+            "full_profile": "⭐ Полный профиль",
+        },
+        "en": {
+            "telegram": "✅ Telegram",
+            "verified": "🛡️ Verified",
+            "has_photo": "📸 Photo available",
+            "full_profile": "⭐ Complete Profile",
+        },
+    }
+
+    texts = BADGE_TEXTS.get(language, BADGE_TEXTS["uz"])
+    badges = [texts["telegram"]]
+
+    if user.verification_status == VerificationStatus.verified:
+        badges.append(texts["verified"])
+
+    if photo_count > 0:
+        badges.append(texts["has_photo"])
+
+    if completion >= 80:
+        badges.append(texts["full_profile"])
+
+    return badges
+
+
+def get_next_completion_step(user: User, photo_count: int) -> tuple[str, str] | None:
+    """
+    Determines the next useful action for the user to complete their profile.
+    Returns a tuple of (action_callback_data, button_text_key) or None.
+    """
+    if photo_count == 0:
+        return "edit_field_photos", "add_photos"
+    if not user.bio:
+        return "edit_field_bio", "add_bio"
+    if not user.interests:
+        return "edit_field_interests", "add_interests"
+    if not user.height:
+        return "edit_field_height", "add_height"
+    if user.verification_status != VerificationStatus.verified:
+        return "settings_verify_account", "verify_account"
+    return None
+
+
+# --- Compatibility Score and Reasons ---
+async def calculate_compatibility_score(user_id: int, candidate_id: int) -> int:
+    """
+    Calculates a compatibility score between two users based on various criteria.
+    """
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        candidate = await session.get(User, candidate_id)
+
+        if not user or not candidate:
+            return 0
+
+        score = 0
+
+        # 1. Common interests: 40 points
+        user_interests = set(user.interests.split(',')) if user.interests else set()
+        candidate_interests = set(candidate.interests.split(',')) if candidate.interests else set()
+        common_interests = user_interests.intersection(candidate_interests)
+        if common_interests:
+            score += 40
+
+        # 2. Candidate age matches user's looking_for age range: 25 points
+        # Assumption: User is looking for someone within +/- 5 years of their own age.
+        # This can be refined if explicit age preference fields are added to the User model later.
+        user_min_age_pref = user.age - 5 if user.age else 18
+        user_max_age_pref = user.age + 5 if user.age else 99
+
+        if user_min_age_pref <= candidate.age <= user_max_age_pref:
+            score += 25
+
+        # 3. Same city: 10 points
+        if user.city and candidate.city and user.city.lower() == candidate.city.lower():
+            score += 10
+            # 4. Same district: additional 5 points
+            if user.district and candidate.district and user.district.lower() == candidate.district.lower():
+                score += 5
+
+        # 5. Gender and looking_for compatibility: 10 points
+        user_looking_for_candidate = (user.looking_for == LookingForGender[candidate.gender.name]) or (user.looking_for == LookingForGender.any)
+        candidate_looking_for_user = (candidate.looking_for == LookingForGender[user.gender.name]) or (candidate.looking_for == LookingForGender.any)
+        if user_looking_for_candidate and candidate_looking_for_user:
+            score += 10
+
+        # 6. Candidate profile completion >= 80: 10 points
+        candidate_photos = await get_user_photos(candidate.id)
+        candidate_completion = calculate_profile_completion(candidate, len(candidate_photos))
+        if candidate_completion >= 80:
+            score += 10
+
+        # 7. Relationship intent compatibility: 15 points
+        if user.relationship_intent and candidate.relationship_intent:
+            u_intent = user.relationship_intent
+            c_intent = candidate.relationship_intent
+
+            if u_intent == c_intent and u_intent != RelationshipIntent.private:
+                score += 15
+            elif u_intent == RelationshipIntent.private or c_intent == RelationshipIntent.private:
+                score += 5
+            else:
+                serious_group = {RelationshipIntent.serious, RelationshipIntent.marriage}
+                casual_group = {RelationshipIntent.friendship, RelationshipIntent.explore}
+                if (u_intent in serious_group and c_intent in serious_group) or (u_intent in casual_group and c_intent in casual_group):
+                    score += 10
+        return max(0, min(100, score))
+
+
+async def get_compatibility_reasons(user_id: int, candidate_id: int, language: str = "uz") -> list[str]:
+    """
+    Generates a list of reasons why two users are compatible.
+    """
+    from inline import ALL_INTERESTS # Import here to avoid circular dependency if inline imports crud
+
+    async with async_session_maker() as session:
+        user = await session.get(User, user_id)
+        candidate = await session.get(User, candidate_id)
+
+        if not user or not candidate:
+            return []
+
+        reasons = []
+
+        REASON_TEXTS = {
+            "uz": {
+                "common_interests": "🌿 Umumiy qiziqishlar: {interests}",
+                "same_city": "📍 Bir xil shahar",
+                "same_district": "📍 Bir xil tuman",
+                "gender_match": "🎯 Niyat yoki qidiruv mos",
+                "intent_match": "🎯 Niyatlar mos",
+                "profile_complete": "✅ To‘liq profil", # This means completion >= 80
+            },
+            "ru": {
+                "common_interests": "🌿 Общие интересы: {interests}",
+                "same_city": "📍 Один город",
+                "same_district": "📍 Один район",
+                "gender_match": "🎯 Намерения или поиск совпадают",
+                "intent_match": "🎯 Цели совпадают",
+                "profile_complete": "✅ Полный профиль",
+            },
+            "en": {
+                "common_interests": "🌿 Common interests: {interests}",
+                "same_city": "📍 Same city",
+                "same_district": "📍 Same district",
+                "gender_match": "🎯 Intent or search matches",
+                "intent_match": "🎯 Intentions match",
+                "profile_complete": "✅ Complete profile",
+            },
+        }
+        texts = REASON_TEXTS.get(language, REASON_TEXTS["uz"])
+
+        # Common interests
+        user_interests = set(user.interests.split(',')) if user.interests else set()
+        candidate_interests = set(candidate.interests.split(',')) if candidate.interests else set()
+        common_interests = user_interests.intersection(candidate_interests)
+        if common_interests:
+            translated_common_interests = []
+            for interest_key in common_interests:
+                if interest_key in ALL_INTERESTS:
+                    translated_common_interests.append(ALL_INTERESTS[interest_key].get(language, ALL_INTERESTS[interest_key]["uz"]))
+            if translated_common_interests:
+                reasons.append(texts["common_interests"].format(interests=", ".join(translated_common_interests)))
+
+        # Same city
+        if user.city and candidate.city and user.city.lower() == candidate.city.lower():
+            reasons.append(texts["same_city"])
+            # Same district
+            if user.district and candidate.district and user.district.lower() == candidate.district.lower():
+                reasons.append(texts["same_district"])
+
+        # Gender and looking_for compatibility
+        user_looking_for_candidate = (user.looking_for == LookingForGender[candidate.gender.name]) or (user.looking_for == LookingForGender.any)
+        candidate_looking_for_user = (candidate.looking_for == LookingForGender[user.gender.name]) or (candidate.looking_for == LookingForGender.any)
+        if user_looking_for_candidate and candidate_looking_for_user:
+            reasons.append(texts["gender_match"])
+
+        # Relationship intent
+        if user.relationship_intent and candidate.relationship_intent:
+            u_intent = user.relationship_intent
+            c_intent = candidate.relationship_intent
+            if u_intent == c_intent and u_intent != RelationshipIntent.private:
+                reasons.append(texts["intent_match"])
+            else:
+                serious_group = {RelationshipIntent.serious, RelationshipIntent.marriage}
+                if u_intent in serious_group and c_intent in serious_group:
+                    reasons.append(texts["intent_match"])
+
+        # Candidate profile completion >= 80
+        candidate_photos = await get_user_photos(candidate.id)
+        candidate_completion = calculate_profile_completion(candidate, len(candidate_photos))
+        if candidate_completion >= 80:
+            reasons.append(texts["profile_complete"])
+
+        return reasons
+
+
 async def get_match_by_id(match_id: int) -> Match | None:
     """Finds a match by its primary key ID."""
     try:
@@ -379,6 +644,50 @@ async def get_profiles_for_user(
         is_premium = case((User.premium_plan != PremiumPlan.basic, 1), else_=0)
 
         query = query.order_by(is_boosted.desc(), is_premium.desc(), func.random()).limit(limit)
+
+        result = await session.execute(query)
+        return result.scalars().all()
+
+
+async def get_users_who_liked_me_full(user_id: int) -> list[User]:
+    """
+    Fetches a comprehensive list of users who have liked the given user.
+    - Filters out users who are already matched.
+    - Filters out users who are inactive or banned.
+    - Filters out users who have been blocked by the current user, or who have blocked the current user.
+    - Orders the results by the most recent like first.
+    """
+    async with async_session_maker() as session:
+        # Subquery for users the current user has blocked or has been blocked by
+        blocked_by_me = select(BlockedUser.blocked_id).where(BlockedUser.blocker_id == user_id)
+        i_blocked = select(BlockedUser.blocker_id).where(BlockedUser.blocked_id == user_id)
+        blocked_subquery = blocked_by_me.union_all(i_blocked).scalar_subquery()
+
+        # Subquery for users with whom there is already an active match
+        matched_subquery = select(
+            case(
+                (Match.user1_id == user_id, Match.user2_id),
+                else_=Match.user1_id
+            )
+        ).where(
+            or_(Match.user1_id == user_id, Match.user2_id == user_id),
+            Match.is_active == True
+        ).scalar_subquery()
+
+        # Main query to get users who liked me
+        query = (
+            select(User)
+            .join(Like, User.id == Like.from_user_id)
+            .where(
+                Like.to_user_id == user_id,
+                User.id != user_id,
+                User.status == UserStatus.active,
+                User.id.notin_(blocked_subquery),
+                User.id.notin_(matched_subquery),
+                exists().where(and_(Photo.user_id == User.id, Photo.is_approved == True))
+            )
+            .order_by(Like.created_at.desc())
+        )
 
         result = await session.execute(query)
         return result.scalars().all()

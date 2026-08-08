@@ -20,6 +20,7 @@ from inline import (
 from menu import show_my_profile
 from states import EditingStates
 from registration import (
+    HEIGHT_INVALID_TEXTS,
     NAME_INVALID_TEXTS,
     BIO_TOO_LONG_TEXTS,
     AI_BIO_GENERATING_TEXTS,
@@ -42,6 +43,7 @@ EDIT_FIELD_PROMPTS = {
         "district": "Yangi tumaningizni tanlang:",
         "interests": "Qiziqishlaringizni qayta tanlang:",
         "photos": "Yangi rasmlaringizni yuboring (eskilar o'chiriladi, maksimum 5 ta). Rasmlar tayyor bo'lgach, '✅ Rasmlar tayyor' tugmasini bosing.",
+        "height": "Yangi bo'yingizni kiriting (sm):",
     },
     "ru": {
         "name": "Введите ваше новое имя:",
@@ -51,6 +53,7 @@ EDIT_FIELD_PROMPTS = {
         "district": "Выберите ваш новый район:",
         "interests": "Выберите ваши интересы заново:",
         "photos": "Отправьте ваши новые фотографии (старые будут удалены, максимум 5). Когда закончите, нажмите '✅ Фотографии готовы'.",
+        "height": "Введите ваш новый рост (см):",
     },
     "en": {
         "name": "Enter your new name:",
@@ -60,6 +63,7 @@ EDIT_FIELD_PROMPTS = {
         "district": "Select your new district:",
         "interests": "Re-select your interests:",
         "photos": "Send your new photos (old ones will be deleted, max 5). When done, press '✅ Photos done'.",
+        "height": "Enter your new height (cm):",
     },
 }
 
@@ -107,6 +111,7 @@ async def edit_name_finish(message: Message, state: FSMContext):
 
     await update_user_profile_field(user.id, "name", new_name)
     await message.answer(FIELD_UPDATED_TEXTS[language])
+    await state.clear()
     await show_my_profile(message, state)
 
 
@@ -171,6 +176,7 @@ async def edit_bio_finish(message: Message, state: FSMContext):
 
     await update_user_profile_field(user.id, "bio", new_bio)
     await message.answer(FIELD_UPDATED_TEXTS[language])
+    await state.clear()
     await show_my_profile(message, state)
 
 
@@ -212,6 +218,7 @@ async def accept_ai_bio_for_edit_handler(callback: CallbackQuery, state: FSMCont
     # So we delete the message and show the profile.
     await callback.message.delete()
     await callback.message.answer(FIELD_UPDATED_TEXTS[language])
+    await state.clear()
     await show_my_profile(callback.message, state)
     await callback.answer()
 
@@ -280,6 +287,7 @@ async def edit_district_selected(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.delete()
     await callback.message.answer(FIELD_UPDATED_TEXTS[language])
+    await state.clear()
     await show_my_profile(callback.message, state)
 
 
@@ -293,7 +301,7 @@ async def edit_interests_start(callback: CallbackQuery, state: FSMContext):
     await state.set_state(EditingStates.editing_interests)
     await state.update_data(edit_interests=current_interests)
     await callback.message.delete()
-    await callback.message.answer( # The comment "Error 7: Add back_callback" was misleading, the back_callback is already there.
+    await callback.message.answer(
         EDIT_FIELD_PROMPTS[language]["interests"],
         reply_markup=get_interests_keyboard(language, current_interests, back_callback="back_to_profile"),
     )
@@ -314,7 +322,7 @@ async def edit_interest_selected(callback: CallbackQuery, state: FSMContext):
 
     await state.update_data(edit_interests=selected_interests)
     await callback.message.edit_reply_markup(
-        reply_markup=get_interests_keyboard(language, selected_interests, back_callback="back_to_profile") # Error 7: Add back_callback
+        reply_markup=get_interests_keyboard(language, selected_interests, back_callback="back_to_profile")
     )
     await callback.answer()
 
@@ -333,7 +341,37 @@ async def edit_interests_finish(callback: CallbackQuery, state: FSMContext):
     await update_user_profile_field(user.id, "interests", ",".join(selected_interests))
     await callback.message.delete()
     await callback.message.answer(FIELD_UPDATED_TEXTS[language])
+    await state.clear()
     await show_my_profile(callback.message, state)
+
+
+@router.callback_query(EditingStates.choosing_field, F.data == "edit_field_height")
+async def edit_height_start(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    await state.set_state(EditingStates.editing_height)
+    await callback.message.delete()
+    await callback.message.answer(EDIT_FIELD_PROMPTS[language]["height"])
+    await callback.answer()
+
+
+@router.message(EditingStates.editing_height, F.text)
+async def edit_height_finish(message: Message, state: FSMContext):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language or "uz"
+
+    try:
+        new_height = float(message.text.replace(",", "."))
+        if not 100 < new_height < 250:
+            raise ValueError
+    except (ValueError, TypeError):
+        await message.answer(HEIGHT_INVALID_TEXTS.get(language, HEIGHT_INVALID_TEXTS["uz"]))
+        return
+
+    await update_user_profile_field(user.id, "height", new_height)
+    await message.answer(FIELD_UPDATED_TEXTS[language])
+    await state.clear()
+    await show_my_profile(message, state)
 
 
 @router.callback_query(EditingStates.editing_city, F.data == "edit_back_to_region_selection")
@@ -425,4 +463,5 @@ async def edit_photos_finish(callback: CallbackQuery, state: FSMContext):
     await update_user_photos(user.id, new_photos)
     await callback.message.answer(FIELD_UPDATED_TEXTS[language])
     await callback.message.answer(PHOTOS_MODERATION_NOTICE[language])
+    await state.clear()
     await show_my_profile(callback.message, state)

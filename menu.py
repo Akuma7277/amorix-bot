@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
 from aiogram import F, Router, Bot
+import random
 import logging
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, User
 from aiogram.fsm.context import FSMContext
 
-from reply import MAIN_MENU_BUTTONS, get_main_menu_keyboard
-from config import PAYMENT_CARD_NUMBER, ADMIN_IDS
+from reply import MAIN_MENU_BUTTONS, get_main_menu_keyboard, CHAT_ACTION_BUTTONS, get_chat_keyboard
+from config import PAYMENT_CARD_NUMBER
 from crud import (
     get_user_by_telegram_id,
     get_user_photos,
@@ -17,39 +18,45 @@ from crud import (
     get_user_matches,
     get_match_by_id,
     create_chat_message,
+    calculate_profile_completion,
+    calculate_compatibility_score,
+    get_compatibility_reasons,
+    get_trust_badges,
+    get_next_completion_step,
     update_user_profile_field,
     create_report,
     delete_user_data,
+    get_users_who_liked_me_full,
+    unmatch_users,
+    is_user_blocked,
+    log_user_event,
     create_verification_request,
     create_payment_record,
-    get_users_who_liked_me, block_user, get_user_referrals, # Added for "Who Liked Me", User Blocking and Referral feature
-    check_and_consume_like_quota, set_user_language, # Fix 12: Import set_user_language
-    mark_messages_as_read, # For read receipts
+    get_users_who_liked_me, block_user, get_user_referrals,
+    check_and_consume_like_quota, set_user_language,
+    mark_messages_as_read,
     activate_profile_boost,
+    is_boost_active, # New import
+    get_boost_remaining_minutes, # New import
     create_support_message,
     get_all_admin_ids,
-    DAILY_LIKE_LIMITS,
-    DAILY_SUPER_LIKE_LIMITS,
-    DAILY_SUPER_LIKE_LIMITS, get_online_status, # Added get_online_status
-    BOOST_DURATION_MINUTES,
+    get_online_status,
     create_gift,
 )
 from states import MenuStates, EditingStates, ReportingStates, SettingsStates, VerificationStates, PremiumStates
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton # Added for gift_message_entered
 from inline import ALL_INTERESTS # Qiziqishlar nomlarini olish uchun
-from inline import ( # Fix 12: Import get_back_only_keyboard and Updated imports for gift feature
+from inline import (
     get_search_keyboard, get_match_keyboard, get_chats_keyboard, get_profile_view_keyboard, get_edit_profile_keyboard,
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
     get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard,
-    get_gift_type_keyboard, GIFT_BUTTON_TEXTS, get_back_only_keyboard, get_advanced_search_keyboard,
+    get_gift_type_keyboard, get_back_only_keyboard, get_advanced_search_keyboard, get_region_keyboard,
 )
-from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType # Import UserStatus and GiftType
-from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType, User # Import UserStatus and GiftType
-from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS # Import common texts
+from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType, EventType
+from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS, ICEBREAKER_QUESTIONS, SECURITY_INFO_TEXTS
+from models import RelationshipIntent
 
 # Using RegistrationStates to clear state is not ideal, but works.
 # Let's keep it for now. from app.states import RegistrationStates
-from registration import EDIT_PROFILE_TEXTS # Import text from registration
 
 router = Router()
 
@@ -89,27 +96,35 @@ CONTACT_SUPPORT_TEXT = {
 SEARCH_PROFILE_TEXTS = {
     "uz": (
         "<b>{name}</b>, {age} ({online_status})\n"
+        "<b>Niyati:</b> {relationship_intent}\n"
         "<b>Bo'y:</b> {height} sm\n"
         "{city}, {district}\n\n"
         "<i>{bio}</i>{verification_checkmark}\n\n"
-        "<b>Qiziqishlar:</b> {interests}"
+        "<b>Qiziqishlar:</b> {interests}\n\n"
+        "✨ <b>Moslik:</b> {compatibility_score}%\n"
+        "💡 <b>Nega mos:</b> {compatibility_reasons}"
     ),
     "ru": (
         "<b>{name}</b>, {age} ({online_status})\n"
+        "<b>Цель:</b> {relationship_intent}\n"
         "<b>Рост:</b> {height} см\n"
         "{city}, {district}\n\n"
         "<i>{bio}</i>{verification_checkmark}\n\n"
-        "<b>Интересы:</b> {interests}"
+        "<b>Интересы:</b> {interests}\n\n"
+        "✨ <b>Совместимость:</b> {compatibility_score}%\n"
+        "💡 <b>Почему подходит:</b> {compatibility_reasons}"
     ),
     "en": (
         "<b>{name}</b>, {age} ({online_status})\n"
+        "<b>Intent:</b> {relationship_intent}\n"
         "<b>Height:</b> {height} cm\n"
         "{city}, {district}\n\n"
         "<i>{bio}</i>{verification_checkmark}\n\n"
-        "<b>Interests:</b> {interests}"
+        "<b>Interests:</b> {interests}\n\n"
+        "✨ <b>Compatibility:</b> {compatibility_score}%\n"
+        "💡 <b>Why compatible:</b> {compatibility_reasons}"
     ),
 }
-
 NO_PROFILES_TEXTS = {
     "uz": "Afsuski, hozircha siz uchun mos anketalar topilmadi. Keyinroq qayta urinib ko'ring.",
     "ru": "К сожалению, подходящих анкет для вас пока не нашлось. Попробуйте позже.",
@@ -130,8 +145,8 @@ CHATS_LIST_TEXTS = {
 
 IN_CHAT_TEXTS = {
     "uz": "Siz <b>{name}</b> bilan suhbatdasiz. Xabarlaringizni yuborishingiz mumkin.\n\nSuhbatni yakunlash uchun /stopchat buyrug'ini bosing.",
-    "ru": "Вы в чате с <b>{name}{verification_checkmark}</b>. Можете отправлять сообщения.\n\nЧтобы завершить чат, используйте команду /stopchat.",
-    "en": "You are in a chat with <b>{name}{verification_checkmark}</b>. You can send your messages.\n\nTo end the chat, use the /stopchat command.",
+    "ru": "Вы в чате с <b>{name}</b>. Можете отправлять сообщения.\n\nЧтобы завершить чат, используйте команду /stopchat.",
+    "en": "You are in a chat with <b>{name}</b>. You can send your messages.\n\nTo end the chat, use the /stopchat command.",
 }
 
 STOP_CHAT_TEXTS = {
@@ -232,9 +247,12 @@ PROFILE_VIEW_TEXTS = {
         "<b>Bo'y:</b> {height} sm\n"
         "<b>Jins:</b> {gender}\n"
         "<b>Kimni qidiryapti:</b> {looking_for}\n"
-        "<b>Shahar:</b> {city}, {district}\n"
+        "<b>Niyati:</b> {relationship_intent}\n"
+        "<b>Manzil:</b> {city}, {district}\n"
         "<b>Qiziqishlar:</b> {interests}\n\n"
         "<b>Bio:</b>\n{bio}\n\n"
+        "📊 <b>Profil:</b> {completion}% tayyor\n"
+        "🛡️ <b>Ishonch:</b> {badges}\n\n"
         "<b>Premium:</b> {premium_status}\n"
         "<b>Verifikatsiya:</b> {verification_status}{verification_checkmark}"
     ),
@@ -245,9 +263,12 @@ PROFILE_VIEW_TEXTS = {
         "<b>Рост:</b> {height} см\n"
         "<b>Пол:</b> {gender}\n"
         "<b>Ищет:</b> {looking_for}\n"
+        "<b>Цель:</b> {relationship_intent}\n"
         "<b>Город:</b> {city}, {district}\n"
         "<b>Интересы:</b> {interests}\n\n"
         "<b>О себе:</b>\n{bio}\n\n"
+        "📊 <b>Профиль:</b> {completion}% готов\n"
+        "🛡️ <b>Доверие:</b> {badges}\n\n"
         "<b>Премиум:</b> {premium_status}\n"
         "<b>Верификация:</b> {verification_status}{verification_checkmark}"
     ),
@@ -258,9 +279,12 @@ PROFILE_VIEW_TEXTS = {
         "<b>Height:</b> {height} cm\n"
         "<b>Gender:</b> {gender}\n"
         "<b>Looking for:</b> {looking_for}\n"
+        "<b>Intent:</b> {relationship_intent}\n"
         "<b>City:</b> {city}, {district}\n"
         "<b>Interests:</b> {interests}\n\n"
-        "<b>Bio:</b>\n{bio}{verification_checkmark}\n\n"
+        "<b>Bio:</b>\n{bio}\n\n"
+        "📊 <b>Profile:</b> {completion}% ready\n"
+        "🛡️ <b>Trust:</b> {badges}\n\n"
         "<b>Premium:</b> {premium_status}\n"
         "<b>Verification:</b> {verification_status}{verification_checkmark}"
     ),
@@ -272,10 +296,58 @@ NO_LIKES_TEXTS = {
     "en": "Nobody has liked you yet. Be more active in the search!",
 }
 
+WHO_LIKED_ME_EMPTY_TEXTS = {
+    "uz": "👀 Hozircha sizga qiziqish bildirganlar yo'q.",
+    "ru": "👀 Пока никто не проявил к вам интерес.",
+    "en": "👀 Nobody has shown interest in you yet.",
+}
+
 PREMIUM_REQUIRED_TEXTS = {
     "uz": "Bu funksiya faqat premium foydalanuvchilar uchun mavjud. Premium obuna sotib olish uchun '⭐️ Premium' tugmasini bosing.",
     "ru": "Эта функция доступна только для премиум-пользователей. Нажмите '⭐️ Премиум', чтобы приобрести премиум-подписку.",
     "en": "This feature is only available for premium users. Click '⭐️ Premium' to purchase a premium subscription.",
+}
+
+ICEBREAKER_SENT_TEXTS = {
+    "uz": "✅ Savol yuborildi! Suhbatdoshingiz javob berishini kuting.",
+    "ru": "✅ Вопрос отправлен! Ожидайте ответа вашего собеседника.",
+    "en": "✅ Question sent! Wait for your match to reply.",
+}
+
+ICEBREAKER_CONFIRM_TO_SENDER_TEXTS = {
+    "uz": "Siz {recipient_name}ga quyidagi savolni yubordingiz:\n\n<i>«{question}»</i>",
+    "ru": "Вы отправили {recipient_name} следующий вопрос:\n\n<i>«{question}»</i>",
+    "en": "You sent the following question to {recipient_name}:\n\n<i>«{question}»</i>",
+}
+
+MATCH_NOT_FOUND_OR_INACTIVE_TEXTS = {
+    "uz": "Bu suhbat topilmadi yoki faol emas.",
+    "ru": "Этот чат не найден или неактивен.",
+    "en": "This chat was not found or is not active.",
+}
+
+MESSAGE_DELIVERY_ERROR_TEXTS = {
+    "uz": "Xatolik: Xabarni yuborib bo'lmadi. Suhbatdoshingiz botni bloklagan bo'lishi mumkin.",
+    "ru": "Ошибка: Не удалось отправить сообщение. Возможно, ваш собеседник заблокировал бота.",
+    "en": "Error: Could not send the message. Your match might have blocked the bot.",
+}
+
+BLOCK_CONFIRM_TEXTS = {
+    "uz": "Siz <b>{name}</b>ni bloklashni va suhbatni yakunlashni tasdiqlaysizmi? Bu amalni qaytarib bo'lmaydi.",
+    "ru": "Вы уверены, что хотите заблокировать <b>{name}</b> и завершить чат? Это действие необратимо.",
+    "en": "Are you sure you want to block <b>{name}</b> and end the chat? This action is irreversible.",
+}
+
+UNMATCH_CONFIRM_TEXTS = {
+    "uz": "Siz <b>{name}</b> bilan suhbatni yakunlashni tasdiqlaysizmi?",
+    "ru": "Вы уверены, что хотите завершить чат с <b>{name}</b>?",
+    "en": "Are you sure you want to end the chat with <b>{name}</b>?",
+}
+
+UNMATCH_SUCCESS_TEXTS = {
+    "uz": "Suhbat yakunlandi. Asosiy menyu.",
+    "ru": "Чат завершен. Главное меню.",
+    "en": "Chat has ended. Main menu.",
 }
 
 LIKE_LIMIT_REACHED_TEXTS = {
@@ -455,9 +527,7 @@ PREMIUM_PLANS = {
 @router.message(F.text == MAIN_MENU_BUTTONS["en"]["my_profile"])
 async def show_my_profile(message: Message, state: FSMContext):
     await state.clear()  # Har ehtimolga qarshi FSM holatini tozalash
-
     user = await get_user_by_telegram_id(message.from_user.id)
-    user = await get_user_by_telegram_id(message.from_user.id) # Fix 11: language variable was not defined
     if not user:
         language = message.from_user.language_code
         await message.answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
@@ -465,8 +535,8 @@ async def show_my_profile(message: Message, state: FSMContext):
 
     language = user.language or "uz"
     verification_checkmark = " ✅" if user.verification_status == VerificationStatus.verified else ""
-
     photos = await get_user_photos(user.id)
+    photo_count = len(photos)
 
     # Qiziqishlar nomlarini olish
     interest_keys = user.interests.split(",") if user.interests else []
@@ -476,37 +546,70 @@ async def show_my_profile(message: Message, state: FSMContext):
         if key.strip() in ALL_INTERESTS
     ]
 
+    completion = calculate_profile_completion(user, photo_count)
+    badges = get_trust_badges(user, photo_count, completion, language)
+
+    next_step = None
+    if completion < 100:
+        next_step = get_next_completion_step(user, photo_count)
+
+    # Format relationship intent
+    intent_texts = {
+        "uz": {
+            "serious": "Jiddiy munosabat", "marriage": "Nikohga tayyorgarlik", "friendship": "Do‘stlik va suhbat",
+            "explore": "Yangi insonlar bilan tanishish", "private": "Niyatini yashirgan",
+        },
+        "ru": {
+            "serious": "Серьезные отношения", "marriage": "Подготовка к браку", "friendship": "Дружба и общение",
+            "explore": "Знакомство с новыми людьми", "private": "Скрывает намерения",
+        },
+        "en": {
+            "serious": "Serious relationship", "marriage": "Preparing for marriage", "friendship": "Friendship and conversation",
+            "explore": "Meeting new people", "private": "Hides intentions",
+        },
+    }
+    
+    intent_text = "Kiritilmagan"
+    if user.relationship_intent:
+        lang_intents = intent_texts.get(language, intent_texts["uz"])
+        intent_text = lang_intents.get(user.relationship_intent.name, "Kiritilmagan")
+
     premium_badge = " ⭐" if has_active_premium(user) else ""
     online_status = await get_online_status(user) # Fix 10: Added online_status
     profile_text = PROFILE_VIEW_TEXTS.get(language, PROFILE_VIEW_TEXTS["uz"]).format(
         name=f"{user.name}{premium_badge}",
         age=user.age,
-        height=user.height,
+        height=user.height or "Kiritilmagan",
         gender=user.gender.value,  # Enum qiymatini olish
         online_status=online_status, # Fix 10: Added online_status
         looking_for=user.looking_for.value,  # Enum qiymatini olish
+        relationship_intent=intent_text,
         city=user.city,
         district=user.district,
         interests=", ".join(interest_names) if interest_names else "Kiritilmagan",
         bio=user.bio if user.bio else "Kiritilmagan",
+        completion=completion,
+        badges=", ".join(badges) if badges else "Yo'q",
         premium_status=user.premium_plan.value,
         verification_status=user.verification_status.value,
         verification_checkmark=verification_checkmark,
     )
+
+    keyboard = get_profile_view_keyboard(language, next_step=next_step)
 
     if photos:
         # Birinchi rasmni caption bilan yuboramiz
         await message.answer_photo(
             photo=photos[0].file_id,
             caption=profile_text,
-            reply_markup=get_profile_view_keyboard(language),
+            reply_markup=keyboard,
         )
         # Agar bir nechta rasm bo'lsa, qolganlarini alohida yuborish mumkin
         # for photo in photos[1:]:
         #     await message.answer_photo(photo=photo.file_id)
     else:
         await message.answer(
-            profile_text, reply_markup=get_profile_view_keyboard(language)
+            profile_text, reply_markup=keyboard
         )
 
 
@@ -556,6 +659,13 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
         await show_next_profile(message, state) # Recursive call.
         return
 
+    # Calculate compatibility score and reasons
+    current_user = await get_user_by_telegram_id(message.from_user.id if isinstance(message, Message) else message.from_user.id)
+    if not current_user:
+        await (message.message if isinstance(message, CallbackQuery) else message).answer(NOT_REGISTERED_TEXTS.get(language, NOT_REGISTERED_TEXTS["uz"]))
+        await state.clear()
+        return
+    
     photos = await get_user_photos(profile_user.id) # Fix 11: Ensure photos are fetched
     if not photos: # Should not happen due to DB query, but for safety
         await show_next_profile(message, state) # Recursive call
@@ -571,18 +681,38 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
     # Add premium badge and online status
     premium_badge = " ⭐" if has_active_premium(profile_user) else ""
     online_status = await get_online_status(profile_user)
+
+    # Format relationship intent for candidate
+    intent_texts = {
+        "uz": {"private": "Niyatini yashirgan"},
+        "ru": {"private": "Скрывает намерения"},
+        "en": {"private": "Hides intentions"},
+    }
+    candidate_intent_text = "Noma'lum"
+    if profile_user.relationship_intent:
+        if profile_user.relationship_intent == RelationshipIntent.private:
+            candidate_intent_text = intent_texts.get(language, intent_texts["uz"]).get("private")
+        else:
+            # Use the enum's value directly for other intents
+            candidate_intent_text = profile_user.relationship_intent.value
+
+    compatibility_score = await calculate_compatibility_score(current_user.id, profile_user.id)
+    compatibility_reasons = await get_compatibility_reasons(current_user.id, profile_user.id, language)
     
     verification_checkmark = " ✅" if profile_user.verification_status == VerificationStatus.verified else ""
     profile_text = SEARCH_PROFILE_TEXTS.get(language, SEARCH_PROFILE_TEXTS["uz"]).format(
         name=f"{profile_user.name}{premium_badge}",
         age=profile_user.age,
+        relationship_intent=candidate_intent_text,
         height=profile_user.height,
         city=profile_user.city,
         district=profile_user.district,
         interests=", ".join(interest_names) if interest_names else "Yo'q",
         bio=profile_user.bio,
         verification_checkmark=verification_checkmark,
-        online_status=online_status
+        online_status=online_status,
+        compatibility_score=compatibility_score,
+        compatibility_reasons=", ".join(compatibility_reasons) if compatibility_reasons else "Aniqlanmadi",
     )
 
     (message.message if isinstance(message, CallbackQuery) else message).answer_photo( # Fix 11: Handle Message | CallbackQuery type
@@ -958,6 +1088,9 @@ async def block_user_handler(callback: CallbackQuery, state: FSMContext):
     current_user = await get_user_by_telegram_id(callback.from_user.id)
     language = current_user.language or "uz"
 
+    # Also unmatch if they were matched
+    await unmatch_users(current_user.id, target_user_id)
+
     await block_user(blocker_id=current_user.id, blocked_id=target_user_id)
     await callback.answer(BLOCKED_USER_TEXTS.get(language, BLOCKED_USER_TEXTS["uz"]))
     await callback.message.delete()
@@ -977,7 +1110,7 @@ async def report_user_start(callback: CallbackQuery, state: FSMContext):
     await state.set_state(ReportingStates.choosing_category)
     await state.update_data(
         reported_user_id=reported_user_id,
-        reporter_user_id=current_user.id,
+        reporter_user_id=current_user.id, # type: ignore
         search_data=search_data # Save previous state data
     )
 
@@ -1006,18 +1139,31 @@ async def report_category_chosen(callback: CallbackQuery, state: FSMContext):
 @router.message(ReportingStates.entering_description, F.text)
 async def report_description_entered(message: Message, state: FSMContext):
     data = await state.get_data()
-    language = (await get_user_by_telegram_id(message.from_user.id)).language or "uz"
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language or "uz" # type: ignore
 
-    await create_report(
+    report = await create_report(
         reporter_id=data.get("reporter_user_id"),
         reported_id=data.get("reported_user_id"),
         category=ReportCategory[data.get("category")],
         description=message.text
     )
 
+    # Log the user event
+    await log_user_event(
+        user_id=report.reporter_id,
+        event_type=EventType.report,
+        details=f"Reported user_id: {report.reported_id}, Report ID: {report.id}"
+    )
+
     await message.answer(REPORT_SUCCESSFULLY_SENT.get(language, REPORT_SUCCESSFULLY_SENT["uz"]))
     
-    # Restore search state and continue
+    # Check where to return
+    if data.get("return_to") == "chats_menu":
+        await state.clear()
+        await message.answer(MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]), reply_markup=get_main_menu_keyboard(language))
+        return
+
     search_data = data.get("search_data", {})
     await state.set_state(MenuStates.searching)
     await state.set_data(search_data)
@@ -1521,27 +1667,36 @@ async def open_chat_handler(callback: CallbackQuery, state: FSMContext):
 
     match = await get_match_by_id(match_id)
     if not match or (current_user.id not in [match.user1_id, match.user2_id]):
-        await callback.answer("Bu suhbat topilmadi yoki faol emas.", show_alert=True)
+        await callback.answer(MATCH_NOT_FOUND_OR_INACTIVE_TEXTS.get(language, MATCH_NOT_FOUND_OR_INACTIVE_TEXTS["uz"]), show_alert=True)
+        return
+
+    partner_db_id = match.user1_id if match.user1_id != current_user.id else match.user2_id
+    partner = await get_user_by_id(partner_db_id)
+
+    # Security check: has one user blocked the other?
+    if not partner or await is_user_blocked(current_user.id, partner.id) or await is_user_blocked(partner.id, current_user.id):
+        await unmatch_users(current_user.id, partner_db_id) # Deactivate the match
+        await callback.answer(MATCH_NOT_FOUND_OR_INACTIVE_TEXTS.get(language, MATCH_NOT_FOUND_OR_INACTIVE_TEXTS["uz"]), show_alert=True)
         return
 
     # Read receipts for premium users
     if has_active_premium(current_user):
         await mark_messages_as_read(match_id, current_user.id)
 
-    partner_db_id = match.user1_id if match.user1_id != current_user.id else match.user2_id
-    partner = await get_user_by_id(partner_db_id)
     verification_checkmark = " ✅" if partner.verification_status == VerificationStatus.verified else ""
 
     await state.set_state(MenuStates.in_chat)
     await state.update_data(
         match_id=match.id,
+        partner_id=partner.id,
         partner_telegram_id=partner.telegram_id,
+        partner_name=partner.name,
         current_user_id=current_user.id
     )
 
-    await callback.message.answer( # Changed to pass verification_checkmark
-        IN_CHAT_TEXTS.get(language, IN_CHAT_TEXTS["uz"]).format(name=partner.name, verification_checkmark=verification_checkmark),
-        reply_markup=ReplyKeyboardRemove(),
+    await callback.message.answer(
+        IN_CHAT_TEXTS.get(language, IN_CHAT_TEXTS["uz"]).format(name=partner.name),
+        reply_markup=get_chat_keyboard(language),
     )
     await callback.answer()
 
@@ -1549,14 +1704,155 @@ async def open_chat_handler(callback: CallbackQuery, state: FSMContext):
 @router.message(MenuStates.in_chat, Command("stopchat"))
 async def stop_chat_handler(message: Message, state: FSMContext):
     user = await get_user_by_telegram_id(message.from_user.id)
-    language = user.language or "uz"
+    language = user.language or "uz" # type: ignore
 
-    await state.clear()
+    data = await state.get_data()
+    partner_name = data.get("partner_name", "Foydalanuvchi")
+
     await message.answer(
-        STOP_CHAT_TEXTS.get(language, STOP_CHAT_TEXTS["uz"]),
-        reply_markup=get_main_menu_keyboard(language)
+        UNMATCH_CONFIRM_TEXTS.get(language, UNMATCH_CONFIRM_TEXTS["uz"]).format(name=partner_name),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Ha, yakunlash", callback_data="chat_action_confirm_unmatch")],
+            [InlineKeyboardButton(text="❌ Yo'q", callback_data="chat_action_cancel")]
+        ])
     )
 
+
+@router.message(MenuStates.in_chat, F.text.in_(list(CHAT_ACTION_BUTTONS["uz"].values()) + list(CHAT_ACTION_BUTTONS["ru"].values()) + list(CHAT_ACTION_BUTTONS["en"].values())))
+async def handle_chat_actions(message: Message, state: FSMContext):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language or "uz" # type: ignore
+    
+    if message.text == CHAT_ACTION_BUTTONS[language]["security"]:
+        await message.answer(SECURITY_INFO_TEXTS.get(language, SECURITY_INFO_TEXTS["uz"]))
+    elif message.text == CHAT_ACTION_BUTTONS[language]["block"]:
+        await handle_block_in_chat(message, state)
+    elif message.text == CHAT_ACTION_BUTTONS[language]["report"]:
+        await handle_report_in_chat(message, state)
+    elif message.text == CHAT_ACTION_BUTTONS[language]["end_chat"]:
+        await stop_chat_handler(message, state)
+
+
+async def handle_block_in_chat(message: Message, state: FSMContext):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language or "uz" # type: ignore
+    data = await state.get_data()
+    partner_name = data.get("partner_name", "Foydalanuvchi")
+
+    await message.answer(
+        BLOCK_CONFIRM_TEXTS.get(language, BLOCK_CONFIRM_TEXTS["uz"]).format(name=partner_name),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Ha, bloklash", callback_data="chat_action_confirm_block")],
+            [InlineKeyboardButton(text="❌ Yo'q", callback_data="chat_action_cancel")]
+        ])
+    )
+
+
+async def handle_report_in_chat(message: Message, state: FSMContext):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language or "uz" # type: ignore
+    data = await state.get_data()
+    partner_id = data.get("partner_id")
+
+    if not partner_id:
+        return
+
+    # Save chat state before switching to reporting
+    await state.update_data(in_chat_data=data)
+    await state.set_state(ReportingStates.choosing_category)
+    await state.update_data(
+        reported_user_id=partner_id,
+        reporter_user_id=user.id, # type: ignore
+        return_to="chats_menu" 
+    )
+
+    await message.answer(
+        text=REPORT_CATEGORY_PROMPT.get(language, REPORT_CATEGORY_PROMPT["uz"]),
+        reply_markup=get_report_category_keyboard(language)
+    )
+
+
+@router.callback_query(MenuStates.in_chat, F.data == "chat_action_cancel")
+async def cancel_chat_action(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await callback.answer("Amal bekor qilindi.")
+
+
+@router.callback_query(MenuStates.in_chat, F.data == "chat_action_confirm_block")
+async def confirm_block_in_chat(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    user_id = data.get("current_user_id")
+    partner_id = data.get("partner_id")
+    partner_telegram_id = data.get("partner_telegram_id")
+    user = await get_user_by_id(user_id)
+    language = user.language or "uz" # type: ignore
+
+    if not user_id or not partner_id:
+        await callback.answer("Xatolik.", show_alert=True)
+        return
+
+    await block_user(blocker_id=user_id, blocked_id=partner_id)
+    await unmatch_users(user_id, partner_id)
+
+    await log_user_event(
+        user_id=user_id,
+        event_type=EventType.block,
+        details=f"Blocked user_id: {partner_id}"
+    )
+
+    await state.clear()
+    await callback.message.delete()
+    await callback.message.answer(
+        BLOCKED_USER_TEXTS.get(language, BLOCKED_USER_TEXTS["uz"]),
+        reply_markup=get_main_menu_keyboard(language)
+    )
+    await callback.answer()
+
+    try:
+        partner = await get_user_by_id(partner_id)
+        partner_lang = partner.language or "uz" # type: ignore
+        await bot.send_message(
+            chat_id=partner_telegram_id,
+            text=STOP_CHAT_TEXTS.get(partner_lang, STOP_CHAT_TEXTS["uz"]),
+            reply_markup=get_main_menu_keyboard(partner_lang)
+        )
+    except Exception as e:
+        logging.warning(f"Could not notify user {partner_telegram_id} about chat ending: {e}")
+
+
+@router.callback_query(MenuStates.in_chat, F.data == "chat_action_confirm_unmatch")
+async def confirm_unmatch_in_chat(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    user_id = data.get("current_user_id")
+    partner_id = data.get("partner_id")
+    partner_telegram_id = data.get("partner_telegram_id")
+    user = await get_user_by_id(user_id)
+    language = user.language or "uz" # type: ignore
+
+    if not user_id or not partner_id:
+        await callback.answer("Xatolik.", show_alert=True)
+        return
+
+    await unmatch_users(user_id, partner_id)
+
+    await state.clear()
+    await callback.message.delete()
+    await callback.message.answer(
+        UNMATCH_SUCCESS_TEXTS.get(language, UNMATCH_SUCCESS_TEXTS["uz"]),
+        reply_markup=get_main_menu_keyboard(language)
+    )
+    await callback.answer()
+
+    try:
+        partner = await get_user_by_id(partner_id)
+        partner_lang = partner.language or "uz" # type: ignore
+        await bot.send_message(
+            chat_id=partner_telegram_id,
+            text=STOP_CHAT_TEXTS.get(partner_lang, STOP_CHAT_TEXTS["uz"]),
+            reply_markup=get_main_menu_keyboard(partner_lang)
+        )
+    except Exception as e:
+        logging.warning(f"Could not notify user {partner_telegram_id} about chat ending: {e}")
 
 @router.message(MenuStates.in_chat, F.text)
 async def message_in_chat_handler(message: Message, state: FSMContext, bot: Bot):
@@ -1567,7 +1863,7 @@ async def message_in_chat_handler(message: Message, state: FSMContext, bot: Bot)
 
     # Typing status for premium users
     current_user = await get_user_by_telegram_id(message.from_user.id)
-    if has_active_premium(current_user):
+    if has_active_premium(current_user): # type: ignore
         try:
             await bot.send_chat_action(chat_id=partner_telegram_id, action="typing")
         except Exception:
@@ -1627,6 +1923,15 @@ async def activate_boost_handler(callback: CallbackQuery):
         await callback.answer(PREMIUM_REQUIRED_TEXTS.get(language, PREMIUM_REQUIRED_TEXTS["uz"]), show_alert=True)
         return
 
+    # Check if boost is already active
+    if await is_boost_active(user.id):
+        remaining_minutes = await get_boost_remaining_minutes(user.id)
+        await callback.answer(
+            f"🚀 Profilingiz allaqachon Boost qilingan. Qolgan vaqt: {remaining_minutes} daqiqa.",
+            show_alert=True
+        )
+        return
+
     expires_at = await activate_profile_boost(user.id)
     if expires_at:
         await callback.answer()
@@ -1634,7 +1939,34 @@ async def activate_boost_handler(callback: CallbackQuery):
             BOOST_ACTIVATED_TEXTS.get(language, BOOST_ACTIVATED_TEXTS["uz"]).format(minutes=BOOST_DURATION_MINUTES)
         )
     else:
-        await callback.answer("Xatolik yuz berdi.", show_alert=True)
+        await callback.answer("Xatolik yuz berdi. Boost faollashtirilmadi.", show_alert=True)
+
+
+@router.callback_query(F.data == "who_liked_me")
+async def who_liked_me_handler(callback: CallbackQuery, state: FSMContext):
+    """Handles the 'Who Liked Me' button from the premium dashboard."""
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+
+    if not has_active_premium(user):
+        await callback.answer(PREMIUM_REQUIRED_TEXTS.get(language, PREMIUM_REQUIRED_TEXTS["uz"]), show_alert=True)
+        return
+
+    liked_users = await get_users_who_liked_me_full(user.id)
+
+    if not liked_users:
+        await callback.answer()
+        await callback.message.answer(WHO_LIKED_ME_EMPTY_TEXTS.get(language, WHO_LIKED_ME_EMPTY_TEXTS["uz"]))
+        return
+
+    liked_user_ids = [u.id for u in liked_users]
+    await state.set_state(MenuStates.viewing_likes)
+    await state.update_data(liked_profiles=liked_user_ids, user_language=language)
+
+    await callback.answer()
+    await callback.message.delete() # Remove the premium dashboard
+    await callback.message.answer(LIKES_VIEW_TEXTS.get(language, LIKES_VIEW_TEXTS["uz"]))
+    await show_next_liked_profile(callback, state)
 
 
 @router.callback_query(PremiumStates.choosing_plan, F.data.startswith("premium_plan_"))

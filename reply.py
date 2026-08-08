@@ -46,6 +46,28 @@ def get_main_menu_keyboard(language: str = "uz") -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 
+CHAT_ACTION_BUTTONS = {
+    "uz": {
+        "security": "🛡️ Xavfsizlik",
+        "block": "🚫 Bloklash",
+        "report": "⚑ Shikoyat qilish",
+        "end_chat": "⏹ Suhbatni yakunlash",
+    },
+    "ru": {
+        "security": "🛡️ Безопасность",
+        "block": "🚫 Заблокировать",
+        "report": "⚑ Пожаловаться",
+        "end_chat": "⏹ Завершить чат",
+    },
+    "en": {
+        "security": "🛡️ Security",
+        "block": "🚫 Block",
+        "report": "⚑ Report",
+        "end_chat": "⏹ End Chat",
+    },
+}
+
+
 ADMIN_MENU_BUTTONS = {
     "uz": {
         "statistics": "📊 Statistika",
@@ -102,5 +124,16 @@ def get_admin_main_menu_keyboard(language: str = "uz") -> ReplyKeyboardMarkup:
         [KeyboardButton(text=texts["broadcast"]), KeyboardButton(text=texts["tariffs_payments"])],
         [KeyboardButton(text=texts["logs"]), KeyboardButton(text=texts["manage_admins"])],
         [KeyboardButton(text=texts["mandatory_channel"]), KeyboardButton(text=texts["districts"])],
+    ]
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
+
+
+def get_chat_keyboard(language: str = "uz") -> ReplyKeyboardMarkup:
+    """Suhbat ichidagi amallar uchun reply keyboard yaratadi."""
+    texts = CHAT_ACTION_BUTTONS.get(language, CHAT_ACTION_BUTTONS["uz"])
+    buttons = [
+        [KeyboardButton(text=texts["security"])],
+        [KeyboardButton(text=texts["block"]), KeyboardButton(text=texts["report"])],
+        [KeyboardButton(text=texts["end_chat"])],
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
