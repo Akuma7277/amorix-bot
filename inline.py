@@ -230,6 +230,12 @@ DONE_BUTTON_TEXTS = {
     "en": "✅ Done",
 }
 
+ADD_INTEREST_BUTTON_TEXTS = {
+    "uz": "➕ Yangi qo'shish",
+    "ru": "➕ Добавить новое",
+    "en": "➕ Add new",
+}
+
 
 AI_BIO_BUTTON_TEXTS = {
     "uz": "✨ Bio yaratish (AI)",
@@ -287,18 +293,33 @@ def get_interests_keyboard(language: str = "uz", selected_interests: list = None
         selected_interests = []
 
     buttons = []
+
+    # Combine standard interests and any custom ones from the selected list
+    all_display_keys = list(ALL_INTERESTS.keys())
+    for key in selected_interests:
+        if key not in all_display_keys:
+            all_display_keys.append(key)
+
     row = []
-    for interest_key, translations in ALL_INTERESTS.items():
-        text = translations.get(language, translations["uz"])
+    for interest_key in all_display_keys:
+        # Get text for standard interests
+        if interest_key in ALL_INTERESTS:
+            text = ALL_INTERESTS[interest_key].get(language, ALL_INTERESTS[interest_key]["uz"])
+        # Create text for custom interests
+        else:
+            text = interest_key.replace("_", " ").title()
+
         if interest_key in selected_interests:
             text = f"✅ {text}"
+        
         row.append(InlineKeyboardButton(text=text, callback_data=f"interest_{interest_key}"))
-        if len(row) == 2:  # Har qatorda 2 ta tugma
+        if len(row) == 2:
             buttons.append(row)
             row = []
-    if row:  # Oxirgi qatorni qo'shish
+    if row:
         buttons.append(row)
 
+    buttons.append([InlineKeyboardButton(text=ADD_INTEREST_BUTTON_TEXTS.get(language, ADD_INTEREST_BUTTON_TEXTS["uz"]), callback_data="add_new_interest")])
     buttons.append([InlineKeyboardButton(text=DONE_BUTTON_TEXTS.get(language, DONE_BUTTON_TEXTS["uz"]), callback_data="interests_done")])
     if back_callback:
         buttons.append(_back_button_row(language, back_callback))

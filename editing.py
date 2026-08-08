@@ -9,6 +9,7 @@ from crud import get_user_by_telegram_id, update_user_profile_field, get_user_ph
 from inline import (
     get_region_keyboard,
     get_photo_management_keyboard,
+    get_edit_profile_keyboard,
     get_city_keyboard,
     get_district_keyboard,
     get_interests_keyboard,
@@ -25,6 +26,7 @@ from states import EditingStates, MenuStates
 from registration import (
     HEIGHT_INVALID_TEXTS,
     NAME_INVALID_TEXTS,
+    EDIT_PROFILE_TEXTS,
     AGE_INVALID_TEXTS,
     AGE_TOO_YOUNG_TEXTS,
     BIO_TOO_LONG_TEXTS,
@@ -36,6 +38,24 @@ from registration import (
     PHOTO_UPLOAD_SUCCESS_TEXTS,
     PHOTO_MIN_ERROR_TEXTS,
 )
+
+NEW_INTEREST_PROMPT_TEXTS = {
+    "uz": "Yangi qiziqishingiz nomini kiriting (masalan, 'Dasturlash'):",
+    "ru": "Введите название вашего нового интереса (например, 'Программирование'):",
+    "en": "Enter the name of your new interest (e.g., 'Programming'):",
+}
+
+NEW_INTEREST_ADDED_TEXTS = {
+    "uz": "✅ Yangi qiziqish qo'shildi va tanlandi. Yana qo'shishingiz yoki 'Tayyor' tugmasini bosishingiz mumkin.",
+    "ru": "✅ Новый интерес добавлен и выбран. Можете добавить еще или нажать 'Готово'.",
+    "en": "✅ New interest added and selected. You can add more or press 'Done'.",
+}
+
+NEW_INTEREST_EXISTS_TEXTS = {
+    "uz": "Bu qiziqish allaqachon mavjud.",
+    "ru": "Этот интерес уже существует.",
+    "en": "This interest already exists.",
+}
 
 router = Router()
 
@@ -96,17 +116,38 @@ async def back_to_profile_view(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
+@router.callback_query(StateFilter(EditingStates.editing_name, EditingStates.editing_age, EditingStates.editing_height), F.data == "back_to_edit_menu")
+async def back_to_edit_menu(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+
+    await state.set_state(EditingStates.choosing_field)
+    
+    edit_menu_text = EDIT_PROFILE_TEXTS.get(language, EDIT_PROFILE_TEXTS["uz"])
+    edit_menu_keyboard = get_edit_profile_keyboard(language)
+
+    if callback.message.photo:
+        await callback.message.edit_caption(
+            caption=edit_menu_text,
+            reply_markup=edit_menu_keyboard,
+        )
+    else:
+        await callback.message.edit_text(
+            edit_menu_text,
+            reply_markup=edit_menu_keyboard,
+        )
+    await callback.answer()
+
+
 # --- Edit Name ---
 @router.callback_query(EditingStates.choosing_field, F.data == "edit_field_name")
 async def edit_name_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.set_state(EditingStates.editing_name)
-    prompt = EDIT_FIELD_PROMPTS[language]["name"]
-    if callback.message.photo:
-        await callback.message.edit_caption(caption=prompt, reply_markup=None)
-    else:
-        await callback.message.edit_text(prompt, reply_markup=None)
+    prompt = EDIT_FIELD_PROMPTS[language]["name"]    
+    keyboard = get_back_only_keyboard(language, "back_to_edit_menu")
+    await callback.message.edit_text(prompt, reply_markup=keyboard)
     await callback.answer()
 
 
@@ -132,11 +173,9 @@ async def edit_age_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.set_state(EditingStates.editing_age)
-    prompt = EDIT_FIELD_PROMPTS[language]["age"]
-    if callback.message.photo:
-        await callback.message.edit_caption(caption=prompt, reply_markup=None)
-    else:
-        await callback.message.edit_text(prompt, reply_markup=None)
+    prompt = EDIT_FIELD_PROMPTS[language]["age"]    
+    keyboard = get_back_only_keyboard(language, "back_to_edit_menu")
+    await callback.message.edit_text(prompt, reply_markup=keyboard)
     await callback.answer()
 
 
@@ -357,7 +396,7 @@ async def edit_interests_start(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(EditingStates.editing_interests, F.data.startswith("interest_"))
 async def edit_interest_selected(callback: CallbackQuery, state: FSMContext):
-    interest_key = callback.data.split("_")[1]
+    interest_key = callback.data.split("_", 1)[1]
     data = await state.get_data()
     language = data.get("language", "uz")
     selected_interests = data.get("edit_interests", [])
@@ -385,11 +424,72 @@ async def edit_interests_finish(callback: CallbackQuery, state: FSMContext):
         await callback.answer(INTERESTS_MIN_ERROR_TEXTS[language], show_alert=True)
         return
 
-    await update_user_profile_field(user.id, "interests", ",".join(selected_interests))
+    final_interests = [i for i in selected_interests if i]
+    await update_user_profile_field(user.id, "interests", ",".join(final_interests))
     await callback.message.delete()
     await callback.message.answer(FIELD_UPDATED_TEXTS[language])
     await state.clear()
     await show_my_profile(callback.message, state)
+
+
+@router.callback_query(EditingStates.editing_interests, F.data == "add_new_interest")
+async def add_new_interest_start(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    
+    await state.set_state(EditingStates.adding_new_interest)
+    
+    await callback.message.edit_text(
+        NEW_INTEREST_PROMPT_TEXTS.get(language, NEW_INTEREST_PROMPT_TEXTS["uz"]),
+        reply_markup=get_back_only_keyboard(language, "back_to_edit_interests")
+    )
+    await callback.answer()
+
+
+@router.callback_query(EditingStates.adding_new_interest, F.data == "back_to_edit_interests")
+async def back_to_edit_interests_handler(callback: CallbackQuery, state: FSMContext):
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language or "uz"
+    data = await state.get_data()
+    selected_interests = data.get("edit_interests", [])
+
+    await state.set_state(EditingStates.editing_interests)
+    
+    await callback.message.edit_text(
+        EDIT_FIELD_PROMPTS[language]["interests"],
+        reply_markup=get_interests_keyboard(language, selected_interests, back_callback="back_to_profile")
+    )
+    await callback.answer()
+
+
+@router.message(EditingStates.adding_new_interest, F.text)
+async def add_new_interest_finish(message: Message, state: FSMContext):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language or "uz"
+    new_interest_name = message.text.strip()
+    
+    if not (2 <= len(new_interest_name) <= 30):
+        await message.answer("Qiziqish nomi 2 dan 30 gacha belgilardan iborat bo'lishi kerak.")
+        return
+
+    new_interest_key = new_interest_name.lower().replace(" ", "_")
+
+    data = await state.get_data()
+    selected_interests = data.get("edit_interests", [])
+
+    if new_interest_key in ALL_INTERESTS or new_interest_key in selected_interests:
+        await message.answer(NEW_INTEREST_EXISTS_TEXTS.get(language, NEW_INTEREST_EXISTS_TEXTS["uz"]))
+        return
+
+    selected_interests.append(new_interest_key)
+    await state.update_data(edit_interests=selected_interests)
+
+    await state.set_state(EditingStates.editing_interests)
+    await message.answer(NEW_INTEREST_ADDED_TEXTS.get(language, NEW_INTEREST_ADDED_TEXTS["uz"]))
+    await message.answer(
+        EDIT_FIELD_PROMPTS[language]["interests"],
+        reply_markup=get_interests_keyboard(language, selected_interests, back_callback="back_to_profile")
+    )
 
 
 @router.callback_query(EditingStates.choosing_field, F.data == "edit_field_height")
@@ -397,11 +497,9 @@ async def edit_height_start(callback: CallbackQuery, state: FSMContext):
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language or "uz"
     await state.set_state(EditingStates.editing_height)
-    prompt = EDIT_FIELD_PROMPTS[language]["height"]
-    if callback.message.photo:
-        await callback.message.edit_caption(caption=prompt, reply_markup=None)
-    else:
-        await callback.message.edit_text(prompt, reply_markup=None)
+    prompt = EDIT_FIELD_PROMPTS[language]["height"]    
+    keyboard = get_back_only_keyboard(language, "back_to_edit_menu")
+    await callback.message.edit_text(prompt, reply_markup=keyboard)
     await callback.answer()
 
 

@@ -935,8 +935,16 @@ async def photos_done(callback: CallbackQuery, state: FSMContext):
 
     # Qiziqishlar nomlarini olish
     interest_keys = data.get("interests", [])
-    interest_names = [ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]['uz']) for key in interest_keys]
-    
+    interest_names = []
+    for key in interest_keys:
+        key = key.strip()
+        if not key:
+            continue
+        if key in ALL_INTERESTS:
+            interest_names.append(ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]["uz"]))
+        else:
+            interest_names.append(key.replace("_", " ").title())
+
     from inline import RELATIONSHIP_INTENT_TEXTS
     intent_key = data.get("relationship_intent")
     intent_text = "Noma'lum"

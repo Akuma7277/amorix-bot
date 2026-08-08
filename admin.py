@@ -530,12 +530,16 @@ async def find_user_handler(message: Message, state: FSMContext):
         await message.answer(USER_NOT_FOUND_TEXT[language])
         return
 
-    interest_keys = user_to_view.interests.split(",") if user_to_view.interests else []
-    interest_names = [
-        ALL_INTERESTS[key.strip()].get(language, ALL_INTERESTS[key.strip()]["uz"])
-        for key in interest_keys
-        if key.strip() in ALL_INTERESTS
-    ]
+    interest_keys = user_to_view.interests.split(',') if user_to_view.interests else []
+    interest_names = []
+    for key in interest_keys:
+        key = key.strip()
+        if not key:
+            continue
+        if key in ALL_INTERESTS:
+            interest_names.append(ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]["uz"]))
+        else:
+            interest_names.append(key.replace("_", " ").title())
 
     # Re-use the profile view text from the menu handler
     profile_text = PROFILE_VIEW_TEXTS.get(language, PROFILE_VIEW_TEXTS["uz"]).format(

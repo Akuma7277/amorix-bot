@@ -53,6 +53,7 @@ from inline import (
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType, EventType
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS, ICEBREAKER_QUESTIONS, SECURITY_INFO_TEXTS
+from registration import EDIT_PROFILE_TEXTS
 from models import RelationshipIntent
 
 # Using RegistrationStates to clear state is not ideal, but works.
@@ -560,12 +561,16 @@ async def show_my_profile(message: Message, state: FSMContext):
     photo_count = len(photos)
 
     # Qiziqishlar nomlarini olish
-    interest_keys = user.interests.split(",") if user.interests else []
-    interest_names = [
-        ALL_INTERESTS[key.strip()].get(language, ALL_INTERESTS[key.strip()]["uz"])
-        for key in interest_keys
-        if key.strip() in ALL_INTERESTS
-    ]
+    interest_keys = user.interests.split(',') if user.interests else []
+    interest_names = []
+    for key in interest_keys:
+        key = key.strip()
+        if not key:
+            continue
+        if key in ALL_INTERESTS:
+            interest_names.append(ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]["uz"]))
+        else:
+            interest_names.append(key.replace("_", " ").title())
 
     completion = calculate_profile_completion(user, photo_count)
     badges = get_trust_badges(user, photo_count, completion, language)
@@ -699,12 +704,16 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
         await show_next_profile(message, state) # Recursive call
         return
 
-    interest_keys = profile_user.interests.split(",") if profile_user.interests else []
-    interest_names = [
-        ALL_INTERESTS[key.strip()].get(language, ALL_INTERESTS[key.strip()]["uz"])
-        for key in interest_keys
-        if key.strip() in ALL_INTERESTS
-    ]
+    interest_keys = profile_user.interests.split(',') if profile_user.interests else []
+    interest_names = []
+    for key in interest_keys:
+        key = key.strip()
+        if not key:
+            continue
+        if key in ALL_INTERESTS:
+            interest_names.append(ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]["uz"]))
+        else:
+            interest_names.append(key.replace("_", " ").title())
 
     # Add premium badge and online status
     premium_badge = " ⭐" if has_active_premium(profile_user) else ""
@@ -783,11 +792,16 @@ async def show_next_liked_profile(message: Message | CallbackQuery, state: FSMCo
         return
 
     photos = await get_user_photos(profile_user.id)
-    interest_keys = profile_user.interests.split(",") if profile_user.interests else []
-    interest_names = [
-        ALL_INTERESTS[key.strip()].get(language, ALL_INTERESTS[key.strip()]["uz"])
-        for key in interest_keys if key.strip() in ALL_INTERESTS
-    ]
+    interest_keys = profile_user.interests.split(',') if profile_user.interests else []
+    interest_names = []
+    for key in interest_keys:
+        key = key.strip()
+        if not key:
+            continue
+        if key in ALL_INTERESTS:
+            interest_names.append(ALL_INTERESTS[key].get(language, ALL_INTERESTS[key]["uz"]))
+        else:
+            interest_names.append(key.replace("_", " ").title())
     verification_checkmark = " ✅" if profile_user.verification_status == VerificationStatus.verified else ""
 
     profile_text = SEARCH_PROFILE_TEXTS.get(language, SEARCH_PROFILE_TEXTS["uz"]).format(
