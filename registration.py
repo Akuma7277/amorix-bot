@@ -31,7 +31,7 @@ from inline import (
 from reply import get_main_menu_keyboard
 from crud import create_user_profile, get_user_by_telegram_id, get_user_photos
 from states import RegistrationStates, EditingStates
-from common import MAIN_MENU_TEXTS
+from common import MAIN_MENU_TEXTS, EDIT_PROFILE_TEXTS
 from config import ADMIN_IDS
 
 router = Router()
@@ -243,11 +243,7 @@ REGISTRATION_COMPLETE_TEXTS = {
     "en": "Congratulations! You have successfully registered. Welcome to the main menu!",
 }
 
-EDIT_PROFILE_TEXTS = {
-    "uz": "Qaysi ma'lumotni tahrirlamoqchisiz?",
-    "ru": "Какую информацию вы хотите отредактировать?",
-    "en": "Which information do you want to edit?",
-}
+
 
 CANCEL_TEXTS = {
     "uz": "Ro'yxatdan o'tish jarayoni bekor qilindi. Qayta boshlash uchun /start buyrug'ini bosing.",

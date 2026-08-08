@@ -109,9 +109,15 @@ ICEBREAKER_QUESTIONS = {
 }
 
 MUST_SUBSCRIBE_TEXTS = {
-    "uz": "Botdan to'liq foydalanish uchun, iltimos, bizning kanalimizga obuna bo'ling. Keyin \"✅ Obuna bo'ldim\" tugmasini bosing.",
-    "ru": "Чтобы получить полный доступ к боту, пожалуйста, подпишитесь на наш канал. Затем нажмите кнопку \"✅ Я подписался\".",
-    "en": "To get full access to the bot, please subscribe to our channel. Then press the \"✅ I'm subscribed\" button.",
+    "uz": "Botdan to'liq foydalanish uchun, iltimos, bizning kanalimizga obuna bo'ling. Keyin "✅ Obuna bo'ldim" tugmasini bosing.",
+    "ru": "Чтобы получить полный доступ к боту, пожалуйста, подпишитесь на наш канал. Затем нажмите кнопку "✅ Я подписался".",
+    "en": "To get full access to the bot, please subscribe to our channel. Then press the "✅ I'm subscribed" button.",
+}
+
+EDIT_PROFILE_TEXTS = {
+    "uz": "Qaysi ma'lumotni tahrirlamoqchisiz?",
+    "ru": "Какую информацию вы хотите отредактировать?",
+    "en": "Which information do you want to edit?",
 }
 
 

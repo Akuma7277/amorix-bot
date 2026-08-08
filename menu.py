@@ -52,8 +52,7 @@ from inline import (
     get_gift_type_keyboard, get_back_only_keyboard, get_advanced_search_keyboard, get_region_keyboard,
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType, EventType
-from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS, ICEBREAKER_QUESTIONS, SECURITY_INFO_TEXTS
-from registration import EDIT_PROFILE_TEXTS
+from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS, ICEBREAKER_QUESTIONS, SECURITY_INFO_TEXTS, EDIT_PROFILE_TEXTS
 from models import RelationshipIntent
 
 # Using RegistrationStates to clear state is not ideal, but works.
