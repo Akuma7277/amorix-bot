@@ -42,9 +42,6 @@ from crud import (
     get_all_admin_ids,
     get_online_status,
     create_gift,
-    DAILY_LIKE_LIMITS,
-    DAILY_SUPER_LIKE_LIMITS,
-    BOOST_DURATION_MINUTES,
 )
 from states import MenuStates, EditingStates, ReportingStates, SettingsStates, VerificationStates, PremiumStates
 from inline import ALL_INTERESTS # Qiziqishlar nomlarini olish uchun
@@ -53,12 +50,10 @@ from inline import (
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
     get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard,
     get_gift_type_keyboard, get_back_only_keyboard, get_advanced_search_keyboard, get_region_keyboard,
-    GIFT_BUTTON_TEXTS,
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType, EventType
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS, ICEBREAKER_QUESTIONS, SECURITY_INFO_TEXTS
 from models import RelationshipIntent
-from registration import EDIT_PROFILE_TEXTS
 
 # Using RegistrationStates to clear state is not ideal, but works.
 # Let's keep it for now. from app.states import RegistrationStates
@@ -79,6 +74,27 @@ def has_active_premium(user) -> bool:
 all_menu_buttons = []
 for lang_buttons in MAIN_MENU_BUTTONS.values():
     all_menu_buttons.extend(lang_buttons.values())
+
+ONLINE_STATUS_TEXTS = {
+    "uz": {
+        "online": "onlayn",
+        "recently": "yaqinda edi",
+        "last_seen": "oxirgi faollik: {date}",
+        "never": "noma'lum"
+    },
+    "ru": {
+        "online": "онлайн",
+        "recently": "недавно",
+        "last_seen": "последняя активность: {date}",
+        "never": "неизвестно"
+    },
+    "en": {
+        "online": "online",
+        "recently": "recently",
+        "last_seen": "last seen: {date}",
+        "never": "unknown"
+    }
+}
 
 HELP_MAIN_TEXT = {
     "uz": "Yordam bo'limi. Savollaringiz bormi?",
@@ -247,7 +263,7 @@ BLOCKED_USER_TEXTS = {
 PROFILE_VIEW_TEXTS = {
     "uz": (
         "<b>👤 Mening profilim:</b>\n\n"
-        "<b>Ism:</b> {name}\n"
+        "<b>Ism:</b> {name} ({online_status})\n"
         "<b>Yosh:</b> {age}\n"
         "<b>Bo'y:</b> {height} sm\n"
         "<b>Jins:</b> {gender}\n"
@@ -263,7 +279,7 @@ PROFILE_VIEW_TEXTS = {
     ),
     "ru": (
         "<b>👤 Мой профиль:</b>\n\n"
-        "<b>Имя:</b> {name}\n"
+        "<b>Имя:</b> {name} ({online_status})\n"
         "<b>Возраст:</b> {age}\n"
         "<b>Рост:</b> {height} см\n"
         "<b>Пол:</b> {gender}\n"
@@ -279,7 +295,7 @@ PROFILE_VIEW_TEXTS = {
     ),
     "en": (
         "<b>👤 My Profile:</b>\n\n"
-        "<b>Name:</b> {name}\n"
+        "<b>Name:</b> {name} ({online_status})\n"
         "<b>Age:</b> {age}\n"
         "<b>Height:</b> {height} cm\n"
         "<b>Gender:</b> {gender}\n"
@@ -579,14 +595,20 @@ async def show_my_profile(message: Message, state: FSMContext):
         lang_intents = intent_texts.get(language, intent_texts["uz"])
         intent_text = lang_intents.get(user.relationship_intent.name, "Kiritilmagan")
 
-    premium_badge = " ⭐" if has_active_premium(user) else ""
-    online_status = await get_online_status(user) # Fix 10: Added online_status
+    premium_badge = " ⭐" if has_active_premium(user) else ""    
+    # Get and translate online status
+    online_status_key = await get_online_status(user)
+    online_status_translations = ONLINE_STATUS_TEXTS.get(language, ONLINE_STATUS_TEXTS["uz"])
+    if online_status_key in online_status_translations:
+        online_status = online_status_translations[online_status_key]
+    else: # It's a date
+        online_status = online_status_translations["last_seen"].format(date=online_status_key)
+
     profile_text = PROFILE_VIEW_TEXTS.get(language, PROFILE_VIEW_TEXTS["uz"]).format(
         name=f"{user.name}{premium_badge}",
         age=user.age,
         height=user.height or "Kiritilmagan",
         gender=user.gender.value,  # Enum qiymatini olish
-        online_status=online_status, # Fix 10: Added online_status
         looking_for=user.looking_for.value,  # Enum qiymatini olish
         relationship_intent=intent_text,
         city=user.city,
@@ -598,6 +620,7 @@ async def show_my_profile(message: Message, state: FSMContext):
         premium_status=user.premium_plan.value,
         verification_status=user.verification_status.value,
         verification_checkmark=verification_checkmark,
+        online_status=online_status,
     )
 
     keyboard = get_profile_view_keyboard(language, next_step=next_step)
@@ -685,7 +708,14 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
 
     # Add premium badge and online status
     premium_badge = " ⭐" if has_active_premium(profile_user) else ""
-    online_status = await get_online_status(profile_user)
+    
+    # Get and translate online status
+    online_status_key = await get_online_status(profile_user)
+    online_status_translations = ONLINE_STATUS_TEXTS.get(language, ONLINE_STATUS_TEXTS["uz"])
+    if online_status_key in online_status_translations:
+        online_status = online_status_translations[online_status_key]
+    else: # It's a date
+        online_status = online_status_translations["last_seen"].format(date=online_status_key)
 
     # Format relationship intent for candidate
     intent_texts = {
@@ -715,11 +745,11 @@ async def show_next_profile(message: Message | CallbackQuery, state: FSMContext)
         interests=", ".join(interest_names) if interest_names else "Yo'q",
         bio=profile_user.bio,
         verification_checkmark=verification_checkmark,
-        online_status=online_status,
         compatibility_score=compatibility_score,
         compatibility_reasons=", ".join(compatibility_reasons) if compatibility_reasons else "Aniqlanmadi",
+        online_status=online_status,
     )
-
+    
     (message.message if isinstance(message, CallbackQuery) else message).answer_photo( # Fix 11: Handle Message | CallbackQuery type
         photo=photos[0].file_id,
         caption=profile_text,

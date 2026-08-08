@@ -1244,6 +1244,7 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
         await callback.answer(UNAUTHORIZED_ACCESS_TEXT["uz"], show_alert=True)
         return
 
+    await callback.answer("✅ Profil tasdiqlanmoqda...") # Callbackni darhol qabul qilish
     user_id = int(callback.data.split("_")[-1])
     user = await get_user_by_id(user_id)
     if not user:
@@ -1256,8 +1257,6 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
         action=ActionType.approve_profile,
         target_user_id=user_id,
     )
-    await callback.answer("✅ Profil tasdiqlandi.")
-
     if callback.message.photo:
         await callback.message.edit_caption(caption=f"{callback.message.caption}\n\n✅ TASDIQLANDI", reply_markup=None)
     else:
@@ -1290,6 +1289,7 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
         await callback.answer(UNAUTHORIZED_ACCESS_TEXT["uz"], show_alert=True)
         return
 
+    await callback.answer("❌ Profil rad etilmoqda...") # Callbackni darhol qabul qilish
     user_id = int(callback.data.split("_")[-1])
     user = await get_user_by_id(user_id)
     if not user:
@@ -1310,8 +1310,6 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
         action=ActionType.reject_profile,
         target_user_id=user_id,
     )
-    await callback.answer("❌ Profil rad etildi.")
-
     if callback.message.photo:
         # Check if caption is not None before appending
         current_caption = callback.message.caption if callback.message.caption else ""
