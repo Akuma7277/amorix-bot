@@ -844,7 +844,7 @@ SETTINGS_BUTTON_TEXTS = {
 }
 
 
-def get_settings_keyboard(language: str = "uz", is_invisible: bool = False, verification_status: str = "not_verified"):
+def get_settings_keyboard(language: str = "uz", is_invisible: bool = False, verification_status: VerificationStatus = VerificationStatus.not_verified):
     texts = SETTINGS_BUTTON_TEXTS.get(language, SETTINGS_BUTTON_TEXTS["uz"])
     buttons = []
 
@@ -853,7 +853,7 @@ def get_settings_keyboard(language: str = "uz", is_invisible: bool = False, veri
     else:
         buttons.append([InlineKeyboardButton(text=texts["hide_profile"], callback_data="settings_hide_profile")])
 
-    if verification_status in [VerificationStatus.not_verified.name, VerificationStatus.rejected.name]:
+    if verification_status in [VerificationStatus.not_verified, VerificationStatus.rejected]:
         buttons.append([InlineKeyboardButton(text=texts["verify_account"], callback_data="settings_verify_account")])
 
     buttons.append([InlineKeyboardButton(text=texts["change_language"], callback_data="settings_change_language")])

@@ -1532,7 +1532,7 @@ async def settings_main_menu(message: Message, state: FSMContext):
 
     await message.answer(
         SETTINGS_MAIN_TEXT.get(language, SETTINGS_MAIN_TEXT["uz"]),
-        reply_markup=get_settings_keyboard(language, user.status == UserStatus.inactive, user.verification_status.name)
+        reply_markup=get_settings_keyboard(language, user.status == UserStatus.inactive, user.verification_status)
     )
     await state.set_state(SettingsStates.main_menu)
 
