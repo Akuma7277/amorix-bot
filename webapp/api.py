@@ -809,6 +809,19 @@ async def handle_index(request):
     return web.FileResponse(os.path.join(webapp_dir, "index.html"))
 
 
+
+async def serve_style(request):
+    import os
+    webapp_dir = os.path.dirname(os.path.abspath(__file__))
+    return web.FileResponse(os.path.join(webapp_dir, "style.css"))
+
+
+async def serve_app(request):
+    import os
+    webapp_dir = os.path.dirname(os.path.abspath(__file__))
+    return web.FileResponse(os.path.join(webapp_dir, "app.js"))
+
+
 def create_webapp_app() -> web.Application:
     """Mini App aiohttp ilovasini yaratadi."""
     app = web.Application()
@@ -855,8 +868,8 @@ def create_webapp_app() -> web.Application:
     os.makedirs(os.path.join(webapp_dir, "static"), exist_ok=True)
     app.router.add_static("/static", os.path.join(webapp_dir, "static"), show_index=True)
     # Map static CSS/JS directly
-    app.router.add_file("/style.css", os.path.join(webapp_dir, "style.css"))
-    app.router.add_file("/app.js", os.path.join(webapp_dir, "app.js"))
+    app.router.add_get("/style.css", serve_style)
+    app.router.add_get("/app.js", serve_app)
 
     return app
 
