@@ -1,3 +1,4 @@
+import logging
 from aiogram import Router, BaseMiddleware
 from aiogram.filters import CommandStart
 from aiogram.types import Message, TelegramObject, Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, MenuButtonWebApp
@@ -234,38 +235,42 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     user = await get_user_by_telegram_id(message.from_user.id)
     language = user.language if user else "uz"
 
-    # Auto set Chat Menu Button
-    try:
-        await bot.set_chat_menu_button(
-            chat_id=message.chat.id,
-            menu_button=MenuButtonWebApp(
-                text="Amorix App",
-                web_app=WebAppInfo(url=WEBAPP_URL)
+    # Auto set Chat Menu Button if WEBAPP_URL is set
+    if WEBAPP_URL:
+        try:
+            await bot.set_chat_menu_button(
+                chat_id=message.chat.id,
+                menu_button=MenuButtonWebApp(
+                    text="Amorix App",
+                    web_app=WebAppInfo(url=WEBAPP_URL)
+                )
             )
-        )
-    except Exception as e:
-        logging.warning(f"Error setting chat menu button: {e}")
+        except Exception as e:
+            logging.warning(f"Error setting chat menu button: {e}")
 
     start_text = {
-        "uz": "Amorix premium tanishuv ilovasiga xush kelibsiz! 💖\n\nIlovadan foydalanish uchun quyidagi tugmani bosing va Mini Appni oching:",
-        "ru": "Добро пожаловать в premium-dating Amorix! 💖\n\nЧтобы открыть приложение, нажмите кнопку ниже:",
-        "en": "Welcome to Amorix premium dating! 💖\n\nTo open the app, press the button below:",
+        "uz": "Amorix premium tanishuv ilovasiga xush kelibsiz! 💖\n\nIlovadan foydalanish uchun quyidagi tugmani bosing va Mini Appni oching:" if WEBAPP_URL else "Amorix premium tanishuv ilovasiga xush kelibsiz! 💖\n\nMini App hali sozlanmagan. Iltimos, keyinroq urinib ko'ring.",
+        "ru": "Добро пожаловать в premium-dating Amorix! 💖\n\nЧтобы открыть приложение, нажмите кнопку ниже:" if WEBAPP_URL else "Добро пожаловать в premium-dating Amorix! 💖\n\nMini App еще не настроен. Пожалуйста, попробуйте позже.",
+        "en": "Welcome to Amorix premium dating! 💖\n\nTo open the app, press the button below:" if WEBAPP_URL else "Welcome to Amorix premium dating! 💖\n\nMini App is not configured yet. Please try again later.",
     }
 
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))]
-    ])
-
-    reply_kb = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=WEBAPP_URL))]
-        ],
-        resize_keyboard=True
-    )
+    if WEBAPP_URL:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))]
+        ])
+        reply_kb = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=WEBAPP_URL))]
+            ],
+            resize_keyboard=True
+        )
+    else:
+        keyboard = None
+        reply_kb = None
 
     await message.answer(
         start_text.get(language, start_text["uz"]),
-        reply_markup=reply_kb
+        reply_markup=reply_kb if reply_kb else ReplyKeyboardRemove()
     )
 
 
@@ -275,35 +280,39 @@ async def all_other_messages(message: Message, bot: Bot):
     user = await get_user_by_telegram_id(message.from_user.id)
     language = user.language if user else "uz"
 
-    try:
-        await bot.set_chat_menu_button(
-            chat_id=message.chat.id,
-            menu_button=MenuButtonWebApp(
-                text="Amorix App",
-                web_app=WebAppInfo(url=WEBAPP_URL)
+    if WEBAPP_URL:
+        try:
+            await bot.set_chat_menu_button(
+                chat_id=message.chat.id,
+                menu_button=MenuButtonWebApp(
+                    text="Amorix App",
+                    web_app=WebAppInfo(url=WEBAPP_URL)
+                )
             )
-        )
-    except Exception:
-        pass
+        except Exception:
+            pass
 
     redirect_text = {
-        "uz": "Amorix faqat Mini App orqali ishlaydi. Ilovani ochish uchun pastdagi tugmani bosing: 📱",
-        "ru": "Amorix работает только через Mini App. Нажмите кнопку ниже, чтобы открыть приложение: 📱",
-        "en": "Amorix only works via Mini App. Press the button below to open the app: 📱",
+        "uz": "Amorix faqat Mini App orqali ishlaydi. Ilovani ochish uchun pastdagi tugmani bosing: 📱" if WEBAPP_URL else "Mini App hali sozlanmagan. Iltimos, keyinroq urinib ko'ring.",
+        "ru": "Amorix работает только через Mini App. Нажмите кнопку ниже, чтобы открыть приложение: 📱" if WEBAPP_URL else "Mini App еще не настроен. Пожалуйста, попробуйте позже.",
+        "en": "Amorix only works via Mini App. Press the button below to open the app: 📱" if WEBAPP_URL else "Mini App is not configured yet. Please try again later.",
     }
 
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))]
-    ])
-
-    reply_kb = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=WEBAPP_URL))]
-        ],
-        resize_keyboard=True
-    )
+    if WEBAPP_URL:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))]
+        ])
+        reply_kb = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=WEBAPP_URL))]
+            ],
+            resize_keyboard=True
+        )
+    else:
+        keyboard = None
+        reply_kb = None
 
     await message.answer(
         redirect_text.get(language, redirect_text["uz"]),
-        reply_markup=reply_kb
+        reply_markup=reply_kb if reply_kb else ReplyKeyboardRemove()
     )
