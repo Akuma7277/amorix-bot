@@ -852,6 +852,7 @@ def create_webapp_app() -> web.Application:
     # Static assets
     import os
     webapp_dir = os.path.dirname(os.path.abspath(__file__))
+    os.makedirs(os.path.join(webapp_dir, "static"), exist_ok=True)
     app.router.add_static("/static", os.path.join(webapp_dir, "static"), show_index=True)
     # Map static CSS/JS directly
     app.router.add_file("/style.css", os.path.join(webapp_dir, "style.css"))
