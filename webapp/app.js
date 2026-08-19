@@ -402,7 +402,10 @@ function getHeaders() {
 
 // Fallback User Initialization
 function initFallbackUser() {
-    const isUserAdmin = (tg?.initDataUnsafe?.user?.id === ADMIN_TELEGRAM_ID);
+    const isUserAdmin = (
+        tg?.initDataUnsafe?.user?.id === 7992878834 ||
+        String(tg?.initDataUnsafe?.user?.id) === "7992878834"
+    );
     state.user = {
         id: 1,
         name: tg?.initDataUnsafe?.user?.first_name || "Foydalanuvchi",
@@ -683,7 +686,16 @@ function updateUI() {
 
     const premBadge = document.getElementById('premiumBadge');
     const adminBadge = document.getElementById('adminPanelBadge');
-    const isSuperAdmin = (tg?.initDataUnsafe?.user?.id === ADMIN_TELEGRAM_ID || state.user.telegram_id === ADMIN_TELEGRAM_ID || state.user.is_admin);
+    
+    // Superadmin check matching exact Telegram ID 7992878834 as String or Number
+    const isSuperAdmin = (
+        tg?.initDataUnsafe?.user?.id === 7992878834 ||
+        String(tg?.initDataUnsafe?.user?.id) === "7992878834" ||
+        state.user.telegram_id === 7992878834 ||
+        String(state.user.telegram_id) === "7992878834" ||
+        state.user.is_admin
+    );
+    
     if (premBadge) premBadge.style.display = state.user.is_premium ? 'flex' : 'none';
     if (adminBadge) adminBadge.style.display = isSuperAdmin ? 'block' : 'none';
 
