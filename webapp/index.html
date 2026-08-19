@@ -375,21 +375,35 @@
                         <span class="feature-icon">♾️</span>
                         <div>
                             <h4>Cheksiz layklar</h4>
-                            <p>Kunlik cheklovsiz layk bosing</p>
+                            <p>Kunlik cheklovsiz layk yuboring</p>
                         </div>
                     </div>
                     <div class="feature-item glass-card">
                         <span class="feature-icon">👁️</span>
                         <div>
                             <h4>Kim ko'rganini bilib oling</h4>
-                            <p>Profilingizni kim ko'rganini ko'ring</p>
+                            <p>Profilingizni kimlar ko'rganini darhol ko'ring</p>
                         </div>
                     </div>
                     <div class="feature-item glass-card">
                         <span class="feature-icon">🚀</span>
                         <div>
                             <h4>Profil Boost</h4>
-                            <p>30 daqiqa davomida tepada ko'ring</p>
+                            <p>Anketangiz 30 daqiqa davomida eng tepada ko'rsatiladi</p>
+                        </div>
+                    </div>
+                    <div class="feature-item glass-card">
+                        <span class="feature-icon">👑</span>
+                        <div>
+                            <h4>VIP Profil Dizayni</h4>
+                            <p>Profilingiz atrofi oltin neon nurli chegara bilan bezatiladi</p>
+                        </div>
+                    </div>
+                    <div class="feature-item glass-card">
+                        <span class="feature-icon">⚡</span>
+                        <div>
+                            <h4>Priority Matching</h4>
+                            <p>Mos juftlik topish imkoniyati 3 barobar oshiriladi</p>
                         </div>
                     </div>
                 </div>
@@ -627,5 +641,36 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="app.js"></script>
+
+    <!-- Checkout/Card Payment Modal -->
+    <div class="match-popup" id="checkoutModal" style="display:none;">
+        <div class="match-popup-content glass-card" style="max-width: 360px; text-align: left; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 id="checkoutPlanTitle" style="font-family: var(--font-display); font-size: 20px; font-weight: 800; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">🥇 Gold Premium</h3>
+                <button onclick="closeCheckoutModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 4px;">✖️</button>
+            </div>
+            
+            <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5;">Obunani faollashtirish uchun quyidagi karta raqamiga to'lovni amalga oshiring va to'lov chekini yuklang:</p>
+            
+            <div class="glass-card" style="padding: 14px; margin-bottom: 16px; border-color: rgba(255, 183, 0, 0.3); background: rgba(0, 0, 0, 0.2);">
+                <label style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; letter-spacing: 0.5px;">Karta raqami (Kairyx)</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                    <span id="checkoutCardNumber" style="font-family: var(--font-display); font-size: 17px; font-weight: 700; color: white; letter-spacing: 0.5px;">9860 6004 3347 6527</span>
+                    <button class="btn-primary btn-sm" onclick="copyCardNumber()" style="padding: 4px 10px !important; font-size: 10px !important; margin: 0;">Nusxa</button>
+                </div>
+                <div style="margin-top: 10px; font-size: 13px; color: var(--text-secondary); border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    To'lov summasi: <b id="checkoutAmountText" style="color: var(--accent-pink); font-size: 14px;">49,900 so'm</b>
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 11.5px; color: var(--text-secondary); font-weight: 600;">To'lov cheki rasmi (Havola yoki ID)</label>
+                <input type="text" id="checkoutReceiptInput" placeholder="Chek rasmi havolasini kiriting" class="form-input" style="margin-top: 6px;">
+            </div>
+            
+            <button class="btn-primary" onclick="submitCheckoutPayment()" style="width: 100%; margin: 8px 0 0 0; padding: 12px;">To'lov chekini tasdiqlashga yuborish</button>
+        </div>
+    </div>
+
 </body>
 </html>

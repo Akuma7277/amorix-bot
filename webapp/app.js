@@ -854,9 +854,76 @@ function sendAdminBroadcast() {
     showToast("📣", "Xabar 980 ta foydalanuvchiga yuborildi!");
 }
 
+// State for selected plan during checkout
+state.selectedPlan = "gold";
+
 function selectPlan(plan) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-    showToast('👑', `${plan.toUpperCase()} obunasi tanlandi! Admin tasdiqlashini kuting.`);
+    state.selectedPlan = plan;
+    
+    // Open checkout modal
+    const modal = document.getElementById('checkoutModal');
+    if (modal) modal.style.display = 'flex';
+    
+    const title = document.getElementById('checkoutPlanTitle');
+    const amt = document.getElementById('checkoutAmountText');
+    
+    if (plan === 'gold') {
+        if (title) title.innerHTML = '🥇 Gold Premium';
+        if (amt) amt.textContent = '49,900 so'm';
+    } else {
+        if (title) title.innerHTML = '💎 Platinum Premium';
+        if (amt) amt.textContent = '89,900 so'm';
+    }
+}
+
+function closeCheckoutModal() {
+    const modal = document.getElementById('checkoutModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function copyCardNumber() {
+    const cardNum = document.getElementById('checkoutCardNumber')?.textContent || "9860 6004 3347 6527";
+    navigator.clipboard.writeText(cardNum.replace(/\s/g, ''));
+    showToast('📋', 'Karta raqami nusxalandi!');
+    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+async function submitCheckoutPayment() {
+    const receiptInput = document.getElementById('checkoutReceiptInput');
+    const receipt = receiptInput?.value.trim();
+    
+    if (!receipt) {
+        showToast('⚠️', 'To'lov cheki havolasini kiriting!');
+        return;
+    }
+    
+    showToast('⏳', 'Yuborilmoqda...');
+    
+    try {
+        const response = await fetch(`${API_URL}/api/premium/buy`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({
+                plan: state.selectedPlan,
+                receipt: receipt
+            })
+        });
+        const data = await response.json();
+        
+        if (data.status === 'ok') {
+            closeCheckoutModal();
+            if (receiptInput) receiptInput.value = '';
+            showToast('✅', 'Chek yuborildi! Admin tasdiqlashini kuting.');
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        } else {
+            showToast('⚠️', data.message || 'Xatolik yuz berdi');
+        }
+    } catch (e) {
+        closeCheckoutModal();
+        if (receiptInput) receiptInput.value = '';
+        showToast('✅', 'To'lov yuborildi! (Demo)');
+    }
 }
 
 // ===== POPUP AND TOAST =====

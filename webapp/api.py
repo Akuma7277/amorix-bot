@@ -565,8 +565,9 @@ async def handle_buy_premium(request):
         
     try:
         data = await request.json()
-        plan = data.get("plan")  # "gold" or "platinum"
+        plan = data.get("plan")
         amount = 49900.0 if plan == "gold" else 89900.0
+        receipt = data.get("receipt", "")
         
         async with async_session_maker() as session:
             stmt = select(User).where(User.telegram_id == tg_user["id"])
@@ -581,16 +582,15 @@ async def handle_buy_premium(request):
                 amount=amount,
                 description=f"Premium {plan.capitalize()} Obunasi",
                 payment_system="Telegram WebApp Payment",
-                transaction_id=f"TX_{user.id}_{int(datetime.now().timestamp())}",
+                transaction_id=receipt or f"TX_{user.id}_{int(datetime.now().timestamp())}",
                 status="pending"
             )
             session.add(payment)
             await session.commit()
             
-            # Send invoice message via Bot if needed, or return success
             return web.json_response({
                 "status": "ok", 
-                "message": "To'lov so'rovi muvaffaqiyatli yaratildi. Admin tasdiqlashini kuting.",
+                "message": "To'lov cheki yuborildi. Admin tasdiqlagach faollashadi.",
                 "payment_id": payment.id
             })
     except Exception as e:
@@ -693,6 +693,7 @@ async def handle_admin_payments(request):
                 "amount": p.amount,
                 "description": p.description,
                 "created_at": p.created_at.isoformat(),
+                "receipt": p.transaction_id,
                 "user": serialize_user(user) if user else None
             })
             
