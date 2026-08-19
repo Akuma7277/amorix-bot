@@ -69,7 +69,7 @@
             <section class="page" id="page-registration">
                 <div class="reg-container glass-card">
                     <div class="reg-logo">💖</div>
-                    <h2>Ro'yxatdan o'tish</h2>
+                    <h2 data-i18n="reg_title">Ro'yxatdan o'tish</h2>
                     <p class="reg-subtitle" id="regStepSubtitle">Bosqich 1 / 12</p>
                     
                     <div class="reg-progress-bar">
@@ -89,18 +89,18 @@
 
                         <!-- Step 2: Terms & Conditions -->
                         <div class="reg-step" data-step="2" style="display:none;">
-                            <h3>Foydalanish qoidalari</h3>
+                            <h3 data-i18n="reg_terms_title">Foydalanish qoidalari</h3>
                             <div class="terms-box">
-                                <p>1. Hurmatli va odobli muomalada bo'ling.</p>
-                                <p>2. Soxta rasmlar va yolg'on ma'lumotlar kiritmang.</p>
-                                <p>3. Boshqa foydalanuvchilarni haqorat qilish taqiqlanadi.</p>
+                                <p data-i18n="reg_terms_1">1. Hurmatli va odobli muomalada bo'ling.</p>
+                                <p data-i18n="reg_terms_2">2. Soxta rasmlar va yolg'on ma'lumotlar kiritmang.</p>
+                                <p data-i18n="reg_terms_3">3. Boshqa foydalanuvchilarni haqorat qilish taqiqlanadi.</p>
                             </div>
-                            <button class="btn-primary" onclick="acceptRegTerms()">Roziman / Accept</button>
+                            <button class="btn-primary" onclick="acceptRegTerms()" data-i18n="btn_accept">Roziman / Accept</button>
                         </div>
 
                         <!-- Step 3: Name -->
                         <div class="reg-step" data-step="3" style="display:none;">
-                            <h3>Ismingiz nima?</h3>
+                            <h3 data-i18n="reg_name_title">Ismingiz nima?</h3>
                             <div class="form-group">
                                 <input type="text" id="regName" placeholder="Ismingizni kiriting" class="form-input">
                             </div>
@@ -108,7 +108,7 @@
 
                         <!-- Step 4: Age -->
                         <div class="reg-step" data-step="4" style="display:none;">
-                            <h3>Yoshingiz nechida?</h3>
+                            <h3 data-i18n="reg_age_title">Yoshingiz nechida?</h3>
                             <div class="form-group">
                                 <input type="number" id="regAge" placeholder="Masalan: 22" class="form-input" min="18" max="99">
                             </div>
@@ -116,16 +116,16 @@
 
                         <!-- Step 5: Gender -->
                         <div class="reg-step" data-step="5" style="display:none;">
-                            <h3>Jinsingiz</h3>
+                            <h3 data-i18n="reg_gender_title">Jinsingiz</h3>
                             <div class="options-grid">
-                                <button class="option-btn selected" onclick="selectRegGender('Erkak', this)">👨 Erkak</button>
-                                <button class="option-btn" onclick="selectRegGender('Ayol', this)">👩 Ayol</button>
+                                <button class="option-btn selected" onclick="selectRegGender('Erkak', this)" data-i18n="gender_male">👨 Erkak</button>
+                                <button class="option-btn" onclick="selectRegGender('Ayol', this)" data-i18n="gender_female">👩 Ayol</button>
                             </div>
                         </div>
 
                         <!-- Step 6: Height -->
                         <div class="reg-step" data-step="6" style="display:none;">
-                            <h3>Bo'yingiz (sm)</h3>
+                            <h3 data-i18n="reg_height_title">Bo'yingiz (sm)</h3>
                             <div class="form-group">
                                 <input type="number" id="regHeight" placeholder="Masalan: 175" class="form-input" min="120" max="230">
                             </div>
@@ -133,28 +133,28 @@
 
                         <!-- Step 7: Looking For -->
                         <div class="reg-step" data-step="7" style="display:none;">
-                            <h3>Kimni qidiryapsiz?</h3>
+                            <h3 data-i18n="reg_looking_title">Kimni qidiryapsiz?</h3>
                             <div class="options-grid">
-                                <button class="option-btn selected" onclick="selectRegLookingFor('Ayolni', this)">👩 Ayolni</button>
-                                <button class="option-btn" onclick="selectRegLookingFor('Erkakni', this)">👨 Erkakni</button>
-                                <button class="option-btn" onclick="selectRegLookingFor('Farqi yo\'q', this)">✨ Farqi yo'q</button>
+                                <button class="option-btn selected" onclick="selectRegLookingFor('Ayolni', this)" data-i18n="look_female">👩 Ayolni</button>
+                                <button class="option-btn" onclick="selectRegLookingFor('Erkakni', this)" data-i18n="look_male">👨 Erkakni</button>
+                                <button class="option-btn" onclick="selectRegLookingFor('Farqi yo\'q', this)" data-i18n="look_any">✨ Farqi yo'q</button>
                             </div>
                         </div>
 
                         <!-- Step 8: Intent -->
                         <div class="reg-step" data-step="8" style="display:none;">
-                            <h3>Munosabatdan maqsadingiz</h3>
+                            <h3 data-i18n="reg_intent_title">Munosabatdan maqsadingiz</h3>
                             <div class="options-grid">
-                                <button class="option-btn selected" onclick="selectRegIntent('serious', this)">💍 Jiddiy munosabat</button>
-                                <button class="option-btn" onclick="selectRegIntent('marriage', this)">💒 Nikohga tayyorgarlik</button>
-                                <button class="option-btn" onclick="selectRegIntent('friendship', this)">☕ Do'stlik va suhbat</button>
-                                <button class="option-btn" onclick="selectRegIntent('explore', this)">🌟 Yangi insonlar</button>
+                                <button class="option-btn selected" onclick="selectRegIntent('serious', this)" data-i18n="intent_serious">💍 Jiddiy munosabat</button>
+                                <button class="option-btn" onclick="selectRegIntent('marriage', this)" data-i18n="intent_marriage">💒 Nikohga tayyorgarlik</button>
+                                <button class="option-btn" onclick="selectRegIntent('friendship', this)" data-i18n="intent_friendship">☕ Do'stlik va suhbat</button>
+                                <button class="option-btn" onclick="selectRegIntent('explore', this)" data-i18n="intent_explore">🌟 Yangi insonlar</button>
                             </div>
                         </div>
 
                         <!-- Step 9: City -->
                         <div class="reg-step" data-step="9" style="display:none;">
-                            <h3>Qaysi shahardansiz?</h3>
+                            <h3 data-i18n="reg_city_title">Qaysi shahardansiz?</h3>
                             <div class="form-group">
                                 <input type="text" id="regCity" placeholder="Masalan: Toshkent" class="form-input">
                             </div>
@@ -162,7 +162,7 @@
 
                         <!-- Step 10: District -->
                         <div class="reg-step" data-step="10" style="display:none;">
-                            <h3>Tumaningiz (ixtiyoriy)</h3>
+                            <h3 data-i18n="reg_district_title">Tumaningiz (ixtiyoriy)</h3>
                             <div class="form-group">
                                 <input type="text" id="regDistrict" placeholder="Masalan: Yunusobod" class="form-input">
                             </div>
@@ -170,7 +170,7 @@
 
                         <!-- Step 11: Interests -->
                         <div class="reg-step" data-step="11" style="display:none;">
-                            <h3>Qiziqishlaringizni tanlang</h3>
+                            <h3 data-i18n="reg_interests_title">Qiziqishlaringizni tanlang</h3>
                             <div class="chips-container" id="regInterestsChips">
                                 <span class="chip" onclick="toggleInterestChip(this)">☕ Kofe</span>
                                 <span class="chip" onclick="toggleInterestChip(this)">✈️ Sayohat</span>
@@ -187,21 +187,21 @@
 
                         <!-- Step 12: Bio & Photo -->
                         <div class="reg-step" data-step="12" style="display:none;">
-                            <h3>O'zingiz haqingizda va Rasm</h3>
+                            <h3 data-i18n="reg_bio_photo_title">O'zingiz haqingizda va Rasm</h3>
                             <div class="form-group">
-                                <label>Bio (O'zingiz haqingizda)</label>
+                                <label data-i18n="reg_label_bio">Bio (O'zingiz haqingizda)</label>
                                 <textarea id="regBio" placeholder="O'zingiz haqingizda qisqacha yozing..." class="form-input" rows="3"></textarea>
                             </div>
                             <div class="form-group">
-                                <label>Profil rasmi URL-i</label>
+                                <label data-i18n="reg_label_photo">Profil rasmi URL-i</label>
                                 <input type="text" id="regPhoto" placeholder="https://example.com/photo.jpg" class="form-input">
                             </div>
                         </div>
                     </div>
 
                     <div class="reg-navigation">
-                        <button class="btn-secondary" id="btnRegPrev" style="display:none;" onclick="prevRegStep()">Orqaga</button>
-                        <button class="btn-primary" id="btnRegNext" onclick="nextRegStep()">Keyingisi</button>
+                        <button class="btn-secondary" id="btnRegPrev" style="display:none;" onclick="prevRegStep()" data-i18n="btn_back">Orqaga</button>
+                        <button class="btn-primary" id="btnRegNext" onclick="nextRegStep()" data-i18n="btn_next">Keyingisi</button>
                     </div>
                 </div>
             </section>
@@ -237,17 +237,17 @@
                     <div class="stat-card glass-card" onclick="navigateTo('likes')">
                         <div class="stat-icon">❤️</div>
                         <div class="stat-value" id="statLikes">0</div>
-                        <div class="stat-label">Yoqqanlar</div>
+                        <div class="stat-label" data-i18n="stat_likes">Yoqqanlar</div>
                     </div>
                     <div class="stat-card glass-card" onclick="navigateTo('matches')">
                         <div class="stat-icon">💬</div>
                         <div class="stat-value" id="statMatches">0</div>
-                        <div class="stat-label">Suhbatlar</div>
+                        <div class="stat-label" data-i18n="stat_chats">Suhbatlar</div>
                     </div>
                     <div class="stat-card glass-card" onclick="navigateTo('views')">
                         <div class="stat-icon">👁️</div>
                         <div class="stat-value" id="statViews">0</div>
-                        <div class="stat-label">Ko'rishlar</div>
+                        <div class="stat-label" data-i18n="stat_views">Ko'rishlar</div>
                     </div>
                 </div>
 
@@ -256,32 +256,32 @@
                     <div class="action-card glass-card gradient-pink" onclick="navigateTo('search')">
                         <div class="action-icon">🔍</div>
                         <div class="action-text">
-                            <h3>Qidirish</h3>
-                            <p>Yangi insonlarni toping</p>
+                            <h3 data-i18n="act_search_title">Qidirish</h3>
+                            <p data-i18n="act_search_desc">Yangi insonlarni toping</p>
                         </div>
                         <div class="action-arrow">→</div>
                     </div>
                     <div class="action-card glass-card gradient-purple" onclick="navigateTo('premium')">
                         <div class="action-icon">👑</div>
                         <div class="action-text">
-                            <h3>Premium</h3>
-                            <p>Cheksiz imkoniyatlar</p>
+                            <h3 data-i18n="act_premium_title">Premium</h3>
+                            <p data-i18n="act_premium_desc">Cheksiz imkoniyatlar</p>
                         </div>
                         <div class="action-arrow">→</div>
                     </div>
                     <div class="action-card glass-card gradient-blue" onclick="navigateTo('profile')">
                         <div class="action-icon">✏️</div>
                         <div class="action-text">
-                            <h3>Profil tahrirlash</h3>
-                            <p>Ma'lumotlaringizni yangilang</p>
+                            <h3 data-i18n="act_profile_title">Profil tahrirlash</h3>
+                            <p data-i18n="act_profile_desc">Ma'lumotlaringizni yangilang</p>
                         </div>
                         <div class="action-arrow">→</div>
                     </div>
                     <div class="action-card glass-card gradient-green" onclick="navigateTo('referrals')">
                         <div class="action-icon">🎁</div>
                         <div class="action-text">
-                            <h3>Taklifnomalar</h3>
-                            <p>Bonus va sovg'alar oling</p>
+                            <h3 data-i18n="act_ref_title">Taklifnomalar</h3>
+                            <p data-i18n="act_ref_desc">Bonus va sovg'alar oling</p>
                         </div>
                         <div class="action-arrow">→</div>
                     </div>
@@ -296,7 +296,7 @@
                             <div class="swipe-card-photo" id="swipePhoto">
                                 <div class="photo-placeholder">
                                     <span>📷</span>
-                                    <p>Rasm yuklanmoqda...</p>
+                                    <p data-i18n="search_photo_loading">Rasm yuklanmoqda...</p>
                                 </div>
                                 <div class="swipe-card-overlay-like">LIKE ❤️</div>
                                 <div class="swipe-card-overlay-nope">NOPE ✖️</div>
@@ -316,9 +316,9 @@
                         </div>
                         <div class="empty-state" id="searchEmpty" style="display:none;">
                             <div class="empty-icon">🔍</div>
-                            <h3>Hozircha anketalar topilmadi</h3>
-                            <p>Keyinroq qayta urinib ko'ring</p>
-                            <button class="btn-primary" onclick="loadProfiles()">Qayta qidirish</button>
+                            <h3 data-i18n="search_empty_title">Hozircha anketalar topilmadi</h3>
+                            <p data-i18n="search_empty_desc">Keyinroq qayta urinib ko'ring</p>
+                            <button class="btn-primary" onclick="loadProfiles()" data-i18n="search_btn_retry">Qayta qidirish</button>
                         </div>
                     </div>
                     <div class="swipe-actions" id="swipeActions">
@@ -338,7 +338,7 @@
             <!-- LIKES PAGE -->
             <section class="page" id="page-likes">
                 <div class="section-header">
-                    <h2>❤️ Menga yoqqanlar</h2>
+                    <h2 data-i18n="likes_header">❤️ Menga yoqqanlar</h2>
                 </div>
                 <div class="likes-grid" id="likesGrid"></div>
             </section>
@@ -346,7 +346,7 @@
             <!-- MATCHES PAGE -->
             <section class="page" id="page-matches">
                 <div class="section-header">
-                    <h2>💬 Suhbatlaringiz</h2>
+                    <h2 data-i18n="chats_header">💬 Suhbatlaringiz</h2>
                 </div>
                 <div class="matches-list" id="matchesList"></div>
             </section>
@@ -357,7 +357,7 @@
                     <div class="chat-messages" id="chatMessages"></div>
                     <div class="chat-input-bar">
                         <input type="text" id="chatMessageInput" placeholder="Xabaringizni yozing..." class="form-input">
-                        <button class="btn-primary" id="btnSendChat" onclick="sendChatMessage()">Yuborish</button>
+                        <button class="btn-primary" id="btnSendChat" onclick="sendChatMessage()" data-i18n="btn_send">Yuborish</button>
                     </div>
                 </div>
             </section>
@@ -367,65 +367,65 @@
                 <div class="premium-hero">
                     <div class="premium-crown">👑</div>
                     <h2 class="premium-title">Kairyx Premium</h2>
-                    <p class="premium-subtitle">Cheksiz imkoniyatlarni oching</p>
+                    <p class="premium-subtitle" data-i18n="prem_subtitle">Cheksiz imkoniyatlarni oching</p>
                 </div>
 
                 <div class="premium-features">
                     <div class="feature-item glass-card">
                         <span class="feature-icon">♾️</span>
                         <div>
-                            <h4>Cheksiz layklar</h4>
-                            <p>Kunlik cheklovsiz layk yuboring</p>
+                            <h4 data-i18n="prem_f1_title">Cheksiz layklar</h4>
+                            <p data-i18n="prem_f1_desc">Kunlik cheklovsiz layk yuboring</p>
                         </div>
                     </div>
                     <div class="feature-item glass-card">
                         <span class="feature-icon">👁️</span>
                         <div>
-                            <h4>Kim ko'rganini bilib oling</h4>
-                            <p>Profilingizni kimlar ko'rganini darhol ko'ring</p>
+                            <h4 data-i18n="prem_f2_title">Kim ko'rganini bilib oling</h4>
+                            <p data-i18n="prem_f2_desc">Profilingizni kimlar ko'rganini darhol ko'ring</p>
                         </div>
                     </div>
                     <div class="feature-item glass-card">
                         <span class="feature-icon">🚀</span>
                         <div>
-                            <h4>Profil Boost</h4>
-                            <p>Anketangiz 30 daqiqa davomida eng tepada ko'rsatiladi</p>
+                            <h4 data-i18n="prem_f3_title">Profil Boost</h4>
+                            <p data-i18n="prem_f3_desc">Anketangiz 30 daqiqa davomida eng tepada ko'rsatiladi</p>
                         </div>
                     </div>
                     <div class="feature-item glass-card">
                         <span class="feature-icon">👑</span>
                         <div>
-                            <h4>VIP Profil Dizayni</h4>
-                            <p>Profilingiz atrofi oltin neon nurli chegara bilan bezatiladi</p>
+                            <h4 data-i18n="prem_f4_title">VIP Profil Dizayni</h4>
+                            <p data-i18n="prem_f4_desc">Profilingiz atrofi oltin neon nurli chegara bilan bezatiladi</p>
                         </div>
                     </div>
                     <div class="feature-item glass-card">
                         <span class="feature-icon">⚡</span>
                         <div>
-                            <h4>Priority Matching</h4>
-                            <p>Mos juftlik topish imkoniyati 3 barobar oshiriladi</p>
+                            <h4 data-i18n="prem_f5_title">Priority Matching</h4>
+                            <p data-i18n="prem_f5_desc">Mos juftlik topish imkoniyati 3 barobar oshiriladi</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="premium-plans">
                     <div class="plan-card glass-card plan-gold" onclick="selectPlan('gold')">
-                        <div class="plan-badge">Mashhur</div>
+                        <div class="plan-badge" data-i18n="prem_badge_popular">Mashhur</div>
                         <h3 class="plan-name">🥇 Gold</h3>
                         <div class="plan-price">
                             <span class="price-amount">49,900</span>
                             <span class="price-currency">so'm/oy</span>
                         </div>
-                        <button class="btn-primary plan-btn">Sotib olish</button>
+                        <button class="btn-primary plan-btn" data-i18n="btn_buy">Sotib olish</button>
                     </div>
                     <div class="plan-card glass-card plan-platinum" onclick="selectPlan('platinum')">
-                        <div class="plan-badge plan-badge-premium">👑 Eng yaxshi</div>
+                        <div class="plan-badge plan-badge-premium" data-i18n="prem_badge_best">👑 Eng yaxshi</div>
                         <h3 class="plan-name">💎 Platinum</h3>
                         <div class="plan-price">
                             <span class="price-amount">89,900</span>
                             <span class="price-currency">so'm/oy</span>
                         </div>
-                        <button class="btn-primary btn-platinum plan-btn">Sotib olish</button>
+                        <button class="btn-primary btn-platinum plan-btn" data-i18n="btn_buy">Sotib olish</button>
                     </div>
                 </div>
             </section>
@@ -433,13 +433,26 @@
             <!-- PROFILE EDIT PAGE -->
             <section class="page" id="page-profile">
                 <div class="section-header">
-                    <h2>✏️ Profil tahrirlash</h2>
+                    <h2 data-i18n="edit_profile_header">✏️ Profil tahrirlash</h2>
                 </div>
+
+                <!-- Photos Manager -->
+                <div class="glass-card" style="padding: 16px; margin-bottom: 16px;">
+                    <h3 style="margin-top:0; font-size:15px;" data-i18n="edit_photos_title">📸 Rasmlar galereyasi</h3>
+                    <div class="photo-manager-grid" id="profilePhotoGrid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom:12px;">
+                        <!-- JS injected photos -->
+                    </div>
+                    <div class="form-group row-group" style="margin-bottom:0; display: flex; gap: 8px;">
+                        <input type="text" id="addPhotoUrlInput" placeholder="Rasm havolasi yoki Telegram ID" class="form-input" style="font-size:12px; flex: 1;">
+                        <button class="btn-primary btn-inline" onclick="addNewProfilePhoto()" style="padding:10px 14px;" data-i18n="btn_add">Qo'shish</button>
+                    </div>
+                </div>
+
                 <div class="profile-edit-form">
                     <div class="edit-field glass-card" onclick="editFieldPrompt('name')">
                         <div class="edit-field-icon">👤</div>
                         <div class="edit-field-content">
-                            <label>Ism</label>
+                            <label data-i18n="edit_lbl_name">Ism</label>
                             <span id="editName">—</span>
                         </div>
                         <div class="edit-field-arrow">›</div>
@@ -447,7 +460,7 @@
                     <div class="edit-field glass-card" onclick="editFieldPrompt('age')">
                         <div class="edit-field-icon">🎂</div>
                         <div class="edit-field-content">
-                            <label>Yosh</label>
+                            <label data-i18n="edit_lbl_age">Yosh</label>
                             <span id="editAge">—</span>
                         </div>
                         <div class="edit-field-arrow">›</div>
@@ -455,7 +468,7 @@
                     <div class="edit-field glass-card" onclick="editFieldPrompt('city')">
                         <div class="edit-field-icon">📍</div>
                         <div class="edit-field-content">
-                            <label>Shahar</label>
+                            <label data-i18n="edit_lbl_city">Shahar</label>
                             <span id="editCity">—</span>
                         </div>
                         <div class="edit-field-arrow">›</div>
@@ -471,7 +484,7 @@
                     <div class="edit-field glass-card" onclick="editFieldPrompt('height')">
                         <div class="edit-field-icon">📏</div>
                         <div class="edit-field-content">
-                            <label>Bo'yingiz</label>
+                            <label data-i18n="edit_lbl_height">Bo'yingiz</label>
                             <span id="editHeight">—</span>
                         </div>
                         <div class="edit-field-arrow">›</div>
@@ -483,33 +496,33 @@
             <section class="page" id="page-referrals">
                 <div class="referral-hero glass-card">
                     <div class="referral-icon">🎁</div>
-                    <h2>Do'stlaringizni taklif qiling</h2>
-                    <p>Har bir taklif uchun bonus oling!</p>
+                    <h2 data-i18n="ref_header">Do'stlaringizni taklif qiling</h2>
+                    <p data-i18n="ref_subtitle">Har bir taklif uchun bonus oling!</p>
                     <div class="referral-stats">
                         <div class="ref-stat">
                             <span class="ref-stat-value" id="refCount">0</span>
-                            <span class="ref-stat-label">Takliflar</span>
+                            <span class="ref-stat-label" data-i18n="ref_stat_count">Takliflar</span>
                         </div>
                         <div class="ref-stat">
                             <span class="ref-stat-value" id="refBonus">0</span>
-                            <span class="ref-stat-label">Bonus (so'm)</span>
+                            <span class="ref-stat-label" data-i18n="ref_stat_bonus">Bonus (so'm)</span>
                         </div>
                     </div>
-                    <button class="btn-primary" onclick="shareReferral()">📤 Havolani ulashish</button>
+                    <button class="btn-primary" onclick="shareReferral()" data-i18n="btn_share_link">📤 Havolani ulashish</button>
                 </div>
             </section>
 
             <!-- VIEWS PAGE -->
             <section class="page" id="page-views">
                 <div class="section-header">
-                    <h2>👁️ Profilingizni ko'rganlar</h2>
+                    <h2 data-i18n="views_header">👁️ Profilingizni ko'rganlar</h2>
                 </div>
                 <div class="views-list" id="viewsList">
                     <div class="premium-lock glass-card">
                         <div class="lock-icon">🔒</div>
-                        <h3>Premium funksiya</h3>
-                        <p>Profilingizni kim ko'rganini bilish uchun Premium sotib oling</p>
-                        <button class="btn-primary" onclick="navigateTo('premium')">👑 Premium olish</button>
+                        <h3 data-i18n="views_lock_title">Premium funksiya</h3>
+                        <p data-i18n="views_lock_desc">Profilingizni kim ko'rganini bilish uchun Premium sotib oling</p>
+                        <button class="btn-primary" onclick="navigateTo('premium')" data-i18n="btn_get_premium">👑 Premium olish</button>
                     </div>
                 </div>
             </section>
@@ -517,22 +530,22 @@
             <!-- SETTINGS PAGE -->
             <section class="page" id="page-settings">
                 <div class="section-header">
-                    <h2>⚙️ Sozlamalar</h2>
+                    <h2 data-i18n="settings_header">⚙️ Sozlamalar</h2>
                 </div>
                 <div class="settings-list">
-                    <div class="settings-item glass-card" onclick="changeSettingsLanguagePrompt()">
+                    <div class="settings-item glass-card" onclick="openLanguageSelectModal()">
                         <span class="settings-icon">🌐</span>
-                        <span class="settings-text">Tilni o'zgartirish / Language</span>
+                        <span class="settings-text" data-i18n="set_lang">Tilni o'zgartirish / Language</span>
                         <span class="settings-arrow" id="currentSettingsLang" style="color: var(--accent-pink); font-size: 13px; font-weight: 700; margin-left: auto;">O'zbekcha</span>
                     </div>
                     <div class="settings-item glass-card" onclick="toggleInvisibleMode()">
                         <span class="settings-icon">👻</span>
-                        <span class="settings-text">Ko'rinmas rejim</span>
+                        <span class="settings-text" data-i18n="set_incognito">Ko'rinmas rejim</span>
                         <input type="checkbox" id="invisibleCheckbox" class="settings-toggle">
                     </div>
                     <div class="settings-item glass-card" onclick="deleteAccountPrompt()">
                         <span class="settings-icon settings-danger">🗑️</span>
-                        <span class="settings-text settings-danger">Hisobni o'chirish</span>
+                        <span class="settings-text settings-danger" data-i18n="set_delete_acc">Hisobni o'chirish</span>
                     </div>
                 </div>
             </section>
@@ -545,19 +558,19 @@
 
                 <div class="admin-stats-grid">
                     <div class="admin-stat-card glass-card">
-                        <h4 id="adminTotalUsers">1,420</h4>
+                        <h4 id="adminTotalUsers">0</h4>
                         <p>Jami foydalanuvchilar</p>
                     </div>
                     <div class="admin-stat-card glass-card">
-                        <h4 id="adminActiveUsers">980</h4>
+                        <h4 id="adminActiveUsers">0</h4>
                         <p>Faol</p>
                     </div>
                     <div class="admin-stat-card glass-card">
-                        <h4 id="adminRegToday">45</h4>
+                        <h4 id="adminRegToday">0</h4>
                         <p>Bugun qo'shilganlar</p>
                     </div>
                     <div class="admin-stat-card glass-card">
-                        <h4 id="adminPremiumUsers">128</h4>
+                        <h4 id="adminPremiumUsers">0</h4>
                         <p>Premium</p>
                     </div>
                 </div>
@@ -602,25 +615,38 @@
         <nav class="bottom-nav" id="bottomNav">
             <button class="nav-item active" data-page="home" onclick="navigateTo('home')">
                 <span class="nav-icon">🏠</span>
-                <span class="nav-label">Asosiy</span>
+                <span class="nav-label" data-i18n="nav_home">Asosiy</span>
             </button>
             <button class="nav-item" data-page="search" onclick="navigateTo('search')">
                 <span class="nav-icon">🔍</span>
-                <span class="nav-label">Qidirish</span>
+                <span class="nav-label" data-i18n="nav_search">Qidirish</span>
             </button>
             <button class="nav-item" data-page="likes" onclick="navigateTo('likes')">
                 <span class="nav-icon">❤️</span>
-                <span class="nav-label">Yoqqanlar</span>
+                <span class="nav-label" data-i18n="nav_likes">Yoqqanlar</span>
             </button>
             <button class="nav-item" data-page="matches" onclick="navigateTo('matches')">
                 <span class="nav-icon">💬</span>
-                <span class="nav-label">Chatlar</span>
+                <span class="nav-label" data-i18n="nav_chats">Chatlar</span>
             </button>
             <button class="nav-item" data-page="settings" onclick="navigateTo('settings')">
                 <span class="nav-icon">⚙️</span>
-                <span class="nav-label">Sozlama</span>
+                <span class="nav-label" data-i18n="nav_settings">Sozlama</span>
             </button>
         </nav>
+    </div>
+
+    <!-- Language Selection Popup Modal (Visual Selector) -->
+    <div class="match-popup" id="languageSelectModal" style="display:none;">
+        <div class="match-popup-content glass-card" style="max-width: 320px; text-align: center; padding: 24px;">
+            <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 800; margin-top: 0; margin-bottom: 16px;">Tilni tanlang / Выберите язык</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="option-btn" onclick="setAppLanguage('uz')" style="text-align: center; justify-content: center; display: flex;">🇺🇿 O'zbekcha</button>
+                <button class="option-btn" onclick="setAppLanguage('ru')" style="text-align: center; justify-content: center; display: flex;">🇷🇺 Русский</button>
+                <button class="option-btn" onclick="setAppLanguage('en')" style="text-align: center; justify-content: center; display: flex;">🇬🇧 English</button>
+            </div>
+            <button class="btn-secondary" onclick="closeLanguageSelectModal()" style="margin-top: 14px; width: 100%;">Yopish / Закрыть</button>
+        </div>
     </div>
 
     <!-- Match Popup -->
@@ -628,11 +654,11 @@
         <div class="match-popup-content glass-card">
             <div class="match-confetti" id="matchConfetti"></div>
             <div class="match-hearts">💕</div>
-            <h2>Bu Match!</h2>
-            <p>Siz va <span id="matchPartnerName">Ism</span> bir-biringizni yoqtirdingiz!</p>
+            <h2 data-i18n="match_title">Bu Match!</h2>
+            <p><span data-i18n="match_body_1">Siz va</span> <span id="matchPartnerName">Ism</span> <span data-i18n="match_body_2">bir-biringizni yoqtirdingiz!</span></p>
             <div class="match-popup-actions">
-                <button class="btn-primary" onclick="openChat()">💬 Xabar yozish</button>
-                <button class="btn-secondary" onclick="closeMatchPopup()">Davom etish</button>
+                <button class="btn-primary" onclick="openChat()" data-i18n="match_btn_chat">💬 Xabar yozish</button>
+                <button class="btn-secondary" onclick="closeMatchPopup()" data-i18n="match_btn_continue">Davom etish</button>
             </div>
         </div>
     </div>
@@ -641,36 +667,5 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="app.js"></script>
-
-    <!-- Checkout/Card Payment Modal -->
-    <div class="match-popup" id="checkoutModal" style="display:none;">
-        <div class="match-popup-content glass-card" style="max-width: 360px; text-align: left; padding: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 id="checkoutPlanTitle" style="font-family: var(--font-display); font-size: 20px; font-weight: 800; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">🥇 Gold Premium</h3>
-                <button onclick="closeCheckoutModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 4px;">✖️</button>
-            </div>
-            
-            <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5;">Obunani faollashtirish uchun quyidagi karta raqamiga to'lovni amalga oshiring va to'lov chekini yuklang:</p>
-            
-            <div class="glass-card" style="padding: 14px; margin-bottom: 16px; border-color: rgba(255, 183, 0, 0.3); background: rgba(0, 0, 0, 0.2);">
-                <label style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; letter-spacing: 0.5px;">Karta raqami (Kairyx)</label>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                    <span id="checkoutCardNumber" style="font-family: var(--font-display); font-size: 17px; font-weight: 700; color: white; letter-spacing: 0.5px;">9860 6004 3347 6527</span>
-                    <button class="btn-primary btn-sm" onclick="copyCardNumber()" style="padding: 4px 10px !important; font-size: 10px !important; margin: 0;">Nusxa</button>
-                </div>
-                <div style="margin-top: 10px; font-size: 13px; color: var(--text-secondary); border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                    To'lov summasi: <b id="checkoutAmountText" style="color: var(--accent-pink); font-size: 14px;">49,900 so'm</b>
-                </div>
-            </div>
-            
-            <div class="form-group" style="margin-bottom: 16px;">
-                <label style="font-size: 11.5px; color: var(--text-secondary); font-weight: 600;">To'lov cheki rasmi (Havola yoki ID)</label>
-                <input type="text" id="checkoutReceiptInput" placeholder="Chek rasmi havolasini kiriting" class="form-input" style="margin-top: 6px;">
-            </div>
-            
-            <button class="btn-primary" onclick="submitCheckoutPayment()" style="width: 100%; margin: 8px 0 0 0; padding: 12px;">To'lov chekini tasdiqlashga yuborish</button>
-        </div>
-    </div>
-
 </body>
 </html>

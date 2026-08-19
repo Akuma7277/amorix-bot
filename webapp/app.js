@@ -4,6 +4,302 @@
 
 const tg = window.Telegram?.WebApp;
 const ADMIN_TELEGRAM_ID = 7992878834;
+
+// Localization Dictionaries
+const TRANSLATIONS = {
+    uz: {
+        nav_home: "Asosiy",
+        nav_search: "Qidirish",
+        nav_likes: "Yoqqanlar",
+        nav_chats: "Chatlar",
+        nav_settings: "Sozlama",
+        reg_title: "Ro'yxatdan o'tish",
+        reg_terms_title: "Foydalanish qoidalari",
+        reg_terms_1: "1. Hurmatli va odobli muomalada bo'ling.",
+        reg_terms_2: "2. Soxta rasmlar va yolg'on ma'lumotlar kiritmang.",
+        reg_terms_3: "3. Boshqa foydalanuvchilarni haqorat qilish taqiqlanadi.",
+        btn_accept: "Roziman / Accept",
+        reg_name_title: "Ismingiz nima?",
+        reg_age_title: "Yoshingiz nechida?",
+        reg_gender_title: "Jinsingiz",
+        gender_male: "👨 Erkak",
+        gender_female: "👩 Ayol",
+        reg_height_title: "Bo'yingiz (sm)",
+        reg_looking_title: "Kimni qidiryapsiz?",
+        look_female: "👩 Ayolni",
+        look_male: "👨 Erkakni",
+        look_any: "✨ Farqi yo'q",
+        reg_intent_title: "Munosabatdan maqsadingiz",
+        intent_serious: "💍 Jiddiy munosabat",
+        intent_marriage: "💒 Nikohga tayyorgarlik",
+        intent_friendship: "☕ Do'stlik va suhbat",
+        intent_explore: "🌟 Yangi insonlar",
+        reg_city_title: "Qaysi shahardansiz?",
+        reg_district_title: "Tumaningiz (ixtiyoriy)",
+        reg_interests_title: "Qiziqishlaringizni tanlang",
+        reg_bio_photo_title: "O'zingiz haqingizda va Rasm",
+        reg_label_bio: "Bio (O'zingiz haqingizda)",
+        reg_label_photo: "Profil rasmi URL-i",
+        btn_back: "Orqaga",
+        btn_next: "Keyingisi",
+        stat_likes: "Yoqqanlar",
+        stat_chats: "Suhbatlar",
+        stat_views: "Ko'rishlar",
+        act_search_title: "Qidirish",
+        act_search_desc: "Yangi insonlarni toping",
+        act_premium_title: "Premium",
+        act_premium_desc: "Cheksiz imkoniyatlar",
+        act_profile_title: "Profil tahrirlash",
+        act_profile_desc: "Ma'lumotlaringizni tahrirlang",
+        act_ref_title: "Taklifnomalar",
+        act_ref_desc: "Bonus va sovg'alar oling",
+        search_photo_loading: "Rasm yuklanmoqda...",
+        search_empty_title: "Hozircha anketalar topilmadi",
+        search_empty_desc: "Keyinroq qayta urinib ko'ring",
+        search_btn_retry: "Qayta qidirish",
+        likes_header: "❤️ Menga yoqqanlar",
+        chats_header: "💬 Suhbatlaringiz",
+        btn_send: "Yuborish",
+        prem_subtitle: "Cheksiz imkoniyatlarni oching",
+        prem_f1_title: "Cheksiz layklar",
+        prem_f1_desc: "Kunlik cheklovsiz layk yuboring",
+        prem_f2_title: "Kim ko'rganini bilib oling",
+        prem_f2_desc: "Profilingizni kimlar ko'rganini darhol ko'ring",
+        prem_f3_title: "Profil Boost",
+        prem_f3_desc: "Anketangiz 30 daqiqa davomida eng tepada ko'rsatiladi",
+        prem_f4_title: "VIP Profil Dizayni",
+        prem_f4_desc: "Profilingiz atrofi oltin neon nurli chegara bilan bezatiladi",
+        prem_f5_title: "Priority Matching",
+        prem_f5_desc: "Mos juftlik topish imkoniyati 3 barobar oshiriladi",
+        prem_badge_popular: "Mashhur",
+        prem_badge_best: "👑 Eng yaxshi",
+        btn_buy: "Sotib olish",
+        edit_profile_header: "✏️ Profil tahrirlash",
+        edit_photos_title: "📸 Rasmlar galereyasi",
+        btn_add: "Qo'shish",
+        edit_lbl_name: "Ism",
+        edit_lbl_age: "Yosh",
+        edit_lbl_city: "Shahar",
+        edit_lbl_height: "Bo'yingiz",
+        ref_header: "Do'stlaringizni taklif qiling",
+        ref_subtitle: "Har bir taklif uchun bonus oling!",
+        ref_stat_count: "Takliflar",
+        ref_stat_bonus: "Bonus (so'm)",
+        btn_share_link: "📤 Havolani ulashish",
+        views_header: "👁️ Profilingizni ko'rganlar",
+        views_lock_title: "Premium funksiya",
+        views_lock_desc: "Profilingizni kim ko'rganini bilish uchun Premium sotib oling",
+        btn_get_premium: "👑 Premium olish",
+        settings_header: "⚙️ Sozlamalar",
+        set_lang: "Tilni o'zgartirish / Language",
+        set_incognito: "Ko'rinmas rejim",
+        set_delete_acc: "Hisobni o'chirish",
+        match_title: "Bu Match!",
+        match_body_1: "Siz va",
+        match_body_2: "bir-biringizni yoqtirdingiz!",
+        match_btn_chat: "💬 Xabar yozish",
+        match_btn_continue: "Davom etish"
+    },
+    ru: {
+        nav_home: "Главная",
+        nav_search: "Поиск",
+        nav_likes: "Лайки",
+        nav_chats: "Чаты",
+        nav_settings: "Настройки",
+        reg_title: "Регистрация",
+        reg_terms_title: "Правила использования",
+        reg_terms_1: "1. Будьте вежливы и уважительны.",
+        reg_terms_2: "2. Не загружайте ложные фото или информацию.",
+        reg_terms_3: "3. Оскорбления других пользователей запрещены.",
+        btn_accept: "Согласен / Accept",
+        reg_name_title: "Как вас зовут?",
+        reg_age_title: "Сколько вам лет?",
+        reg_gender_title: "Ваш пол",
+        gender_male: "👨 Мужчина",
+        gender_female: "👩 Женщина",
+        reg_height_title: "Ваш рост (см)",
+        reg_looking_title: "Кого вы ищете?",
+        look_female: "👩 Женщину",
+        look_male: "👨 Мужчину",
+        look_any: "✨ Неважно",
+        reg_intent_title: "Цель знакомства",
+        intent_serious: "💍 Серьезные отношения",
+        intent_marriage: "💒 Подготовка к браку",
+        intent_friendship: "☕ Дружба и общение",
+        intent_explore: "🌟 Новые люди",
+        reg_city_title: "Из какого вы города?",
+        reg_district_title: "Ваш район (необязательно)",
+        reg_interests_title: "Выберите ваши интересы",
+        reg_bio_photo_title: "О себе и Фото",
+        reg_label_bio: "О себе (Bio)",
+        reg_label_photo: "Ссылка на фото профиля",
+        btn_back: "Назад",
+        btn_next: "Далее",
+        stat_likes: "Лайки",
+        stat_chats: "Диалоги",
+        stat_views: "Просмотры",
+        act_search_title: "Поиск",
+        act_search_desc: "Найти новых людей",
+        act_premium_title: "Премиум",
+        act_premium_desc: "Безлимитные возможности",
+        act_profile_title: "Мой профиль",
+        act_profile_desc: "Редактировать анкету",
+        act_ref_title: "Приглашения",
+        act_ref_desc: "Получайте бонусы и подарки",
+        search_photo_loading: "Загрузка фото...",
+        search_empty_title: "Анкет пока не найдено",
+        search_empty_desc: "Пожалуйста, попробуйте позже",
+        search_btn_retry: "Повторить поиск",
+        likes_header: "❤️ Мои лайки",
+        chats_header: "💬 Ваши диалоги",
+        btn_send: "Отправить",
+        prem_subtitle: "Откройте безлимитный доступ",
+        prem_f1_title: "Безлимитные лайки",
+        prem_f1_desc: "Отправляйте сколько угодно лайков ежедневно",
+        prem_f2_title: "Кто вас смотрел",
+        prem_f2_desc: "Мгновенно узнайте, кто посещал вашу анкету",
+        prem_f3_title: "Буст профиля",
+        prem_f3_desc: "Ваша анкета будет наверху в течение 30 минут",
+        prem_f4_title: "VIP Дизайн Профиля",
+        prem_f4_desc: "Золотая неоновая рамка вокруг вашей аватарки",
+        prem_f5_title: "Priority Matching",
+        prem_f5_desc: "Шанс найти пару увеличивается в 3 раза",
+        prem_badge_popular: "Популярно",
+        prem_badge_best: "👑 Лучший выбор",
+        btn_buy: "Купить",
+        edit_profile_header: "✏️ Редактирование",
+        edit_photos_title: "📸 Галерея фотографий",
+        btn_add: "Добавить",
+        edit_lbl_name: "Имя",
+        edit_lbl_age: "Возраст",
+        edit_lbl_city: "Город",
+        edit_lbl_height: "Рост",
+        ref_header: "Пригласить друзей",
+        ref_subtitle: "Получайте бонусы за каждого друга!",
+        ref_stat_count: "Приглашено",
+        ref_stat_bonus: "Бонусы (сум)",
+        btn_share_link: "📤 Поделиться ссылкой",
+        views_header: "👁️ Кто смотрел профиль",
+        views_lock_title: "Премиум функция",
+        views_lock_desc: "Купите Премиум, чтобы увидеть посетителей вашего профиля",
+        btn_get_premium: "👑 Взять Премиум",
+        settings_header: "⚙️ Настройки",
+        set_lang: "Сменить язык / Language",
+        set_incognito: "Режим инкогнито",
+        set_delete_acc: "Удалить аккаунт",
+        match_title: "Это Мэтч!",
+        match_body_1: "Вы и",
+        match_body_2: "понравились друг другу!",
+        match_btn_chat: "💬 Написать сообщение",
+        match_btn_continue: "Продолжить"
+    },
+    en: {
+        nav_home: "Home",
+        nav_search: "Discover",
+        nav_likes: "Likes",
+        nav_chats: "Chats",
+        nav_settings: "Settings",
+        reg_title: "Registration",
+        reg_terms_title: "Terms of Service",
+        reg_terms_1: "1. Be polite and respectful to others.",
+        reg_terms_2: "2. Do not upload fake photos or info.",
+        reg_terms_3: "3. Harassment of other users is prohibited.",
+        btn_accept: "Agree / Accept",
+        reg_name_title: "What is your name?",
+        reg_age_title: "How old are you?",
+        reg_gender_title: "Your gender",
+        gender_male: "👨 Male",
+        gender_female: "👩 Female",
+        reg_height_title: "Your height (cm)",
+        reg_looking_title: "Who are you looking for?",
+        look_female: "👩 Woman",
+        look_male: "👨 Man",
+        look_any: "✨ Anyone",
+        reg_intent_title: "Relationship Intent",
+        intent_serious: "💍 Serious relationship",
+        intent_marriage: "💒 Preparation for marriage",
+        intent_friendship: "☕ Friendship and chat",
+        intent_explore: "🌟 New people",
+        reg_city_title: "Which city are you from?",
+        reg_district_title: "Your district (optional)",
+        reg_interests_title: "Select your interests",
+        reg_bio_photo_title: "About Me and Photo",
+        reg_label_bio: "Bio (About Me)",
+        reg_label_photo: "Profile photo URL",
+        btn_back: "Back",
+        btn_next: "Next",
+        stat_likes: "Likes",
+        stat_chats: "Chats",
+        stat_views: "Views",
+        act_search_title: "Discover",
+        act_search_desc: "Find new people",
+        act_premium_title: "Premium",
+        act_premium_desc: "Unlock limit advantages",
+        act_profile_title: "My Profile",
+        act_profile_desc: "Edit your profile details",
+        act_ref_title: "Invites",
+        act_ref_desc: "Get bonuses and gifts",
+        search_photo_loading: "Loading photo...",
+        search_empty_title: "No profiles found yet",
+        search_empty_desc: "Please try again later",
+        search_btn_retry: "Search again",
+        likes_header: "❤️ People I Liked",
+        chats_header: "💬 Your Chats",
+        btn_send: "Send",
+        prem_subtitle: "Unlock unlimited access",
+        prem_f1_title: "Unlimited Likes",
+        prem_f1_desc: "Send unlimited likes daily",
+        prem_f2_title: "Who Viewed You",
+        prem_f2_desc: "Instantly see who visited your profile",
+        prem_f3_title: "Profile Boost",
+        prem_f3_desc: "Your profile is pinned on top for 30 minutes",
+        prem_f4_title: "VIP Profile Design",
+        prem_f4_desc: "Golden neon glowing border around your avatar",
+        prem_f5_title: "Priority Matching",
+        prem_f5_desc: "Get matched up to 3 times faster",
+        prem_badge_popular: "Popular",
+        prem_badge_best: "👑 Best Choice",
+        btn_buy: "Buy Now",
+        edit_profile_header: "✏️ Edit Profile",
+        edit_photos_title: "📸 Photos Gallery",
+        btn_add: "Add",
+        edit_lbl_name: "Name",
+        edit_lbl_age: "Age",
+        edit_lbl_city: "City",
+        edit_lbl_height: "Height",
+        ref_header: "Invite Friends",
+        ref_subtitle: "Get bonuses for each friend invited!",
+        ref_stat_count: "Invited",
+        ref_stat_bonus: "Bonus (sum)",
+        btn_share_link: "📤 Share Link",
+        views_header: "👁️ Profile Visitors",
+        views_lock_title: "Premium Feature",
+        views_lock_desc: "Buy Premium to see who visited your profile",
+        btn_get_premium: "👑 Get Premium",
+        settings_header: "⚙️ Settings",
+        set_lang: "Change Language / Language",
+        set_incognito: "Incognito mode",
+        set_delete_acc: "Delete Account",
+        match_title: "It's a Match!",
+        match_body_1: "You and",
+        match_body_2: "liked each other!",
+        match_btn_chat: "💬 Write Message",
+        match_btn_continue: "Continue"
+    }
+};
+
+function applyTranslations() {
+    const lang = state.user?.language || "uz";
+    const dict = TRANSLATIONS[lang] || TRANSLATIONS.uz;
+    
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) {
+            el.textContent = dict[key];
+        }
+    });
+}
+
 const API_URL = "";
 
 // Global App State
@@ -352,6 +648,12 @@ async function submitRegistration() {
 // ===== UI UPDATES =====
 function updateUI() {
     if (!state.user) return;
+    
+    // Apply visual translations instantly
+    applyTranslations();
+    
+    // Render profile photo manager grid
+    renderProfilePhotoGrid();
 
     const pName = document.getElementById('profileName');
     const pMeta = document.getElementById('profileMeta');
@@ -1002,5 +1304,168 @@ function changeSettingsLanguagePrompt() {
         saveProfileField("language", "ru");
     } else if (selected === "3") {
         saveProfileField("language", "en");
+    }
+}
+
+// ===== VISUAL LANGUAGE SELECTOR POPUP =====
+function openLanguageSelectModal() {
+    const modal = document.getElementById('languageSelectModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeLanguageSelectModal() {
+    const modal = document.getElementById('languageSelectModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function setAppLanguage(lang) {
+    if (!state.user) return;
+    state.user.language = lang;
+    closeLanguageSelectModal();
+    updateUI();
+    
+    // Save to server
+    try {
+        await fetch(`${API_URL}/api/profile/update`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ language: lang })
+        });
+    } catch (e) {
+        console.log("Language save fallback");
+    }
+    
+    showToast("🌐", lang === 'uz' ? "Til o'zgartirildi" : lang === 'ru' ? "Язык изменен" : "Language changed");
+}
+
+// ===== PHOTOS MANAGER (ADD, DELETE, SET MAIN) =====
+function renderProfilePhotoGrid() {
+    const grid = document.getElementById('profilePhotoGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    const photos = state.user?.photos || [];
+    
+    photos.forEach((photo, index) => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            position: relative;
+            width: 100%;
+            padding-top: 100%; /* 1:1 Aspect Ratio */
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid ${index === 0 ? 'var(--accent-pink)' : 'rgba(255,255,255,0.1)'};
+            box-shadow: ${index === 0 ? '0 0 10px rgba(255,71,133,0.4)' : 'none'};
+        `;
+        
+        const img = document.createElement('img');
+        img.src = resolvePhotoUrl(photo);
+        img.style.cssText = 'position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;';
+        item.appendChild(img);
+        
+        // Delete button (x)
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '✖️';
+        delBtn.style.cssText = `
+            position: absolute; top: 4px; right: 4px;
+            background: rgba(0,0,0,0.6); border:none; border-radius:50%;
+            color: white; width:20px; height:20px; font-size:10px;
+            cursor: pointer; display: flex; align-items:center; justify-content:center;
+            padding: 0; z-index: 5;
+        `;
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteProfilePhoto(index);
+        };
+        item.appendChild(delBtn);
+        
+        // Star badge / Set Main button
+        if (index === 0) {
+            const badge = document.createElement('div');
+            badge.textContent = '⭐ Main';
+            badge.style.cssText = `
+                position: absolute; bottom: 4px; left: 4px; right: 4px;
+                background: var(--accent-pink); font-size: 8px; font-weight:800;
+                color: white; text-align:center; padding: 2px; border-radius:4px;
+                z-index: 5;
+            `;
+            item.appendChild(badge);
+        } else {
+            const starBtn = document.createElement('button');
+            starBtn.innerHTML = '⭐ Set Main';
+            starBtn.style.cssText = `
+                position: absolute; bottom: 4px; left: 4px; right: 4px;
+                background: rgba(0,0,0,0.6); font-size: 8px; font-weight:800;
+                color: white; text-align:center; padding: 2px; border-radius:4px;
+                border: none; cursor: pointer; z-index: 5;
+            `;
+            starBtn.onclick = (e) => {
+                e.stopPropagation();
+                makePhotoMain(index);
+            };
+            item.appendChild(starBtn);
+        }
+        
+        grid.appendChild(item);
+    });
+    
+    // Add placeholders if photo count is less than 3
+    for (let i = photos.length; i < 3; i++) {
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = `
+            position: relative; width:100%; padding-top:100%;
+            border-radius: 8px; border: 2px dashed rgba(255,255,255,0.1);
+            display: flex; align-items:center; justify-content:center;
+            background: rgba(255,255,255,0.02);
+        `;
+        const inner = document.createElement('span');
+        inner.textContent = '📸';
+        inner.style.cssText = 'position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:20px;';
+        placeholder.appendChild(inner);
+        grid.appendChild(placeholder);
+    }
+}
+
+async function addNewProfilePhoto() {
+    const input = document.getElementById('addPhotoUrlInput');
+    const photoUrl = input?.value.trim();
+    if (!photoUrl) {
+        showToast("⚠️", "Rasm havolasini yoki Telegram ID kiriting!");
+        return;
+    }
+    
+    if (!state.user.photos) state.user.photos = [];
+    state.user.photos.push(photoUrl);
+    if (input) input.value = '';
+    
+    updateUI();
+    savePhotosToServer();
+}
+
+async function deleteProfilePhoto(index) {
+    if (!state.user.photos || state.user.photos.length <= index) return;
+    state.user.photos.splice(index, 1);
+    updateUI();
+    savePhotosToServer();
+}
+
+async function makePhotoMain(index) {
+    if (!state.user.photos || state.user.photos.length <= index) return;
+    const item = state.user.photos.splice(index, 1)[0];
+    state.user.photos.unshift(item); // Move to start
+    updateUI();
+    savePhotosToServer();
+}
+
+async function savePhotosToServer() {
+    try {
+        await fetch(`${API_URL}/api/profile/update`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ photos: state.user.photos })
+        });
+        showToast("✅", "Galereya yangilandi!");
+    } catch (e) {
+        console.log("Photo update fallback");
     }
 }
