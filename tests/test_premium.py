@@ -3,6 +3,8 @@ from unittest.mock import AsyncMock, patch
 from datetime import datetime, timedelta
 
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.base import StorageKey
+import crud
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from menu import who_liked_me_handler, activate_boost_handler, PREMIUM_REQUIRED_TEXTS, WHO_LIKED_ME_EMPTY_TEXTS, LIKES_VIEW_TEXTS, BOOST_ACTIVATED_TEXTS
@@ -25,7 +27,7 @@ async def get_mock_callback_and_state(user_telegram_id):
     # Mock message attribute on callback
     callback.message = AsyncMock()
     storage = MemoryStorage()
-    state = FSMContext(storage, chat_id=user_telegram_id, user_id=user_telegram_id)
+    state = FSMContext(storage, key=StorageKey(bot_id=123, chat_id=user_telegram_id, user_id=user_telegram_id))
     return callback, state
 
 
@@ -87,7 +89,7 @@ async def test_basic_user_cannot_activate_boost():
     callback, _ = await get_mock_callback_and_state(123)
 
     with patch('menu.get_user_by_telegram_id', AsyncMock(return_value=user)), \
-         patch('crud.activate_profile_boost', AsyncMock(return_value=None)): # Mock crud function to return None for non-premium
+         patch('menu.activate_profile_boost', AsyncMock(return_value=None)): # Mock crud function to return None for non-premium
         await activate_boost_handler(callback)
 
     callback.answer.assert_called_once_with(
@@ -103,8 +105,8 @@ async def test_premium_user_can_activate_boost():
     # Mock the crud function to return a future datetime
     mock_expires_at = datetime.now() + timedelta(minutes=30) # Using a fixed value for test
     with patch('menu.get_user_by_telegram_id', AsyncMock(return_value=user)), \
-         patch('crud.activate_profile_boost', AsyncMock(return_value=mock_expires_at)), \
-         patch('crud.is_boost_active', AsyncMock(return_value=False)): # Ensure boost is not already active
+         patch('menu.activate_profile_boost', AsyncMock(return_value=mock_expires_at)), \
+         patch('menu.is_boost_active', AsyncMock(return_value=False)): # Ensure boost is not already active
         await activate_boost_handler(callback)
 
     callback.answer.assert_called_once_with() # No alert means success
@@ -120,8 +122,8 @@ async def test_active_boost_is_not_re_added():
 
     # Mock boost as already active
     with patch('menu.get_user_by_telegram_id', AsyncMock(return_value=user)), \
-         patch('crud.is_boost_active', AsyncMock(return_value=True)), \
-         patch('crud.get_boost_remaining_minutes', AsyncMock(return_value=15)): # Assume 15 minutes remaining
+         patch('menu.is_boost_active', AsyncMock(return_value=True)), \
+         patch('menu.get_boost_remaining_minutes', AsyncMock(return_value=15)): # Assume 15 minutes remaining
         await activate_boost_handler(callback)
 
     callback.answer.assert_called_once_with(
@@ -137,7 +139,13 @@ async def test_expired_boost_is_not_active():
     user.boost_active_until = datetime.now() - timedelta(minutes=1) # Boost expired
     
     # Test is_boost_active directly
-    with patch('crud.async_session_maker', AsyncMock()) as mock_session_maker:
-        mock_session_maker.return_value.__aenter__.return_value.get.return_value = user
+    mock_session = AsyncMock()
+    mock_session.get.return_value = user
+    
+    class MockCtx:
+        async def __aenter__(self): return mock_session
+        async def __aexit__(self, exc_type, exc_val, exc_tb): pass
+        
+    with patch('crud.async_session_maker', return_value=MockCtx()):
         is_active = await crud.is_boost_active(user.id)
         assert not is_active

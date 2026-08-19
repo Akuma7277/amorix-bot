@@ -16,11 +16,11 @@ from sqlalchemy.orm import selectinload
 
 from engine import async_session_maker
 from models import (
-    User, Photo, Like, Match, ChatMessage, Payment, VerificationRequest, 
+    User, Photo, Like, Match, ChatMessage, Payment, VerificationRequest, BlockedUser, 
     UserStatus, VerificationStatus, PremiumPlan, RelationshipIntent,
     UserGender, LookingForGender
 )
-from config import BOT_TOKEN, ADMIN_IDS
+from config import BOT_TOKEN, ADMIN_IDS, DEV_MODE
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +74,10 @@ def get_telegram_user(request) -> dict | None:
             init_data = auth_header.split(" ")[1]
             
     if not init_data:
-        # Fallback for dev mode
-        return {"id": 7992878834, "first_name": "Developer"}
+        if DEV_MODE:
+            # Fallback for dev mode only
+            return {"id": 7992878834, "first_name": "Developer"}
+        return None
         
     return validate_telegram_init_data(init_data, BOT_TOKEN)
 
@@ -299,6 +301,16 @@ async def handle_profiles(request):
         liked_res = await session.execute(liked_stmt)
         exclude_ids = list(liked_res.scalars().all())
         exclude_ids.append(user.id)
+        
+        # Filter out users blocked by the current user
+        blocked_stmt = select(BlockedUser.blocked_id).where(BlockedUser.blocker_id == user.id)
+        blocked_res = await session.execute(blocked_stmt)
+        exclude_ids.extend(blocked_res.scalars().all())
+        
+        # Filter out users who have blocked the current user
+        blocked_by_stmt = select(BlockedUser.blocker_id).where(BlockedUser.blocked_id == user.id)
+        blocked_by_res = await session.execute(blocked_by_stmt)
+        exclude_ids.extend(blocked_by_res.scalars().all())
         
         q = select(User).where(
             and_(

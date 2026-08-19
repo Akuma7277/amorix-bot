@@ -35,8 +35,10 @@ async def test_banned_user_is_stopped_by_middleware():
          patch('common.auto_lift_expired_ban', AsyncMock(return_value=banned_user_db)):
         
         middleware = BanCheckMiddleware()
+        bot_mock = AsyncMock()
+        message._bot = bot_mock
         # The middleware should return None, preventing the handler from being called
-        result = await middleware(handler=handler_mock, event=update, data={'bot': AsyncMock()})
+        result = await middleware(handler=handler_mock, event=update, data={'bot': bot_mock})
 
         assert result is None
         handler_mock.assert_not_called()

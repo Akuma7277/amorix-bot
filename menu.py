@@ -35,7 +35,7 @@ from crud import (
     get_users_who_liked_me, block_user, get_user_referrals,
     check_and_consume_like_quota, set_user_language,
     mark_messages_as_read,
-    activate_profile_boost,
+    activate_profile_boost, BOOST_DURATION_MINUTES,
     is_boost_active, # New import
     get_boost_remaining_minutes, # New import
     create_support_message,
@@ -2098,3 +2098,66 @@ async def open_mini_app_handler(message: Message, state: FSMContext):
         }
         await message.answer(open_texts.get(language, open_texts["uz"]), reply_markup=webapp_kb)
 
+
+
+@router.callback_query(F.data.startswith("icebreaker_"))
+async def process_icebreaker_callback(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await icebreaker_handler(callback, state, bot)
+
+
+async def icebreaker_handler(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    sender = await get_user_by_telegram_id(callback.from_user.id)
+    if not sender:
+        await callback.answer("Siz hali ro'yxatdan o'tmagansiz.", show_alert=True)
+        return
+        
+    sender_lang = sender.language or "uz"
+    
+    try:
+        match_id = int(callback.data.split("_")[1])
+    except (IndexError, ValueError):
+        await callback.answer(MATCH_NOT_FOUND_OR_INACTIVE_TEXTS.get(sender_lang, MATCH_NOT_FOUND_OR_INACTIVE_TEXTS["uz"]), show_alert=True)
+        return
+        
+    match = await get_match_by_id(match_id)
+    if not match or not match.is_active:
+        await callback.answer(MATCH_NOT_FOUND_OR_INACTIVE_TEXTS.get(sender_lang, MATCH_NOT_FOUND_OR_INACTIVE_TEXTS["uz"]), show_alert=True)
+        return
+        
+    if sender.id not in (match.user1_id, match.user2_id):
+        await callback.answer(MATCH_NOT_FOUND_OR_INACTIVE_TEXTS.get(sender_lang, MATCH_NOT_FOUND_OR_INACTIVE_TEXTS["uz"]), show_alert=True)
+        return
+        
+    recipient_id = match.user2_id if sender.id == match.user1_id else match.user1_id
+    recipient = await get_user_by_id(recipient_id)
+    if not recipient:
+        await callback.answer(MATCH_NOT_FOUND_OR_INACTIVE_TEXTS.get(sender_lang, MATCH_NOT_FOUND_OR_INACTIVE_TEXTS["uz"]), show_alert=True)
+        return
+        
+    recipient_lang = recipient.language or "uz"
+    
+    questions = ICEBREAKER_QUESTIONS.get(recipient_lang, ICEBREAKER_QUESTIONS["uz"])
+    question = random.choice(questions)
+    
+    await create_chat_message(
+        match_id=match.id,
+        sender_id=sender.id,
+        text=question
+    )
+    
+    try:
+        await bot.send_message(
+            chat_id=recipient.telegram_id,
+            text=f"✉️ {sender.name} sizga muzqaymoq (icebreaker) savolini yubordi:\n\n<i>«{question}»</i>",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send icebreaker to recipient: {e}")
+        
+    await callback.answer(ICEBREAKER_SENT_TEXTS.get(sender_lang, ICEBREAKER_SENT_TEXTS["uz"]), show_alert=True)
+    
+    confirm_text = ICEBREAKER_CONFIRM_TO_SENDER_TEXTS.get(sender_lang, ICEBREAKER_CONFIRM_TO_SENDER_TEXTS["uz"]).format(
+        recipient_name=recipient.name,
+        question=question
+    )
+    await callback.message.answer(confirm_text, parse_mode="HTML")

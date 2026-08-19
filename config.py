@@ -73,3 +73,6 @@ WEBAPP_URL = os.getenv("WEBAPP_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN") or os
 
 if WEBAPP_URL and not WEBAPP_URL.startswith("http"):
     WEBAPP_URL = f"https://{WEBAPP_URL}"
+
+# Developer Mode (forces dev fallback auth if True)
+DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"

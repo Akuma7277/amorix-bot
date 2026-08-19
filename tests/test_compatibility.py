@@ -1,8 +1,8 @@
 import pytest
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from models import UserGender, LookingForGender, VerificationStatus, User, PremiumPlan
+from models import UserGender, LookingForGender, VerificationStatus, User, PremiumPlan, UserStatus
 from crud import calculate_compatibility_score, get_compatibility_reasons, calculate_profile_completion, get_user_photos, get_profiles_for_user
 from inline import ALL_INTERESTS
 
@@ -42,7 +42,6 @@ def create_mock_user(
         is_invisible=is_invisible,
     )
     # Mocking properties that might be accessed
-    user.is_premium = False
     user.premium_plan = PremiumPlan.basic
     user.premium_expires_at = None
     return user
@@ -70,9 +69,8 @@ def mock_session():
                 return self._users.get(ident)
             return None
 
-    @patch('crud.async_session_maker', new_callable=AsyncMock)
     def _mock_session_factory(users):
-        mock_maker = AsyncMock()
+        mock_maker = MagicMock()
         mock_maker.return_value = MockSession(users)
         return mock_maker
 
@@ -86,7 +84,7 @@ async def test_calculate_compatibility_score_common_interests(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[MockPhoto()])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=100)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=100)):
         score = await calculate_compatibility_score(user1.id, user2.id)
         # Common interests (music, travel) = 40 points
         # Age match (25 vs 25) = 25 points
@@ -104,7 +102,7 @@ async def test_calculate_compatibility_score_no_common_interests(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[MockPhoto()])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=100)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=100)):
         score = await calculate_compatibility_score(user1.id, user2.id)
         # No common interests = 0 points
         # Age match (25 vs 25) = 25 points
@@ -122,7 +120,7 @@ async def test_calculate_compatibility_score_age_mismatch(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[MockPhoto()])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=100)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=100)):
         score = await calculate_compatibility_score(user1.id, user2.id)
         # Common interests = 40 points
         # Age mismatch = 0 points
@@ -140,7 +138,7 @@ async def test_calculate_compatibility_score_location_mismatch(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[MockPhoto()])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=100)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=100)):
         score = await calculate_compatibility_score(user1.id, user2.id)
         # Common interests = 40 points
         # Age match = 25 points
@@ -157,7 +155,7 @@ async def test_calculate_compatibility_score_gender_mismatch(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[MockPhoto()])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=100)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=100)):
         score = await calculate_compatibility_score(user1.id, user2.id)
         # Common interests = 40 points
         # Age match = 25 points
@@ -175,7 +173,7 @@ async def test_calculate_compatibility_score_low_completion(mock_session):
     # Mock calculate_profile_completion to return low score for candidate
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=50)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=50)):
         score = await calculate_compatibility_score(user1.id, user2.id)
         # Common interests = 40 points
         # Age match = 25 points
@@ -193,7 +191,7 @@ async def test_calculate_compatibility_score_clamped_to_100(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[MockPhoto()])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=100)): # Ensure 100 completion
+         patch('crud.calculate_profile_completion', MagicMock(return_value=100)): # Ensure 100 completion
         score = await calculate_compatibility_score(user1.id, user2.id)
         assert score == 100
 
@@ -204,7 +202,7 @@ async def test_calculate_compatibility_score_clamped_to_0(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=0)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=0)):
         score = await calculate_compatibility_score(user1.id, user2.id)
         assert score == 0 # All conditions should be 0
 
@@ -215,7 +213,7 @@ async def test_get_compatibility_reasons_all_reasons(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[MockPhoto()])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=85)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=85)):
         reasons = await get_compatibility_reasons(user1.id, user2.id, language="uz")
         
         expected_reasons = [
@@ -234,7 +232,7 @@ async def test_get_compatibility_reasons_no_reasons(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=0)):
+         patch('crud.calculate_profile_completion', MagicMock(return_value=0)):
         reasons = await get_compatibility_reasons(user1.id, user2.id, language="uz")
         assert reasons == []
 
@@ -245,7 +243,7 @@ async def test_get_compatibility_reasons_partial_reasons(mock_session):
     
     with patch('crud.async_session_maker', mock_session([user1, user2])), \
          patch('crud.get_user_photos', AsyncMock(return_value=[])), \
-         patch('crud.calculate_profile_completion', AsyncMock(return_value=70)): # Below 80
+         patch('crud.calculate_profile_completion', MagicMock(return_value=70)): # Below 80
         reasons = await get_compatibility_reasons(user1.id, user2.id, language="uz")
         
         expected_reasons = [
@@ -300,7 +298,7 @@ async def test_blocked_or_inactive_profile_not_in_search_results(mock_session):
             
             return SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: eligible_users))
 
-    with patch('crud.async_session_maker', new_callable=AsyncMock) as mock_maker:
+    with patch('crud.async_session_maker') as mock_maker:
         mock_maker.return_value = MockSessionForSearch([current_user, blocked_candidate, inactive_candidate, active_candidate], blocked_users_data)
         
         # Mock get_user_photos to avoid errors, not directly relevant to this test

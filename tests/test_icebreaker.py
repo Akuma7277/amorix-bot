@@ -3,6 +3,7 @@ import random
 from unittest.mock import AsyncMock, patch
 
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.base import StorageKey
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from menu import icebreaker_handler, MATCH_NOT_FOUND_OR_INACTIVE_TEXTS, ICEBREAKER_SENT_TEXTS
@@ -24,7 +25,7 @@ async def get_mock_callback_and_state(user_telegram_id, data_str):
     callback.data = data_str
     callback.message = AsyncMock()
     storage = MemoryStorage()
-    state = FSMContext(storage, chat_id=user_telegram_id, user_id=user_telegram_id)
+    state = FSMContext(storage, key=StorageKey(bot_id=123, chat_id=user_telegram_id, user_id=user_telegram_id))
     return callback, state
 
 @pytest.mark.asyncio

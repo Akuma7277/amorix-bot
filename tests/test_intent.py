@@ -6,21 +6,35 @@ from crud import calculate_compatibility_score, get_compatibility_reasons
 from registration import intent_chosen
 from states import RegistrationStates
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.base import StorageKey
 from aiogram.fsm.storage.memory import MemoryStorage
 
 def create_mock_user_for_intent(id, intent=None):
     """Helper to create a mock user with a specific intent."""
-    return User(
-        id=id,
-        telegram_id=id,
-        name=f"User {id}",
-        age=25,
-        gender=UserGender.male,
-        looking_for=LookingForGender.female,
-        interests="test",
-        city="Tashkent",
-        relationship_intent=intent
-    )
+    if id == 1:
+        return User(
+            id=id,
+            telegram_id=id,
+            name=f"User {id}",
+            age=20,
+            gender=UserGender.male,
+            looking_for=LookingForGender.female,
+            interests="a",
+            city="Tashkent",
+            relationship_intent=intent
+        )
+    else:
+        return User(
+            id=id,
+            telegram_id=id,
+            name=f"User {id}",
+            age=50,
+            gender=UserGender.female,
+            looking_for=LookingForGender.male,
+            interests="b",
+            city="Tashkent",
+            relationship_intent=intent
+        )
 
 @pytest.mark.asyncio
 async def test_compatibility_score_intent_match():
@@ -85,7 +99,7 @@ async def test_registration_intent_step():
     callback.data = "intent_serious"
     callback.message = AsyncMock()
     storage = MemoryStorage()
-    state = FSMContext(storage, chat_id=123, user_id=123)
+    state = FSMContext(storage, key=StorageKey(bot_id=123, chat_id=123, user_id=123))
     await state.update_data(language="uz")
 
     await intent_chosen(callback, state)
