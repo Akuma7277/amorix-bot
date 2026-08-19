@@ -87,10 +87,11 @@ async function initApp() {
             showToast("⚠️", "Ulanishda xatolik yuz berdi");
         }
     } catch (e) {
-        console.error(e);
+        console.error("API error, switching to interactive fallback:", e);
         document.getElementById('loadingScreen').classList.add('hidden');
         document.getElementById('appContainer').style.display = 'flex';
-        showToast("⚠️", "API serverga ulanib bo'lmadi");
+        initFallbackUser();
+        navigateTo('home');
     }
     
     setupSwipeGestures();
