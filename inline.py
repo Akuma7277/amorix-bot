@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InputMediaPhoto
 from models import UserStatus, ReportCategory, VerificationStatus, PremiumPlan, ActionType, GiftType, RelationshipIntent
 
 
@@ -1114,5 +1114,23 @@ def get_advanced_search_keyboard(language: str):
     buttons = [
         [InlineKeyboardButton(text=texts["advanced"], callback_data="advanced_search_yes")],
         [InlineKeyboardButton(text=texts["regular"], callback_data="advanced_search_no")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+# ===== MINI APP TUGMASI =====
+WEBAPP_BUTTON_TEXTS = {
+    "uz": "📱 Mini App ochish",
+    "ru": "📱 Открыть Mini App",
+    "en": "📱 Open Mini App",
+}
+
+
+def get_webapp_keyboard(language: str = "uz", webapp_url: str = ""):
+    """Telegram Mini App (WebApp) ochish uchun inline tugma."""
+    if not webapp_url:
+        return None
+    text = WEBAPP_BUTTON_TEXTS.get(language, WEBAPP_BUTTON_TEXTS["uz"])
+    buttons = [
+        [InlineKeyboardButton(text=text, web_app=WebAppInfo(url=webapp_url))],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

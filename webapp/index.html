@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Amorix - Premium tanishuv ilovasi. Yangi insonlar bilan tanishing, sevgi toping.">
+    <title>Amorix - Premium Dating</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated Background Particles -->
+    <div class="bg-particles" id="bgParticles"></div>
+
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">
+            <div class="loading-heart">💕</div>
+            <h1 class="loading-title">Amorix</h1>
+            <p class="loading-subtitle">Premium Dating</p>
+            <div class="loading-bar">
+                <div class="loading-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container" id="appContainer" style="display:none;">
+
+        <!-- Header -->
+        <header class="app-header" id="appHeader">
+            <div class="header-left">
+                <button class="header-btn back-btn" id="backBtn" style="display:none;" onclick="goBack()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h1 class="header-title" id="headerTitle">Amorix</h1>
+            </div>
+            <div class="header-right">
+                <div class="header-premium-badge" id="premiumBadge" style="display:none;">
+                    <span>👑</span> Premium
+                </div>
+            </div>
+        </header>
+
+        <!-- Pages Container -->
+        <main class="pages-container" id="pagesContainer">
+
+            <!-- HOME PAGE -->
+            <section class="page active" id="page-home">
+                <!-- Profile Card -->
+                <div class="profile-card glass-card" id="myProfileCard">
+                    <div class="profile-card-avatar">
+                        <div class="avatar-placeholder">
+                            <span>👤</span>
+                        </div>
+                        <div class="profile-online-dot"></div>
+                    </div>
+                    <div class="profile-card-info">
+                        <h2 class="profile-name" id="profileName">Yuklanmoqda...</h2>
+                        <p class="profile-meta" id="profileMeta"></p>
+                    </div>
+                    <div class="profile-completion" id="profileCompletion">
+                        <div class="completion-ring">
+                            <svg viewBox="0 0 36 36">
+                                <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2d2d3d" stroke-width="3"/>
+                                <path class="ring-fill" id="completionRing" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="url(#gradient)" stroke-width="3" stroke-dasharray="0, 100"/>
+                                <defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff6b9d"/><stop offset="100%" stop-color="#c44dff"/></linearGradient></defs>
+                            </svg>
+                            <span class="completion-text" id="completionText">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-row">
+                    <div class="stat-card glass-card" onclick="navigateTo('likes')">
+                        <div class="stat-icon">❤️</div>
+                        <div class="stat-value" id="statLikes">0</div>
+                        <div class="stat-label">Layklar</div>
+                    </div>
+                    <div class="stat-card glass-card" onclick="navigateTo('matches')">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-value" id="statMatches">0</div>
+                        <div class="stat-label">Matchlar</div>
+                    </div>
+                    <div class="stat-card glass-card" onclick="navigateTo('views')">
+                        <div class="stat-icon">👁️</div>
+                        <div class="stat-value" id="statViews">0</div>
+                        <div class="stat-label">Ko'rishlar</div>
+                    </div>
+                </div>
+
+                <!-- Action Cards -->
+                <div class="action-cards">
+                    <div class="action-card glass-card gradient-pink" onclick="navigateTo('search')">
+                        <div class="action-icon">🔍</div>
+                        <div class="action-text">
+                            <h3>Qidirish</h3>
+                            <p>Yangi insonlarni toping</p>
+                        </div>
+                        <div class="action-arrow">→</div>
+                    </div>
+                    <div class="action-card glass-card gradient-purple" onclick="navigateTo('premium')">
+                        <div class="action-icon">👑</div>
+                        <div class="action-text">
+                            <h3>Premium</h3>
+                            <p>Cheksiz imkoniyatlar</p>
+                        </div>
+                        <div class="action-arrow">→</div>
+                    </div>
+                    <div class="action-card glass-card gradient-blue" onclick="navigateTo('profile')">
+                        <div class="action-icon">✏️</div>
+                        <div class="action-text">
+                            <h3>Profil tahrirlash</h3>
+                            <p>Ma'lumotlaringizni yangilang</p>
+                        </div>
+                        <div class="action-arrow">→</div>
+                    </div>
+                    <div class="action-card glass-card gradient-green" onclick="navigateTo('referrals')">
+                        <div class="action-icon">🎁</div>
+                        <div class="action-text">
+                            <h3>Do'stlarni taklif qiling</h3>
+                            <p>Bonus oling</p>
+                        </div>
+                        <div class="action-arrow">→</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEARCH PAGE -->
+            <section class="page" id="page-search">
+                <div class="search-container">
+                    <div class="swipe-card-stack" id="swipeCardStack">
+                        <div class="swipe-card glass-card" id="currentSwipeCard">
+                            <div class="swipe-card-photo">
+                                <div class="photo-placeholder">
+                                    <span>📷</span>
+                                    <p>Profil yuklanmoqda...</p>
+                                </div>
+                                <div class="swipe-card-overlay-like">LIKE ❤️</div>
+                                <div class="swipe-card-overlay-nope">NOPE ✖️</div>
+                            </div>
+                            <div class="swipe-card-info">
+                                <h3 class="swipe-name" id="swipeName">Ism, Yosh</h3>
+                                <p class="swipe-location" id="swipeLocation">📍 Shahar</p>
+                                <p class="swipe-bio" id="swipeBio">Bio yuklanmoqda...</p>
+                                <div class="swipe-compatibility">
+                                    <div class="compat-bar">
+                                        <div class="compat-fill" id="compatFill" style="width: 0%"></div>
+                                    </div>
+                                    <span class="compat-text" id="compatText">0% mos</span>
+                                </div>
+                                <div class="swipe-interests" id="swipeInterests"></div>
+                            </div>
+                        </div>
+                        <div class="empty-state" id="searchEmpty" style="display:none;">
+                            <div class="empty-icon">🔍</div>
+                            <h3>Hozircha anketalar topilmadi</h3>
+                            <p>Keyinroq qayta urinib ko'ring</p>
+                            <button class="btn-primary" onclick="loadProfiles()">Qayta qidirish</button>
+                        </div>
+                    </div>
+                    <div class="swipe-actions" id="swipeActions">
+                        <button class="swipe-btn swipe-nope" id="btnNope" onclick="swipeAction('nope')">
+                            <span>✖️</span>
+                        </button>
+                        <button class="swipe-btn swipe-superlike" id="btnSuperlike" onclick="swipeAction('superlike')">
+                            <span>⭐</span>
+                        </button>
+                        <button class="swipe-btn swipe-like" id="btnLike" onclick="swipeAction('like')">
+                            <span>❤️</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LIKES PAGE -->
+            <section class="page" id="page-likes">
+                <div class="section-header">
+                    <h2>❤️ Sizni yoqtirganlar</h2>
+                </div>
+                <div class="likes-grid" id="likesGrid">
+                    <div class="empty-state">
+                        <div class="empty-icon">💔</div>
+                        <h3>Hali hech kim yoqtirmagan</h3>
+                        <p>Profilingizni to'ldiring va qidiruvni boshlang!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MATCHES PAGE -->
+            <section class="page" id="page-matches">
+                <div class="section-header">
+                    <h2>💬 Suhbatlaringiz</h2>
+                </div>
+                <div class="matches-list" id="matchesList">
+                    <div class="empty-state">
+                        <div class="empty-icon">💬</div>
+                        <h3>Hali suhbat yo'q</h3>
+                        <p>Qidiruvni boshlang va juftingizni toping!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PREMIUM PAGE -->
+            <section class="page" id="page-premium">
+                <div class="premium-hero">
+                    <div class="premium-crown">👑</div>
+                    <h2 class="premium-title">Amorix Premium</h2>
+                    <p class="premium-subtitle">Cheksiz imkoniyatlarni oching</p>
+                </div>
+
+                <div class="premium-features">
+                    <div class="feature-item glass-card">
+                        <span class="feature-icon">♾️</span>
+                        <div>
+                            <h4>Cheksiz layklar</h4>
+                            <p>Kunlik cheklovsiz layk bosing</p>
+                        </div>
+                    </div>
+                    <div class="feature-item glass-card">
+                        <span class="feature-icon">👁️</span>
+                        <div>
+                            <h4>Kim ko'rganini bilib oling</h4>
+                            <p>Profilingizni kim ko'rganini ko'ring</p>
+                        </div>
+                    </div>
+                    <div class="feature-item glass-card">
+                        <span class="feature-icon">🚀</span>
+                        <div>
+                            <h4>Profil Boost</h4>
+                            <p>30 daqiqa davomida tepada ko'ring</p>
+                        </div>
+                    </div>
+                    <div class="feature-item glass-card">
+                        <span class="feature-icon">⭐</span>
+                        <div>
+                            <h4>Super Like</h4>
+                            <p>O'zingizni ajratib ko'rsating</p>
+                        </div>
+                    </div>
+                    <div class="feature-item glass-card">
+                        <span class="feature-icon">❤️</span>
+                        <div>
+                            <h4>Kim yoqtirganini ko'ring</h4>
+                            <p>Sizni yoqtirganlarni darhol ko'ring</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="premium-plans">
+                    <div class="plan-card glass-card plan-gold" onclick="selectPlan('gold')">
+                        <div class="plan-badge">Mashhur</div>
+                        <h3 class="plan-name">🥇 Gold</h3>
+                        <div class="plan-price">
+                            <span class="price-amount">49,900</span>
+                            <span class="price-currency">so'm/oy</span>
+                        </div>
+                        <ul class="plan-features">
+                            <li>✅ Cheksiz layklar</li>
+                            <li>✅ 5 ta Super Like/kun</li>
+                            <li>✅ Kim yoqtirganini ko'rish</li>
+                            <li>✅ Profil Boost (1/kun)</li>
+                        </ul>
+                        <button class="btn-primary plan-btn">Tanlash</button>
+                    </div>
+                    <div class="plan-card glass-card plan-platinum" onclick="selectPlan('platinum')">
+                        <div class="plan-badge plan-badge-premium">👑 Eng yaxshi</div>
+                        <h3 class="plan-name">💎 Platinum</h3>
+                        <div class="plan-price">
+                            <span class="price-amount">89,900</span>
+                            <span class="price-currency">so'm/oy</span>
+                        </div>
+                        <ul class="plan-features">
+                            <li>✅ Gold'dagi hamma narsa</li>
+                            <li>✅ Cheksiz Super Like</li>
+                            <li>✅ Kim ko'rganini bilish</li>
+                            <li>✅ Cheksiz Boost</li>
+                            <li>✅ Maxfiy rejim</li>
+                        </ul>
+                        <button class="btn-primary btn-platinum plan-btn">Tanlash</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROFILE EDIT PAGE -->
+            <section class="page" id="page-profile">
+                <div class="section-header">
+                    <h2>✏️ Profil tahrirlash</h2>
+                </div>
+                <div class="profile-edit-form">
+                    <div class="edit-field glass-card" onclick="sendAction('edit_name')">
+                        <div class="edit-field-icon">👤</div>
+                        <div class="edit-field-content">
+                            <label>Ism</label>
+                            <span id="editName">—</span>
+                        </div>
+                        <div class="edit-field-arrow">›</div>
+                    </div>
+                    <div class="edit-field glass-card" onclick="sendAction('edit_age')">
+                        <div class="edit-field-icon">🎂</div>
+                        <div class="edit-field-content">
+                            <label>Yosh</label>
+                            <span id="editAge">—</span>
+                        </div>
+                        <div class="edit-field-arrow">›</div>
+                    </div>
+                    <div class="edit-field glass-card" onclick="sendAction('edit_city')">
+                        <div class="edit-field-icon">📍</div>
+                        <div class="edit-field-content">
+                            <label>Shahar</label>
+                            <span id="editCity">—</span>
+                        </div>
+                        <div class="edit-field-arrow">›</div>
+                    </div>
+                    <div class="edit-field glass-card" onclick="sendAction('edit_bio')">
+                        <div class="edit-field-icon">💬</div>
+                        <div class="edit-field-content">
+                            <label>Bio</label>
+                            <span id="editBio">—</span>
+                        </div>
+                        <div class="edit-field-arrow">›</div>
+                    </div>
+                    <div class="edit-field glass-card" onclick="sendAction('edit_photos')">
+                        <div class="edit-field-icon">📷</div>
+                        <div class="edit-field-content">
+                            <label>Rasmlar</label>
+                            <span id="editPhotos">Tahrirlash</span>
+                        </div>
+                        <div class="edit-field-arrow">›</div>
+                    </div>
+                    <div class="edit-field glass-card" onclick="sendAction('edit_interests')">
+                        <div class="edit-field-icon">🎯</div>
+                        <div class="edit-field-content">
+                            <label>Qiziqishlar</label>
+                            <span id="editInterests">—</span>
+                        </div>
+                        <div class="edit-field-arrow">›</div>
+                    </div>
+                    <div class="edit-field glass-card" onclick="sendAction('edit_height')">
+                        <div class="edit-field-icon">📏</div>
+                        <div class="edit-field-content">
+                            <label>Bo'y</label>
+                            <span id="editHeight">—</span>
+                        </div>
+                        <div class="edit-field-arrow">›</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- REFERRALS PAGE -->
+            <section class="page" id="page-referrals">
+                <div class="referral-hero glass-card">
+                    <div class="referral-icon">🎁</div>
+                    <h2>Do'stlaringizni taklif qiling</h2>
+                    <p>Har bir taklif uchun bonus oling!</p>
+                    <div class="referral-stats">
+                        <div class="ref-stat">
+                            <span class="ref-stat-value" id="refCount">0</span>
+                            <span class="ref-stat-label">Takliflar</span>
+                        </div>
+                        <div class="ref-stat">
+                            <span class="ref-stat-value" id="refBonus">0</span>
+                            <span class="ref-stat-label">Bonus</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="shareReferral()">📤 Havolani ulashish</button>
+                </div>
+            </section>
+
+            <!-- VIEWS PAGE -->
+            <section class="page" id="page-views">
+                <div class="section-header">
+                    <h2>👁️ Profilingizni ko'rganlar</h2>
+                </div>
+                <div class="views-list" id="viewsList">
+                    <div class="premium-lock glass-card">
+                        <div class="lock-icon">🔒</div>
+                        <h3>Premium funksiya</h3>
+                        <p>Profilingizni kim ko'rganini bilish uchun Premium sotib oling</p>
+                        <button class="btn-primary" onclick="navigateTo('premium')">👑 Premium olish</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SETTINGS PAGE -->
+            <section class="page" id="page-settings">
+                <div class="section-header">
+                    <h2>⚙️ Sozlamalar</h2>
+                </div>
+                <div class="settings-list">
+                    <div class="settings-item glass-card" onclick="sendAction('change_language')">
+                        <span class="settings-icon">🌐</span>
+                        <span class="settings-text">Tilni o'zgartirish</span>
+                        <span class="settings-arrow">›</span>
+                    </div>
+                    <div class="settings-item glass-card" onclick="sendAction('toggle_invisible')">
+                        <span class="settings-icon">👻</span>
+                        <span class="settings-text">Ko'rinmas rejim</span>
+                        <span class="settings-arrow">›</span>
+                    </div>
+                    <div class="settings-item glass-card" onclick="sendAction('verify')">
+                        <span class="settings-icon">✅</span>
+                        <span class="settings-text">Hisobni tasdiqlash</span>
+                        <span class="settings-arrow">›</span>
+                    </div>
+                    <div class="settings-item glass-card" onclick="sendAction('security_info')">
+                        <span class="settings-icon">🛡️</span>
+                        <span class="settings-text">Xavfsizlik</span>
+                        <span class="settings-arrow">›</span>
+                    </div>
+                    <div class="settings-item glass-card settings-danger" onclick="sendAction('delete_account')">
+                        <span class="settings-icon">🗑️</span>
+                        <span class="settings-text">Hisobni o'chirish</span>
+                        <span class="settings-arrow">›</span>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav" id="bottomNav">
+            <button class="nav-item active" data-page="home" onclick="navigateTo('home')">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Asosiy</span>
+            </button>
+            <button class="nav-item" data-page="search" onclick="navigateTo('search')">
+                <span class="nav-icon">🔍</span>
+                <span class="nav-label">Qidirish</span>
+            </button>
+            <button class="nav-item" data-page="likes" onclick="navigateTo('likes')">
+                <span class="nav-icon">❤️</span>
+                <span class="nav-label">Layklar</span>
+                <span class="nav-badge" id="likesBadge" style="display:none;">0</span>
+            </button>
+            <button class="nav-item" data-page="matches" onclick="navigateTo('matches')">
+                <span class="nav-icon">💬</span>
+                <span class="nav-label">Chatlar</span>
+                <span class="nav-badge" id="matchesBadge" style="display:none;">0</span>
+            </button>
+            <button class="nav-item" data-page="settings" onclick="navigateTo('settings')">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Sozlama</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Match Popup -->
+    <div class="match-popup" id="matchPopup" style="display:none;">
+        <div class="match-popup-content glass-card">
+            <div class="match-confetti" id="matchConfetti"></div>
+            <div class="match-hearts">💕</div>
+            <h2>Bu Match!</h2>
+            <p>Siz va <span id="matchPartnerName">Ism</span> bir-biringizni yoqtirdingiz!</p>
+            <div class="match-popup-actions">
+                <button class="btn-primary" onclick="openChat()">💬 Xabar yozish</button>
+                <button class="btn-secondary" onclick="closeMatchPopup()">Davom etish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

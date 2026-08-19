@@ -9,6 +9,7 @@ from crud import get_user_by_telegram_id, auto_lift_expired_ban, get_channel_che
 from states import RegistrationStates
 from inline import get_language_keyboard, get_subscribe_keyboard
 from reply import get_main_menu_keyboard
+from config import WEBAPP_URL
 from models import UserStatus
 
 router = Router()

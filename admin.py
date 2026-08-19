@@ -31,13 +31,13 @@ LOGS_PAGE_SIZE = 10
 
 UNAUTHORIZED_ACCESS_TEXT = {
     "uz": "Sizda admin paneliga kirish huquqi yo'q.",
-    "ru": "У вас нет доступа к админ-панели.",
+    "ru": "РЈ РІР°СЃ РЅРµС‚ РґРѕСЃС‚СѓРїР° Рє Р°РґРјРёРЅ-РїР°РЅРµР»Рё.",
     "en": "You do not have access to the admin panel.",
 }
 
 STATISTICS_TEXT = {
     "uz": (
-        "📊 <b>Bot statistikasi:</b>\n\n"
+        "рџ“Љ <b>Bot statistikasi:</b>\n\n"
         "Jami foydalanuvchilar: {total_users}\n"
         "Bugun ro'yxatdan o'tganlar: {registered_today}\n"
         "Faol foydalanuvchilar: {active_users}\n"
@@ -45,15 +45,15 @@ STATISTICS_TEXT = {
         "Premium foydalanuvchilar: {premium_users}"
     ),
     "ru": (
-        "📊 <b>Статистика бота:</b>\n\n"
-        "Всего пользователей: {total_users}\n"
-        "Зарегистрировано сегодня: {registered_today}\n"
-        "Активных пользователей: {active_users}\n"
-        "Всего совпадений: {total_matches}\n"
-        "Премиум пользователи: {premium_users}"
+        "рџ“Љ <b>РЎС‚Р°С‚РёСЃС‚РёРєР° Р±РѕС‚Р°:</b>\n\n"
+        "Р’СЃРµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№: {total_users}\n"
+        "Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅРѕ СЃРµРіРѕРґРЅСЏ: {registered_today}\n"
+        "РђРєС‚РёРІРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№: {active_users}\n"
+        "Р’СЃРµРіРѕ СЃРѕРІРїР°РґРµРЅРёР№: {total_matches}\n"
+        "РџСЂРµРјРёСѓРј РїРѕР»СЊР·РѕРІР°С‚РµР»Рё: {premium_users}"
     ),
     "en": (
-        "📊 <b>Bot Statistics:</b>\n\n"
+        "рџ“Љ <b>Bot Statistics:</b>\n\n"
         "Total users: {total_users}\n"
         "Registered today: {registered_today}\n"
         "Active users: {active_users}\n"
@@ -64,81 +64,81 @@ STATISTICS_TEXT = {
 
 NO_PHOTOS_TO_MODERATE_TEXT = {
     "uz": "Hozircha moderatsiya uchun rasmlar yo'q. Asosiy menyuga qaytishingiz mumkin.",
-    "ru": "На данный момент нет фотографий для модерации. Можете вернуться в главное меню.",
+    "ru": "РќР° РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ РЅРµС‚ С„РѕС‚РѕРіСЂР°С„РёР№ РґР»СЏ РјРѕРґРµСЂР°С†РёРё. РњРѕР¶РµС‚Рµ РІРµСЂРЅСѓС‚СЊСЃСЏ РІ РіР»Р°РІРЅРѕРµ РјРµРЅСЋ.",
     "en": "There are no photos for moderation at the moment. You can return to the main menu.",
 }
 
 PHOTO_MODERATION_CAPTION = {
     "uz": "Foydalanuvchi: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
-    "ru": "Пользователь: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
+    "ru": "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
     "en": "User: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`",
 }
 
 PHOTO_APPROVED_TEXT = {
-    "uz": "✅ Rasm tasdiqlandi. Keyingisi ko'rsatilmoqda...",
-    "ru": "✅ Фото одобрено. Показываю следующее...",
-    "en": "✅ Photo approved. Showing next...",
+    "uz": "вњ… Rasm tasdiqlandi. Keyingisi ko'rsatilmoqda...",
+    "ru": "вњ… Р¤РѕС‚Рѕ РѕРґРѕР±СЂРµРЅРѕ. РџРѕРєР°Р·С‹РІР°СЋ СЃР»РµРґСѓСЋС‰РµРµ...",
+    "en": "вњ… Photo approved. Showing next...",
 }
 
 PHOTO_REJECTED_TEXT = {
-    "uz": "❌ Rasm rad etildi. Keyingisi ko'rsatilmoqda...",
-    "ru": "❌ Фото отклонено. Показываю следующее...",
-    "en": "❌ Photo rejected. Showing next...",
+    "uz": "вќЊ Rasm rad etildi. Keyingisi ko'rsatilmoqda...",
+    "ru": "вќЊ Р¤РѕС‚Рѕ РѕС‚РєР»РѕРЅРµРЅРѕ. РџРѕРєР°Р·С‹РІР°СЋ СЃР»РµРґСѓСЋС‰РµРµ...",
+    "en": "вќЊ Photo rejected. Showing next...",
 }
 
 USER_BAN_WIP_TEXT = {
     "uz": "Foydalanuvchini bloklash funksiyasi ishlab chiqilmoqda.",
-    "ru": "Функция блокировки пользователя в разработке.",
+    "ru": "Р¤СѓРЅРєС†РёСЏ Р±Р»РѕРєРёСЂРѕРІРєРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ СЂР°Р·СЂР°Р±РѕС‚РєРµ.",
     "en": "User banning feature is under development.",
 }
 
 USER_SEARCH_PROMPT_TEXT = {
     "uz": "Foydalanuvchining Telegram ID yoki DB ID raqamini kiriting:",
-    "ru": "Введите Telegram ID или ID базы данных пользователя:",
+    "ru": "Р’РІРµРґРёС‚Рµ Telegram ID РёР»Рё ID Р±Р°Р·С‹ РґР°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ:",
     "en": "Enter the user's Telegram ID or DB ID:",
 }
 
 USER_NOT_FOUND_TEXT = {
     "uz": "Bunday ID raqamli foydalanuvchi topilmadi.",
-    "ru": "Пользователь с таким ID не найден.",
+    "ru": "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј ID РЅРµ РЅР°Р№РґРµРЅ.",
     "en": "User with this ID was not found.",
 }
 
-USER_BANNED_TEXT = "🚫 Foydalanuvchi bloklandi va endi botda ko'rinmaydi."
-USER_UNBANNED_TEXT = "✅ Foydalanuvchi blokdan chiqarildi."
+USER_BANNED_TEXT = "рџљ« Foydalanuvchi bloklandi va endi botda ko'rinmaydi."
+USER_UNBANNED_TEXT = "вњ… Foydalanuvchi blokdan chiqarildi."
 PROFILE_DELETED_TEXT = {
-    "uz": "🗑 Profil butunlay o'chirildi.",
-    "ru": "🗑 Профиль полностью удален.",
-    "en": "🗑 The profile has been permanently deleted.",
+    "uz": "рџ—‘ Profil butunlay o'chirildi.",
+    "ru": "рџ—‘ РџСЂРѕС„РёР»СЊ РїРѕР»РЅРѕСЃС‚СЊСЋ СѓРґР°Р»РµРЅ.",
+    "en": "рџ—‘ The profile has been permanently deleted.",
 }
 
 USER_MANAGEMENT_TEXT = {
     "uz": "Foydalanuvchini boshqarish:",
-    "ru": "Управление пользователем:",
+    "ru": "РЈРїСЂР°РІР»РµРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј:",
     "en": "User management:",
 }
 
 BAN_NOTICE_TEXT = {
-    "uz": "🚫 Sizning hisobingiz {until} sanasigacha vaqtincha bloklandi.",
-    "ru": "🚫 Ваш аккаунт временно заблокирован до {until}.",
-    "en": "🚫 Your account has been temporarily banned until {until}.",
+    "uz": "рџљ« Sizning hisobingiz {until} sanasigacha vaqtincha bloklandi.",
+    "ru": "рџљ« Р’Р°С€ Р°РєРєР°СѓРЅС‚ РІСЂРµРјРµРЅРЅРѕ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ РґРѕ {until}.",
+    "en": "рџљ« Your account has been temporarily banned until {until}.",
 }
 
 BAN_NOTICE_PERMANENT_TEXT = {
-    "uz": "🚫 Sizning hisobingiz doimiy ravishda bloklandi.",
-    "ru": "🚫 Ваш аккаунт заблокирован навсегда.",
-    "en": "🚫 Your account has been permanently banned.",
+    "uz": "рџљ« Sizning hisobingiz doimiy ravishda bloklandi.",
+    "ru": "рџљ« Р’Р°С€ Р°РєРєР°СѓРЅС‚ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ РЅР°РІСЃРµРіРґР°.",
+    "en": "рџљ« Your account has been permanently banned.",
 }
 
 PROFILE_DELETED_NOTICE_TEXT = {
-    "uz": "🗑 Sizning profilingiz administrator tomonidan o'chirildi. Qayta ro'yxatdan o'tish uchun /start buyrug'ini bosing.",
-    "ru": "🗑 Ваш профиль был удален администратором. Чтобы зарегистрироваться заново, нажмите /start.",
-    "en": "🗑 Your profile has been deleted by an administrator. Press /start to register again.",
+    "uz": "рџ—‘ Sizning profilingiz administrator tomonidan o'chirildi. Qayta ro'yxatdan o'tish uchun /start buyrug'ini bosing.",
+    "ru": "рџ—‘ Р’Р°С€ РїСЂРѕС„РёР»СЊ Р±С‹Р» СѓРґР°Р»РµРЅ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕРј. Р§С‚РѕР±С‹ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ Р·Р°РЅРѕРІРѕ, РЅР°Р¶РјРёС‚Рµ /start.",
+    "en": "рџ—‘ Your profile has been deleted by an administrator. Press /start to register again.",
 }
 
 REPORT_DETAILS_TEXT = {
     "uz": (
-        "<b>❗️ Yangi shikoyat</b>\n\n"
+        "<b>вќ—пёЏ Yangi shikoyat</b>\n\n"
         "<b>Shikoyatchi:</b> {reporter_name} (ID: {reporter_id})\n"
         "<b>Ayblanuvchi:</b> {reported_name} (ID: {reported_id})\n"
         "<b>Sana:</b> {report_date}\n\n"
@@ -146,15 +146,15 @@ REPORT_DETAILS_TEXT = {
         "<b>Tavsif:</b>\n{description}"
     ),
     "ru": (
-        "<b>❗️ Новая жалоба</b>\n\n"
-        "<b>Жалобщик:</b> {reporter_name} (ID: {reporter_id})\n"
-        "<b>Обвиняемый:</b> {reported_name} (ID: {reported_id})\n"
-        "<b>Дата:</b> {report_date}\n\n"
-        "<b>Категория:</b> {category}\n"
-        "<b>Описание:</b>\n{description}"
+        "<b>вќ—пёЏ РќРѕРІР°СЏ Р¶Р°Р»РѕР±Р°</b>\n\n"
+        "<b>Р–Р°Р»РѕР±С‰РёРє:</b> {reporter_name} (ID: {reporter_id})\n"
+        "<b>РћР±РІРёРЅСЏРµРјС‹Р№:</b> {reported_name} (ID: {reported_id})\n"
+        "<b>Р”Р°С‚Р°:</b> {report_date}\n\n"
+        "<b>РљР°С‚РµРіРѕСЂРёСЏ:</b> {category}\n"
+        "<b>РћРїРёСЃР°РЅРёРµ:</b>\n{description}"
     ),
     "en": (
-        "<b>❗️ New Report</b>\n\n"
+        "<b>вќ—пёЏ New Report</b>\n\n"
         "<b>Reporter:</b> {reporter_name} (ID: {reporter_id})\n"
         "<b>Reported:</b> {reported_name} (ID: {reported_id})\n"
         "<b>Date:</b> {report_date}\n\n"
@@ -165,53 +165,53 @@ REPORT_DETAILS_TEXT = {
 
 NO_REPORTS_TEXT = {
     "uz": "Hozircha ko'rib chiqilmagan shikoyatlar yo'q.",
-    "ru": "На данный момент нет нерассмотренных жалоб.",
+    "ru": "РќР° РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ РЅРµС‚ РЅРµСЂР°СЃСЃРјРѕС‚СЂРµРЅРЅС‹С… Р¶Р°Р»РѕР±.",
     "en": "There are no pending reports at the moment.",
 }
 
-REPORT_RESOLVED_TEXT = "✅ Shikoyat 'hal qilindi' deb belgilandi."
-REPORT_REJECTED_TEXT = "❌ Shikoyat 'rad etildi' deb belgilandi."
-REPORT_USER_BANNED_TEXT = "🚫 Foydalanuvchi bloklandi va shikoyat 'hal qilindi' deb belgilandi."
+REPORT_RESOLVED_TEXT = "вњ… Shikoyat 'hal qilindi' deb belgilandi."
+REPORT_REJECTED_TEXT = "вќЊ Shikoyat 'rad etildi' deb belgilandi."
+REPORT_USER_BANNED_TEXT = "рџљ« Foydalanuvchi bloklandi va shikoyat 'hal qilindi' deb belgilandi."
 
 BROADCAST_MESSAGE_PROMPT = {
     "uz": "Barcha faol foydalanuvchilarga yubormoqchi bo'lgan xabaringizni kiriting:",
-    "ru": "Введите сообщение, которое вы хотите отправить всем активным пользователям:",
+    "ru": "Р’РІРµРґРёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ, РєРѕС‚РѕСЂРѕРµ РІС‹ С…РѕС‚РёС‚Рµ РѕС‚РїСЂР°РІРёС‚СЊ РІСЃРµРј Р°РєС‚РёРІРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРј:",
     "en": "Enter the message you want to send to all active users:",
 }
 
 BROADCAST_CONFIRMATION_TEXT = {
     "uz": "Ushbu xabarni {user_count} ta foydalanuvchiga yuborishni tasdiqlaysizmi?\n\n<b>Xabar:</b>\n{message_text}",
-    "ru": "Вы подтверждаете отправку этого сообщения {user_count} пользователям?\n\n<b>Сообщение:</b>\n{message_text}",
+    "ru": "Р’С‹ РїРѕРґС‚РІРµСЂР¶РґР°РµС‚Рµ РѕС‚РїСЂР°РІРєСѓ СЌС‚РѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ {user_count} РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРј?\n\n<b>РЎРѕРѕР±С‰РµРЅРёРµ:</b>\n{message_text}",
     "en": "Do you confirm sending this message to {user_count} users?\n\n<b>Message:</b>\n{message_text}",
 }
 
 BROADCAST_SENT_SUCCESS = {
-    "uz": "✅ Xabar muvaffaqiyatli yuborildi!",
-    "ru": "✅ Сообщение успешно отправлено!",
-    "en": "✅ Message sent successfully!",
+    "uz": "вњ… Xabar muvaffaqiyatli yuborildi!",
+    "ru": "вњ… РЎРѕРѕР±С‰РµРЅРёРµ СѓСЃРїРµС€РЅРѕ РѕС‚РїСЂР°РІР»РµРЅРѕ!",
+    "en": "вњ… Message sent successfully!",
 }
 
 BROADCAST_CANCELLED = {
     "uz": "Broadcast bekor qilindi.",
-    "ru": "Рассылка отменена.",
+    "ru": "Р Р°СЃСЃС‹Р»РєР° РѕС‚РјРµРЅРµРЅР°.",
     "en": "Broadcast cancelled.",
 }
 
 TARIFFS_PAYMENTS_TEXT = {
     "uz": (
-        "💰 <b>Tariflar va to'lovlar statistikasi:</b>\n\n"
+        "рџ’° <b>Tariflar va to'lovlar statistikasi:</b>\n\n"
         "Jami premium obunalar: {total_premium_subscriptions}\n"
         "Faol obunalar: {active_subscriptions}\n"
         "Jami tushum (yakunlangan to'lovlar): {total_revenue} UZS"
     ),
     "ru": (
-        "💰 <b>Статистика тарифов и платежей:</b>\n\n"
-        "Всего премиум подписок: {total_premium_subscriptions}\n"
-        "Активных подписок: {active_subscriptions}\n"
-        "Общий доход (завершенные платежи): {total_revenue} UZS"
+        "рџ’° <b>РЎС‚Р°С‚РёСЃС‚РёРєР° С‚Р°СЂРёС„РѕРІ Рё РїР»Р°С‚РµР¶РµР№:</b>\n\n"
+        "Р’СЃРµРіРѕ РїСЂРµРјРёСѓРј РїРѕРґРїРёСЃРѕРє: {total_premium_subscriptions}\n"
+        "РђРєС‚РёРІРЅС‹С… РїРѕРґРїРёСЃРѕРє: {active_subscriptions}\n"
+        "РћР±С‰РёР№ РґРѕС…РѕРґ (Р·Р°РІРµСЂС€РµРЅРЅС‹Рµ РїР»Р°С‚РµР¶Рё): {total_revenue} UZS"
     ),
     "en": (
-        "💰 <b>Tariffs and Payments Statistics:</b>\n\n"
+        "рџ’° <b>Tariffs and Payments Statistics:</b>\n\n"
         "Total premium subscriptions: {total_premium_subscriptions}\n"
         "Active subscriptions: {active_subscriptions}\n"
         "Total revenue (completed payments): {total_revenue} UZS"
@@ -220,34 +220,34 @@ TARIFFS_PAYMENTS_TEXT = {
 
 VERIFICATION_MODERATION_CAPTION = {
     "uz": "Foydalanuvchi: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nSo'rov yuborilgan sana: {request_date}",
-    "ru": "Пользователь: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nДата запроса: {request_date}",
+    "ru": "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nР”Р°С‚Р° Р·Р°РїСЂРѕСЃР°: {request_date}",
     "en": "User: {user_name} (ID: {user_id})\nTelegram ID: `{telegram_id}`\nRequest date: {request_date}",
 }
 
 NO_VERIFICATIONS_TO_MODERATE_TEXT = {
     "uz": "Hozircha moderatsiya uchun verifikatsiya so'rovlari yo'q.",
-    "ru": "На данный момент нет запросов на верификацию для модерации.",
+    "ru": "РќР° РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ РЅРµС‚ Р·Р°РїСЂРѕСЃРѕРІ РЅР° РІРµСЂРёС„РёРєР°С†РёСЋ РґР»СЏ РјРѕРґРµСЂР°С†РёРё.",
     "en": "There are no verification requests for moderation at the moment.",
 }
 
-VERIFICATION_APPROVED_TEXT = "✅ Verifikatsiya tasdiqlandi."
-VERIFICATION_REJECTED_TEXT = "❌ Verifikatsiya rad etildi."
+VERIFICATION_APPROVED_TEXT = "вњ… Verifikatsiya tasdiqlandi."
+VERIFICATION_REJECTED_TEXT = "вќЊ Verifikatsiya rad etildi."
 
 USER_NOTIFIED_VERIFIED_TEXT = {
-    "uz": "🎉 Tabriklaymiz! Sizning hisobingiz muvaffaqiyatli tasdiqlandi (verifikatsiya qilindi).",
-    "ru": "🎉 Поздравляем! Ваш аккаунт успешно верифицирован.",
-    "en": "🎉 Congratulations! Your account has been successfully verified.",
+    "uz": "рџЋ‰ Tabriklaymiz! Sizning hisobingiz muvaffaqiyatli tasdiqlandi (verifikatsiya qilindi).",
+    "ru": "рџЋ‰ РџРѕР·РґСЂР°РІР»СЏРµРј! Р’Р°С€ Р°РєРєР°СѓРЅС‚ СѓСЃРїРµС€РЅРѕ РІРµСЂРёС„РёС†РёСЂРѕРІР°РЅ.",
+    "en": "рџЋ‰ Congratulations! Your account has been successfully verified.",
 }
 
 USER_NOTIFIED_REJECTED_TEXT = {
-    "uz": "😔 Afsuski, sizning verifikatsiya so'rovingiz rad etildi. Sabab: hujjat sifati past yoki ma'lumotlar mos kelmadi. Iltimos, qayta urinib ko'ring.",
-    "ru": "😔 К сожалению, ваш запрос на верификацию был отклонен. Причина: низкое качество документа или несоответствие данных. Пожалуйста, попробуйте еще раз.",
-    "en": "😔 Unfortunately, your verification request was rejected. Reason: low document quality or mismatched information. Please try again.",
+    "uz": "рџ” Afsuski, sizning verifikatsiya so'rovingiz rad etildi. Sabab: hujjat sifati past yoki ma'lumotlar mos kelmadi. Iltimos, qayta urinib ko'ring.",
+    "ru": "рџ” Рљ СЃРѕР¶Р°Р»РµРЅРёСЋ, РІР°С€ Р·Р°РїСЂРѕСЃ РЅР° РІРµСЂРёС„РёРєР°С†РёСЋ Р±С‹Р» РѕС‚РєР»РѕРЅРµРЅ. РџСЂРёС‡РёРЅР°: РЅРёР·РєРѕРµ РєР°С‡РµСЃС‚РІРѕ РґРѕРєСѓРјРµРЅС‚Р° РёР»Рё РЅРµСЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РґР°РЅРЅС‹С…. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰Рµ СЂР°Р·.",
+    "en": "рџ” Unfortunately, your verification request was rejected. Reason: low document quality or mismatched information. Please try again.",
 }
 
 PAYMENT_MODERATION_TEXT = {
     "uz": (
-        "<b>💳 Yangi to'lov so'rovi</b>\n\n"
+        "<b>рџ’і Yangi to'lov so'rovi</b>\n\n"
         "<b>Foydalanuvchi:</b> {user_name} (ID: {user_id})\n"
         "<b>Telegram ID:</b> `{telegram_id}`\n"
         "<b>Sana:</b> {payment_date}\n\n"
@@ -255,15 +255,15 @@ PAYMENT_MODERATION_TEXT = {
         "<b>Summa:</b> {amount} UZS"
     ),
     "ru": (
-        "<b>💳 Новый запрос на оплату</b>\n\n"
-        "<b>Пользователь:</b> {user_name} (ID: {user_id})\n"
+        "<b>рџ’і РќРѕРІС‹Р№ Р·Р°РїСЂРѕСЃ РЅР° РѕРїР»Р°С‚Сѓ</b>\n\n"
+        "<b>РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ:</b> {user_name} (ID: {user_id})\n"
         "<b>Telegram ID:</b> `{telegram_id}`\n"
-        "<b>Дата:</b> {payment_date}\n\n"
-        "<b>Тариф:</b> {plan_name}\n"
-        "<b>Сумма:</b> {amount} UZS"
+        "<b>Р”Р°С‚Р°:</b> {payment_date}\n\n"
+        "<b>РўР°СЂРёС„:</b> {plan_name}\n"
+        "<b>РЎСѓРјРјР°:</b> {amount} UZS"
     ),
     "en": (
-        "<b>💳 New Payment Request</b>\n\n"
+        "<b>рџ’і New Payment Request</b>\n\n"
         "<b>User:</b> {user_name} (ID: {user_id})\n"
         "<b>Telegram ID:</b> `{telegram_id}`\n"
         "<b>Date:</b> {payment_date}\n\n"
@@ -274,76 +274,76 @@ PAYMENT_MODERATION_TEXT = {
 
 NO_PENDING_PAYMENTS_TEXT = {
     "uz": "Hozircha ko'rib chiqilmagan to'lovlar yo'q.",
-    "ru": "На данный момент нет ожидающих платежей.",
+    "ru": "РќР° РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ РЅРµС‚ РѕР¶РёРґР°СЋС‰РёС… РїР»Р°С‚РµР¶РµР№.",
     "en": "There are no pending payments at the moment.",
 }
 
-PAYMENT_APPROVED_TEXT = "✅ To'lov tasdiqlandi."
-PAYMENT_REJECTED_TEXT = "❌ To'lov rad etildi."
+PAYMENT_APPROVED_TEXT = "вњ… To'lov tasdiqlandi."
+PAYMENT_REJECTED_TEXT = "вќЊ To'lov rad etildi."
 
 USER_NOTIFIED_PAYMENT_REJECTED_TEXT = {
-    "uz": "😔 Afsuski, sizning to'lovingiz tasdiqlanmadi. Premium statusingiz bekor qilindi. Qo'shimcha ma'lumot uchun, iltimos, qo'llab-quvvatlash xizmatiga murojaat qiling.",
-    "ru": "😔 К сожалению, ваш платеж не был подтвержден. Ваш премиум-статус был отменен. Для получения дополнительной информации, пожалуйста, свяжитесь со службой поддержки.",
-    "en": "😔 Unfortunately, your payment was not confirmed. Your premium status has been revoked. For more information, please contact support.",
+    "uz": "рџ” Afsuski, sizning to'lovingiz tasdiqlanmadi. Premium statusingiz bekor qilindi. Qo'shimcha ma'lumot uchun, iltimos, qo'llab-quvvatlash xizmatiga murojaat qiling.",
+    "ru": "рџ” Рљ СЃРѕР¶Р°Р»РµРЅРёСЋ, РІР°С€ РїР»Р°С‚РµР¶ РЅРµ Р±С‹Р» РїРѕРґС‚РІРµСЂР¶РґРµРЅ. Р’Р°С€ РїСЂРµРјРёСѓРј-СЃС‚Р°С‚СѓСЃ Р±С‹Р» РѕС‚РјРµРЅРµРЅ. Р”Р»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё, РїРѕР¶Р°Р»СѓР№СЃС‚Р°, СЃРІСЏР¶РёС‚РµСЃСЊ СЃРѕ СЃР»СѓР¶Р±РѕР№ РїРѕРґРґРµСЂР¶РєРё.",
+    "en": "рџ” Unfortunately, your payment was not confirmed. Your premium status has been revoked. For more information, please contact support.",
 }
 
 LOGS_HEADER_TEXT = {
-    "uz": "📝 <b>Admin Harakatlari Loglari (Sahifa {current_page}/{total_pages})</b>\n\n",
-    "ru": "📝 <b>Логи Действий Администраторов (Страница {current_page}/{total_pages})</b>\n\n",
-    "en": "📝 <b>Admin Action Logs (Page {current_page}/{total_pages})</b>\n\n",
+    "uz": "рџ“ќ <b>Admin Harakatlari Loglari (Sahifa {current_page}/{total_pages})</b>\n\n",
+    "ru": "рџ“ќ <b>Р›РѕРіРё Р”РµР№СЃС‚РІРёР№ РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕРІ (РЎС‚СЂР°РЅРёС†Р° {current_page}/{total_pages})</b>\n\n",
+    "en": "рџ“ќ <b>Admin Action Logs (Page {current_page}/{total_pages})</b>\n\n",
 }
 
 LOG_ENTRY_TEXT = {
     "uz": "<b>ID:</b> {log_id} | <b>Sana:</b> {date}\n<b>Admin ID:</b> {admin_id}\n<b>Harakat:</b> {action}\n<b>Target User ID:</b> {target_user_id}\n<b>Izoh:</b> {comment}\n",
-    "ru": "<b>ID:</b> {log_id} | <b>Дата:</b> {date}\n<b>ID Админа:</b> {admin_id}\n<b>Действие:</b> {action}\n<b>ID Целевого Пользователя:</b> {target_user_id}\n<b>Комментарий:</b> {comment}\n",
+    "ru": "<b>ID:</b> {log_id} | <b>Р”Р°С‚Р°:</b> {date}\n<b>ID РђРґРјРёРЅР°:</b> {admin_id}\n<b>Р”РµР№СЃС‚РІРёРµ:</b> {action}\n<b>ID Р¦РµР»РµРІРѕРіРѕ РџРѕР»СЊР·РѕРІР°С‚РµР»СЏ:</b> {target_user_id}\n<b>РљРѕРјРјРµРЅС‚Р°СЂРёР№:</b> {comment}\n",
     "en": "<b>ID:</b> {log_id} | <b>Date:</b> {date}\n<b>Admin ID:</b> {admin_id}\n<b>Action:</b> {action}\n<b>Target User ID:</b> {target_user_id}\n<b>Comment:</b> {comment}\n",
 }
 
 NO_LOGS_TEXT = {
     "uz": "Hozircha loglar mavjud emas.",
-    "ru": "Логи пока отсутствуют.",
+    "ru": "Р›РѕРіРё РїРѕРєР° РѕС‚СЃСѓС‚СЃС‚РІСѓСЋС‚.",
     "en": "No logs available yet.",
 }
 
 FILTER_MENU_TEXT = {
     "uz": "Loglarni qanday filtrlashni tanlang:",
-    "ru": "Выберите, как фильтровать логи:",
+    "ru": "Р’С‹Р±РµСЂРёС‚Рµ, РєР°Рє С„РёР»СЊС‚СЂРѕРІР°С‚СЊ Р»РѕРіРё:",
     "en": "Choose how to filter logs:",
 }
 
 FILTER_BY_DATE_PROMPT = {
     "uz": "Sana bo'yicha filtrlash uchun sanani `YYYY-MM-DD` formatida kiriting (masalan, `2024-07-29`):",
-    "ru": "Для фильтрации по дате введите дату в формате `YYYY-MM-DD` (например, `2024-07-29`):",
+    "ru": "Р”Р»СЏ С„РёР»СЊС‚СЂР°С†РёРё РїРѕ РґР°С‚Рµ РІРІРµРґРёС‚Рµ РґР°С‚Сѓ РІ С„РѕСЂРјР°С‚Рµ `YYYY-MM-DD` (РЅР°РїСЂРёРјРµСЂ, `2024-07-29`):",
     "en": "To filter by date, enter the date in `YYYY-MM-DD` format (e.g., `2024-07-29`):",
 }
 
 INVALID_DATE_FORMAT_TEXT = {
     "uz": "Sana formati noto'g'ri. Iltimos, `YYYY-MM-DD` formatida kiriting.",
-    "ru": "Неверный формат даты. Пожалуйста, введите в формате `YYYY-MM-DD`.",
+    "ru": "РќРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚ РґР°С‚С‹. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІРІРµРґРёС‚Рµ РІ С„РѕСЂРјР°С‚Рµ `YYYY-MM-DD`.",
     "en": "Invalid date format. Please enter in `YYYY-MM-DD` format.",
 }
 
 INVALID_TELEGRAM_ID_TEXT = {
     "uz": "Iltimos, faqat raqam (Telegram ID) yuboring.",
-    "ru": "Пожалуйста, отправьте только число (Telegram ID).",
+    "ru": "РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РѕС‚РїСЂР°РІСЊС‚Рµ С‚РѕР»СЊРєРѕ С‡РёСЃР»Рѕ (Telegram ID).",
     "en": "Please send only a number (Telegram ID).",
 }
 
 FILTER_BY_ACTION_PROMPT = {
     "uz": "Harakat turi bo'yicha filtrlash uchun quyidagilardan birini tanlang:",
-    "ru": "Для фильтрации по типу действия выберите один из следующих:",
+    "ru": "Р”Р»СЏ С„РёР»СЊС‚СЂР°С†РёРё РїРѕ С‚РёРїСѓ РґРµР№СЃС‚РІРёСЏ РІС‹Р±РµСЂРёС‚Рµ РѕРґРёРЅ РёР· СЃР»РµРґСѓСЋС‰РёС…:",
     "en": "To filter by action type, choose one of the following:",
 }
 
 FILTERS_CLEARED_TEXT = {
-    "uz": "🧹 Filtrlash tozalandi.",
-    "ru": "🧹 Фильтры очищены.",
-    "en": "🧹 Filters cleared.",
+    "uz": "рџ§№ Filtrlash tozalandi.",
+    "ru": "рџ§№ Р¤РёР»СЊС‚СЂС‹ РѕС‡РёС‰РµРЅС‹.",
+    "en": "рџ§№ Filters cleared.",
 }
 
 ADMIN_PANEL_RETURN_TEXT = {
     "uz": "Admin paneliga qaytish:",
-    "ru": "Возврат в админ-панель:",
+    "ru": "Р’РѕР·РІСЂР°С‚ РІ Р°РґРјРёРЅ-РїР°РЅРµР»СЊ:",
     "en": "Returning to admin panel:",
 }
 
@@ -365,7 +365,7 @@ async def cmd_admin(message: Message, state: FSMContext):
     language = user.language if user else "uz"
 
     await message.answer(
-        "🛡️ Admin paneliga xush kelibsiz. Bu yerda foydalanuvchilar, to'lovlar, moderatorlik va broadcastlarni boshqarishingiz mumkin.",
+        "рџ›ЎпёЏ Admin paneliga xush kelibsiz. Bu yerda foydalanuvchilar, to'lovlar, moderatorlik va broadcastlarni boshqarishingiz mumkin.",
         reply_markup=get_admin_main_menu_keyboard(language)
     )
     await state.set_state(AdminStates.main_menu)
@@ -384,12 +384,85 @@ async def admin_back_to_main_menu_handler(callback: CallbackQuery, state: FSMCon
         pass
 
     await callback.message.answer(
-        "🛡️ Asosiy menyu.",
+        "рџ›ЎпёЏ Asosiy menyu.",
         reply_markup=get_admin_main_menu_keyboard(language)
     )
     await callback.answer()
 
 
+
+
+
+# ===== INLINE DASHBOARD BUTTON HANDLERS =====
+# get_admin_dashboard_keyboard() inline tugmalari uchun callback handlerlar.
+# Bu tugmalar oldin ishlamagan edi, chunki faqat reply keyboard text handlerlar mavjud edi.
+
+@router.callback_query(F.data == "admin_stats")
+async def admin_stats_inline_handler(callback: CallbackQuery, state: FSMContext):
+    """Inline 'Statistika' tugmasi uchun handler."""
+    if not await is_admin_user(callback.from_user.id):
+        await callback.answer("Ruxsat yo'q.", show_alert=True)
+        return
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language if user else "uz"
+    stats = await get_bot_statistics()
+    stats_text = STATISTICS_TEXT[language].format(**stats)
+    try:
+        await callback.message.edit_text(stats_text)
+    except Exception:
+        await callback.message.answer(stats_text)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin_users")
+async def admin_users_inline_handler(callback: CallbackQuery, state: FSMContext):
+    """Inline 'Foydalanuvchilar' tugmasi uchun handler."""
+    if not await is_admin_user(callback.from_user.id):
+        await callback.answer("Ruxsat yo'q.", show_alert=True)
+        return
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language if user else "uz"
+    await callback.answer()
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+    await callback.message.answer(USER_SEARCH_PROMPT_TEXT[language], reply_markup=ReplyKeyboardRemove())
+    await state.set_state(AdminStates.waiting_for_user_id)
+
+
+@router.callback_query(F.data == "admin_payments")
+async def admin_payments_inline_handler(callback: CallbackQuery, state: FSMContext):
+    """Inline 'To\'lovlar' tugmasi uchun handler."""
+    if not await is_admin_user(callback.from_user.id):
+        await callback.answer("Ruxsat yo'q.", show_alert=True)
+        return
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language if user else "uz"
+    stats = await get_payment_statistics()
+    stats_text = TARIFFS_PAYMENTS_TEXT[language].format(**stats)
+    try:
+        await callback.message.edit_text(stats_text)
+    except Exception:
+        await callback.message.answer(stats_text)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin_broadcast")
+async def admin_broadcast_inline_handler(callback: CallbackQuery, state: FSMContext):
+    """Inline 'Broadcast' tugmasi uchun handler."""
+    if not await is_admin_user(callback.from_user.id):
+        await callback.answer("Ruxsat yo'q.", show_alert=True)
+        return
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language if user else "uz"
+    await callback.answer()
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+    await callback.message.answer(BROADCAST_MESSAGE_PROMPT[language], reply_markup=ReplyKeyboardRemove())
+    await state.set_state(AdminStates.waiting_for_broadcast_message)
 
 
 @router.message(AdminStates.main_menu, F.text == ADMIN_MENU_BUTTONS["uz"]["statistics"])
@@ -553,7 +626,7 @@ async def find_user_handler(message: Message, state: FSMContext):
         bio=user_to_view.bio or "Kiritilmagan",
         premium_status=user_to_view.premium_plan.value,
         verification_status=user_to_view.verification_status.value,
-        verification_checkmark=" ✅" if user_to_view.verification_status == VerificationStatus.verified else "",
+        verification_checkmark=" вњ…" if user_to_view.verification_status == VerificationStatus.verified else "",
     )
 
     photos = await get_user_photos(user_to_view.id)
@@ -824,9 +897,9 @@ async def receive_broadcast_message(message: Message, state: FSMContext):
     )
 
     confirm_keyboard_texts = {
-        "uz": {"confirm": "✅ Tasdiqlash", "cancel": "❌ Bekor qilish"},
-        "ru": {"confirm": "✅ Подтвердить", "cancel": "❌ Отмена"},
-        "en": {"confirm": "✅ Confirm", "cancel": "❌ Cancel"},
+        "uz": {"confirm": "вњ… Tasdiqlash", "cancel": "вќЊ Bekor qilish"},
+        "ru": {"confirm": "вњ… РџРѕРґС‚РІРµСЂРґРёС‚СЊ", "cancel": "вќЊ РћС‚РјРµРЅР°"},
+        "en": {"confirm": "вњ… Confirm", "cancel": "вќЊ Cancel"},
     }
     texts = confirm_keyboard_texts.get(language, confirm_keyboard_texts["uz"])
     # Inline keyboard for confirmation
@@ -1230,15 +1303,15 @@ async def reject_payment_handler(callback: CallbackQuery, state: FSMContext, bot
 
 
 PROFILE_APPROVED_USER_TEXT = {
-    "uz": "✅ Tabriklaymiz! Profilingiz administrator tomonidan tasdiqlandi va endi qidiruvda ko'rinadi.",
-    "ru": "✅ Поздравляем! Ваш профиль одобрен администратором и теперь виден в поиске.",
-    "en": "✅ Congratulations! Your profile has been approved by the administrator and is now visible in search.",
+    "uz": "вњ… Tabriklaymiz! Profilingiz administrator tomonidan tasdiqlandi va endi qidiruvda ko'rinadi.",
+    "ru": "вњ… РџРѕР·РґСЂР°РІР»СЏРµРј! Р’Р°С€ РїСЂРѕС„РёР»СЊ РѕРґРѕР±СЂРµРЅ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕРј Рё С‚РµРїРµСЂСЊ РІРёРґРµРЅ РІ РїРѕРёСЃРєРµ.",
+    "en": "вњ… Congratulations! Your profile has been approved by the administrator and is now visible in search.",
 }
 
 PROFILE_REJECTED_USER_TEXT = {
-    "uz": "❌ Afsuski, profilingiz administrator tomonidan rad etildi. Iltimos, 'Mening profilim' bo'limida ma'lumotlaringizni tahrirlab qayta yuboring.",
-    "ru": "❌ К сожалению, ваш профиль отклонен администратором. Пожалуйста, отредактируйте данные в разделе «Мой профиль» и отправьте снова.",
-    "en": '❌ Unfortunately, your profile was rejected by the administrator. Please edit your details under "My Profile" and resubmit.',
+    "uz": "вќЊ Afsuski, profilingiz administrator tomonidan rad etildi. Iltimos, 'Mening profilim' bo'limida ma'lumotlaringizni tahrirlab qayta yuboring.",
+    "ru": "вќЊ Рљ СЃРѕР¶Р°Р»РµРЅРёСЋ, РІР°С€ РїСЂРѕС„РёР»СЊ РѕС‚РєР»РѕРЅРµРЅ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕРј. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РѕС‚СЂРµРґР°РєС‚РёСЂСѓР№С‚Рµ РґР°РЅРЅС‹Рµ РІ СЂР°Р·РґРµР»Рµ В«РњРѕР№ РїСЂРѕС„РёР»СЊВ» Рё РѕС‚РїСЂР°РІСЊС‚Рµ СЃРЅРѕРІР°.",
+    "en": 'вќЊ Unfortunately, your profile was rejected by the administrator. Please edit your details under "My Profile" and resubmit.',
 }
 
 
@@ -1248,7 +1321,7 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
         await callback.answer(UNAUTHORIZED_ACCESS_TEXT["uz"], show_alert=True)
         return
 
-    await callback.answer("✅ Profil tasdiqlanmoqda...") # Callbackni darhol qabul qilish
+    await callback.answer("вњ… Profil tasdiqlanmoqda...") # Callbackni darhol qabul qilish
     user_id = int(callback.data.split("_")[-1])
     user = await get_user_by_id(user_id)
     if not user:
@@ -1262,9 +1335,9 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
         target_user_id=user_id,
     )
     if callback.message.photo:
-        await callback.message.edit_caption(caption=f"{callback.message.caption}\n\n✅ TASDIQLANDI", reply_markup=None)
+        await callback.message.edit_caption(caption=f"{callback.message.caption}\n\nвњ… TASDIQLANDI", reply_markup=None)
     else:
-        await callback.message.edit_text(f"{callback.message.text}\n\n✅ TASDIQLANDI", reply_markup=None)
+        await callback.message.edit_text(f"{callback.message.text}\n\nвњ… TASDIQLANDI", reply_markup=None)
 
     user_lang = user.language or "uz"
     try:
@@ -1277,15 +1350,15 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
 
 
 MANAGE_ADMINS_HEADER_TEXT = {
-    "uz": "👮 <b>Adminlar ro'yxati</b>\n\nQo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
-    "ru": "👮 <b>Список администраторов</b>\n\nИспользуйте кнопки для добавления или удаления дополнительных администраторов.\n\n<i>Примечание: основные администраторы (из ADMIN_IDS в .env) не могут быть удалены здесь.</i>",
-    "en": "👮 <b>Admin List</b>\n\nUse the buttons to add or remove additional administrators.\n\n<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
+    "uz": "рџ‘® <b>Adminlar ro'yxati</b>\n\nQo'shimcha admin qo'shish yoki olib tashlash uchun tugmalardan foydalaning.\n\n<i>Eslatma: asosiy adminlar (.env dagi ADMIN_IDS) shu yerdan olib tashlanmaydi.</i>",
+    "ru": "рџ‘® <b>РЎРїРёСЃРѕРє Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕРІ</b>\n\nРСЃРїРѕР»СЊР·СѓР№С‚Рµ РєРЅРѕРїРєРё РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РёР»Рё СѓРґР°Р»РµРЅРёСЏ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕРІ.\n\n<i>РџСЂРёРјРµС‡Р°РЅРёРµ: РѕСЃРЅРѕРІРЅС‹Рµ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂС‹ (РёР· ADMIN_IDS РІ .env) РЅРµ РјРѕРіСѓС‚ Р±С‹С‚СЊ СѓРґР°Р»РµРЅС‹ Р·РґРµСЃСЊ.</i>",
+    "en": "рџ‘® <b>Admin List</b>\n\nUse the buttons to add or remove additional administrators.\n\n<i>Note: primary admins (from ADMIN_IDS in .env) cannot be removed here.</i>",
 }
 
-ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "Отправьте Telegram ID нового администратора.\n(Пользователь должен быть зарегистрирован в боте, нажав /start.)", "en": "Send the Telegram ID of the new admin.\n(The user must have registered with the bot by pressing /start first.)"}
-ADMIN_ADDED_TEXT = {"uz": "✅ Admin muvaffaqiyatli qo'shildi.", "ru": "✅ Администратор успешно добавлен.", "en": "✅ Admin successfully added."}
-ADMIN_REMOVED_TEXT = {"uz": "✅ Admin olib tashlandi.", "ru": "✅ Администратор удален.", "en": "✅ Admin removed."}
-ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = {"uz": "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak.", "ru": "Пользователь не найден. Он должен быть зарегистрирован в боте, нажав /start.", "en": "User not found. They must have registered with the bot by pressing /start first."}
+ADD_ADMIN_PROMPT_TEXT = {"uz": "Yangi adminning Telegram ID raqamini yuboring.\n(Foydalanuvchi botdan avval /start bilan ro'yxatdan o'tgan bo'lishi kerak.)", "ru": "РћС‚РїСЂР°РІСЊС‚Рµ Telegram ID РЅРѕРІРѕРіРѕ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°.\n(РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ РІ Р±РѕС‚Рµ, РЅР°Р¶Р°РІ /start.)", "en": "Send the Telegram ID of the new admin.\n(The user must have registered with the bot by pressing /start first.)"}
+ADMIN_ADDED_TEXT = {"uz": "вњ… Admin muvaffaqiyatli qo'shildi.", "ru": "вњ… РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ СѓСЃРїРµС€РЅРѕ РґРѕР±Р°РІР»РµРЅ.", "en": "вњ… Admin successfully added."}
+ADMIN_REMOVED_TEXT = {"uz": "вњ… Admin olib tashlandi.", "ru": "вњ… РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ СѓРґР°Р»РµРЅ.", "en": "вњ… Admin removed."}
+ADMIN_NOT_FOUND_FOR_PROMOTION_TEXT = {"uz": "Bunday foydalanuvchi topilmadi. U avval botda /start bosib ro'yxatdan o'tgan bo'lishi kerak.", "ru": "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ. РћРЅ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ РІ Р±РѕС‚Рµ, РЅР°Р¶Р°РІ /start.", "en": "User not found. They must have registered with the bot by pressing /start first."}
 
 @router.callback_query(F.data.startswith("reject_profile_"))
 async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
@@ -1293,7 +1366,7 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
         await callback.answer(UNAUTHORIZED_ACCESS_TEXT["uz"], show_alert=True)
         return
 
-    await callback.answer("❌ Profil rad etilmoqda...") # Callbackni darhol qabul qilish
+    await callback.answer("вќЊ Profil rad etilmoqda...") # Callbackni darhol qabul qilish
     user_id = int(callback.data.split("_")[-1])
     user = await get_user_by_id(user_id)
     if not user:
@@ -1317,11 +1390,11 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
     if callback.message.photo:
         # Check if caption is not None before appending
         current_caption = callback.message.caption if callback.message.caption else ""
-        await callback.message.edit_caption(caption=f"{current_caption}\n\n❌ RAD ETILDI", reply_markup=None)
+        await callback.message.edit_caption(caption=f"{current_caption}\n\nвќЊ RAD ETILDI", reply_markup=None)
     else:
         # Check if text is not None before appending
         current_text = callback.message.text if callback.message.text else ""
-        await callback.message.edit_text(f"{current_text}\n\n❌ RAD ETILDI", reply_markup=None)
+        await callback.message.edit_text(f"{current_text}\n\nвќЊ RAD ETILDI", reply_markup=None)
 
 
 async def show_manage_admins(message: Message, state: FSMContext):
@@ -1339,7 +1412,7 @@ async def show_manage_admins(message: Message, state: FSMContext):
 async def mandatory_channel_handler(message: Message, state: FSMContext):
     is_enabled = await get_setting("force_subscribe_channel") == "true"
     channel_id = await get_setting("subscribe_channel_id")
-    text = f"Majburiy kanal holati: {'✅ Yoqilgan' if is_enabled else '❌ O''chirilgan'}\n"
+    text = f"Majburiy kanal holati: {'вњ… Yoqilgan' if is_enabled else 'вќЊ O''chirilgan'}\n"
     if is_enabled and channel_id:
         text += f"Kanal: {channel_id}"
 
@@ -1504,14 +1577,14 @@ async def remove_admin_handler(callback: CallbackQuery, state: FSMContext):
 
 
 CHANNEL_CHECK_SET_SUCCESS_TEXT = {
-    "uz": "✅ Kanalga majburiy obuna sozlamalari o'rnatildi.",
-    "ru": "✅ Настройки принудительной подписки на канал установлены.",
-    "en": "✅ Forced channel subscription settings have been set.",
+    "uz": "вњ… Kanalga majburiy obuna sozlamalari o'rnatildi.",
+    "ru": "вњ… РќР°СЃС‚СЂРѕР№РєРё РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕР№ РїРѕРґРїРёСЃРєРё РЅР° РєР°РЅР°Р» СѓСЃС‚Р°РЅРѕРІР»РµРЅС‹.",
+    "en": "вњ… Forced channel subscription settings have been set.",
 }
 
 CHANNEL_CHECK_SET_USAGE_TEXT = {
     "uz": "Noto'g'ri format. Foydalanish: /set_channel_check <on|off> [@channel_id]",
-    "ru": "Неверный формат. Используйте: /set_channel_check <on|off> [@channel_id]",
+    "ru": "РќРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚. РСЃРїРѕР»СЊР·СѓР№С‚Рµ: /set_channel_check <on|off> [@channel_id]",
     "en": "Invalid format. Usage: /set_channel_check <on|off> [@channel_id]",
 }
 

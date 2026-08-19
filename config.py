@@ -61,3 +61,5 @@ AI_API_KEY = os.getenv("AI_API_KEY")
 # This is a placeholder for a real payment gateway integration.
 # Do NOT use this in a production environment.
 PAYMENT_CARD_NUMBER = os.getenv("PAYMENT_CARD_NUMBER", "9860 6004 3347 6527")
+# Telegram Mini App (WebApp) URL
+WEBAPP_URL = os.getenv("WEBAPP_URL", "")

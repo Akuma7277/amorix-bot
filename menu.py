@@ -50,6 +50,7 @@ from inline import (
     get_report_category_keyboard, get_settings_keyboard, get_confirm_delete_account_keyboard, get_language_keyboard,
     get_premium_plans_keyboard, get_premium_dashboard_keyboard, get_likes_keyboard, get_help_keyboard, get_payment_confirmation_keyboard,
     get_gift_type_keyboard, get_back_only_keyboard, get_advanced_search_keyboard, get_region_keyboard,
+    get_webapp_keyboard,
 )
 from models import ReportCategory, UserStatus, VerificationStatus, PremiumPlan, GiftType, EventType
 from common import MAIN_MENU_TEXTS, VERIFICATION_START_TEXT, VERIFICATION_SUBMITTED_TEXT, VERIFICATION_IN_PROGRESS_TEXT, VERIFICATION_ALREADY_VERIFIED_TEXT, NOT_REGISTERED_TEXTS, ICEBREAKER_QUESTIONS, SECURITY_INFO_TEXTS, EDIT_PROFILE_TEXTS
@@ -2065,3 +2066,35 @@ async def confirm_payment(callback: CallbackQuery, state: FSMContext):
 async def handle_other_menu_buttons(message: Message, state: FSMContext): # This handler is now a fallback
     """Fallback handler for any main menu buttons without a dedicated handler."""
     await message.answer(f"'{message.text}' bo'limi vaqtincha mavjud emas.")
+
+# ===== MINI APP HANDLER =====
+MINI_APP_BUTTON_TEXTS = ["📱 Mini App", "📱 Мини Приложение", "📱 Mini App"]
+
+@router.message(F.text.in_(MINI_APP_BUTTON_TEXTS))
+async def open_mini_app_handler(message: Message, state: FSMContext):
+    """Mini App tugmasi bosilganda WebApp URLni yuboradi."""
+    user = await get_user_by_telegram_id(message.from_user.id)
+    if not user:
+        await message.answer("Siz hali ro\'yxatdan o\'tmagansiz. /start buyrug\'ini bosing.")
+        return
+    
+    language = user.language if user else "uz"
+    
+    if not WEBAPP_URL:
+        mini_app_texts = {
+            "uz": "Mini App hali sozlanmagan. Iltimos, keyinroq urinib ko\'ring.",
+            "ru": "Mini App ещё не настроен. Попробуйте позже.",
+            "en": "Mini App is not configured yet. Please try again later.",
+        }
+        await message.answer(mini_app_texts.get(language, mini_app_texts["uz"]))
+        return
+    
+    webapp_kb = get_webapp_keyboard(language, WEBAPP_URL)
+    if webapp_kb:
+        open_texts = {
+            "uz": "📱 Mini App ni ochish uchun quyidagi tugmani bosing:",
+            "ru": "📱 Нажмите кнопку ниже, чтобы открыть Mini App:",
+            "en": "📱 Press the button below to open the Mini App:",
+        }
+        await message.answer(open_texts.get(language, open_texts["uz"]), reply_markup=webapp_kb)
+

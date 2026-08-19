@@ -10,6 +10,7 @@ MAIN_MENU_BUTTONS = {
         "referrals": "🎁 Do'stlarni taklif qilish",
         "settings": "⚙️ Sozlamalar",
         "help": "❓ Yordam",
+        "mini_app": "📱 Mini App",
     },
     "ru": {
         "search": "🔍 Поиск",
@@ -20,6 +21,7 @@ MAIN_MENU_BUTTONS = {
         "referrals": "🎁 Пригласить друзей",
         "settings": "⚙️ Настройки",
         "help": "❓ Помощь",
+        "mini_app": "📱 Mini App",
     },
     "en": {
         "search": "🔍 Search",
@@ -30,6 +32,7 @@ MAIN_MENU_BUTTONS = {
         "referrals": "🎁 Refer Friends",
         "settings": "⚙️ Settings",
         "help": "❓ Help",
+        "mini_app": "📱 Mini App",
     },
 }
 
@@ -42,6 +45,7 @@ def get_main_menu_keyboard(language: str = "uz") -> ReplyKeyboardMarkup:
         [KeyboardButton(text=texts["premium"])],
         [KeyboardButton(text=texts["referrals"])],
         [KeyboardButton(text=texts["settings"]), KeyboardButton(text=texts["help"])],
+        [KeyboardButton(text=texts["mini_app"])],
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
