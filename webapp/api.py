@@ -1,5 +1,5 @@
 """
-Amorix Mini App - Complete REST API Server
+Kairyx Mini App - Complete REST API Server
 Handles all dating operations and admin functions inside the Mini App.
 """
 import hashlib

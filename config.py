@@ -62,15 +62,6 @@ AI_API_KEY = os.getenv("AI_API_KEY")
 # Do NOT use this in a production environment.
 PAYMENT_CARD_NUMBER = os.getenv("PAYMENT_CARD_NUMBER", "9860 6004 3347 6527")
 # Telegram Mini App (WebApp) URL
-
-# Telegram Mini App (WebApp) URL - Railway domains are auto-detected if empty
-WEBAPP_URL = os.getenv("WEBAPP_URL")
-if not WEBAPP_URL:
-    domain = os.getenv("RAILWAY_PUBLIC_DOMAIN") or os.getenv("RAILWAY_STATIC_URL")
-    if domain:
-        if not domain.startswith("http"):
-            domain = f"https://{domain}"
-        WEBAPP_URL = domain
-    else:
-        WEBAPP_URL = ""
-
+WEBAPP_URL = os.getenv("WEBAPP_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN") or os.getenv("RAILWAY_STATIC_URL") or os.getenv("PUBLIC_URL") or "https://kairyx-bot.up.railway.app"
+if not WEBAPP_URL.startswith("http"):
+    WEBAPP_URL = f"https://{WEBAPP_URL}"

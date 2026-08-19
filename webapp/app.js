@@ -275,7 +275,7 @@ function navigateTo(pageName) {
 
     // Headers
     const titles = {
-        home: 'Amorix',
+        home: 'Kairyx',
         search: 'Qidirish',
         likes: 'Yoqqanlar',
         matches: 'Suhbatlar',
@@ -289,7 +289,7 @@ function navigateTo(pageName) {
         registration: 'Ro'yxatdan o'tish'
     };
 
-    document.getElementById('headerTitle').textContent = titles[pageName] || 'Amorix';
+    document.getElementById('headerTitle').textContent = titles[pageName] || 'Kairyx';
     
     // Hide nav bar if on registration or chat pages
     const bottomNav = document.getElementById('bottomNav');
@@ -1056,8 +1056,8 @@ function showToast(icon, message) {
 }
 
 function shareReferral() {
-    const shareUrl = `https://t.me/amorix_bot?start=ref_${state.user?.id || '0'}`;
-    const text = 'Amorix - sevgi topish ilovasi! Men foydalanyapman, siz ham qo\'shiling 💕';
+    const shareUrl = `https://t.me/kairyx_bot?start=ref_${state.user?.id || '0'}`;
+    const text = 'Kairyx - sevgi topish ilovasi! Men foydalanyapman, siz ham qo\'shiling 💕';
     
     if (tg) {
         tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`);

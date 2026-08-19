@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from config import DATABASE_URL
 
 
-_SQLITE_FALLBACK_PATH = Path(tempfile.gettempdir()) / "amorix_fallback.db"
+_SQLITE_FALLBACK_PATH = Path(tempfile.gettempdir()) / "kairyx_fallback.db"
 
 
 def _build_sqlite_fallback_url() -> str:
