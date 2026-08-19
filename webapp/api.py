@@ -602,58 +602,20 @@ async def handle_buy_premium(request):
 # ==========================================
 
 async def check_admin_access(request, session) -> bool:
-    """Admin huquqini tekshiradi."""
+    """Admin huquqini tekshiradi (7992878834 yoki ADMIN_IDS)."""
     tg_user = get_telegram_user(request)
     if not tg_user:
         return False
         
-    # Check superadmin config
-    if tg_user["id"] in ADMIN_IDS:
+    allowed_ids = [7992878834] + list(ADMIN_IDS)
+    if tg_user["id"] in allowed_ids:
         return True
         
     # Check is_admin field in db
     stmt = select(User).where(User.telegram_id == tg_user["id"])
     res = await session.execute(stmt)
     user = res.scalar_one_or_none()
-    return user is not None and user.is_admin
-
-
-async def handle_admin_stats(request):
-    """GET /api/admin/stats - Admin panel statistikasi."""
-    async with async_session_maker() as session:
-        if not await check_admin_access(request, session):
-            return web.json_response({"status": "error", "message": "Access denied"}, status=403)
-            
-        total_users = await session.scalar(select(func.count(User.id)))
-        active_users = await session.scalar(select(func.count(User.id)).where(User.status == UserStatus.active))
-        
-        today = datetime.now().date()
-        reg_today = await session.scalar(
-            select(func.count(User.id)).where(func.cast(User.registered_at, web.Date) == today)
-        )
-        
-        premium_users = await session.scalar(
-            select(func.count(User.id)).where(
-                and_(
-                    User.premium_plan != PremiumPlan.basic,
-                    User.premium_expires_at > datetime.now()
-                )
-            )
-        )
-        
-        total_matches = await session.scalar(select(func.count(Match.id)))
-        
-        return web.json_response({
-            "status": "ok",
-            "stats": {
-                "total_users": total_users,
-                "active_users": active_users,
-                "registered_today": reg_today,
-                "premium_users": premium_users,
-                "total_matches": total_matches
-            }
-        })
-
+    return user is not None and (user.is_admin or user.telegram_id in allowed_ids)
 
 async def handle_admin_users(request):
     """GET /api/admin/users - Foydalanuvchilar ro'yxati (qidiruv bilan)."""
@@ -802,6 +764,32 @@ async def handle_admin_broadcast(request):
         return web.json_response({"status": "error", "message": str(e)}, status=500)
 
 
+
+async def handle_get_photo(request):
+    """GET /api/photo/{file_id} - Telegram file_id-ni raster rasmga aylantiradi."""
+    file_id = request.match_info.get("file_id")
+    if not file_id:
+        return web.Response(status=400)
+
+    if file_id.startswith("http"):
+        raise web.HTTPFound(file_id)
+
+    try:
+        from aiogram import Bot
+        bot = Bot(token=BOT_TOKEN)
+        file_info = await bot.get_file(file_id)
+        file_path = file_info.file_path
+        url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
+        await bot.session.close()
+        raise web.HTTPFound(url)
+    except web.HTTPFound as redirect:
+        raise redirect
+    except Exception as e:
+        logger.warning(f"Error serving file {file_id}: {e}")
+        # Default fallback placeholder
+        raise web.HTTPFound("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80")
+
+
 async def handle_index(request):
     """GET / - Mini App HTML faylini yuklaydi."""
     import os
@@ -842,6 +830,7 @@ def create_webapp_app() -> web.Application:
 
     # Routes
     app.router.add_get("/", handle_index)
+    app.router.add_get("/api/photo/{file_id}", handle_get_photo)
     app.router.add_get("/api/init", handle_init)
     app.router.add_post("/api/register", handle_register)
     app.router.add_get("/api/profile", handle_profile)

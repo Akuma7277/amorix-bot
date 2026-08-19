@@ -3,6 +3,7 @@
    ============================================ */
 
 const tg = window.Telegram?.WebApp;
+const ADMIN_TELEGRAM_ID = 7992878834;
 const API_URL = "";
 
 // Global App State
@@ -80,6 +81,14 @@ const DEMO_PROFILES = [
     }
 ];
 
+
+// Helper: Resolve Telegram photo using local proxy
+function resolvePhotoUrl(photoId) {
+    if (!photoId) return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80";
+    if (photoId.startsWith("http")) return photoId;
+    return `${API_URL}/api/photo/${photoId}`;
+}
+
 // Helper: Headers
 function getHeaders() {
     const headers = { "Content-Type": "application/json" };
@@ -95,6 +104,7 @@ function getHeaders() {
 
 // Fallback User Initialization
 function initFallbackUser() {
+    const isUserAdmin = (tg?.initDataUnsafe?.user?.id === ADMIN_TELEGRAM_ID);
     state.user = {
         id: 1,
         name: tg?.initDataUnsafe?.user?.first_name || "Foydalanuvchi",
@@ -103,10 +113,16 @@ function initFallbackUser() {
         bio: "Kairyx Premium ilovasi foydalanuvchisi ✨",
         premium_plan: "Gold",
         is_premium: true,
-        is_admin: true,
+        is_admin: isUserAdmin,
         height: 178,
-        photos: ["https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80"]
+        photos: []
     };
+    
+    // Set user avatar if Telegram provides photo_url
+    if (tg?.initDataUnsafe?.user?.photo_url) {
+        state.user.photos = [tg.initDataUnsafe.user.photo_url];
+    }
+    
     state.profiles = DEMO_PROFILES;
     updateUI();
     displayCurrentProfile();
@@ -345,7 +361,7 @@ function updateUI() {
     const myAvatar = document.getElementById('myAvatar');
     if (myAvatar) {
         if (state.user.photos && state.user.photos.length > 0) {
-            myAvatar.innerHTML = `<img src="${state.user.photos[0]}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            myAvatar.innerHTML = `<img src="${resolvePhotoUrl(state.user.photos[0])}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
         } else {
             myAvatar.innerHTML = `<span>👤</span>`;
         }
@@ -363,8 +379,16 @@ function updateUI() {
 
     const premBadge = document.getElementById('premiumBadge');
     const adminBadge = document.getElementById('adminPanelBadge');
+    const isSuperAdmin = (tg?.initDataUnsafe?.user?.id === ADMIN_TELEGRAM_ID || state.user.telegram_id === ADMIN_TELEGRAM_ID || state.user.is_admin);
     if (premBadge) premBadge.style.display = state.user.is_premium ? 'flex' : 'none';
-    if (adminBadge) adminBadge.style.display = state.user.is_admin ? 'block' : 'none';
+    if (adminBadge) adminBadge.style.display = isSuperAdmin ? 'block' : 'none';
+    
+    // Update settings language label
+    const langLabel = document.getElementById('currentSettingsLang');
+    if (langLabel) {
+        const langMap = { "uz": "O'zbekcha", "ru": "Русский", "en": "English" };
+        langLabel.textContent = langMap[state.user.language] || "O'zbekcha";
+    }
 
     const eName = document.getElementById('editName');
     const eAge = document.getElementById('editAge');
@@ -492,7 +516,7 @@ function displayCurrentProfile() {
     const photoContainer = document.getElementById('swipePhoto');
     if (photoContainer) {
         if (profile.photos && profile.photos.length > 0) {
-            photoContainer.innerHTML = `<img src="${profile.photos[0]}" style="width:100%;height:100%;object-fit:cover;">
+            photoContainer.innerHTML = `<img src="${resolvePhotoUrl(profile.photos[0])}" style="width:100%;height:100%;object-fit:cover;">
                 <div class="swipe-card-overlay-like">LIKE ❤️</div>
                 <div class="swipe-card-overlay-nope">NOPE ✖️</div>`;
         } else {
@@ -663,7 +687,7 @@ async function loadLikes() {
         card.className = `like-card ${p.premium_plan !== 'Basic' ? 'glowing-premium-border' : ''}`;
         card.onclick = () => showToast('❤️', `${p.name} sizga yoqdi!`);
         
-        const photo = p.photos && p.photos.length > 0 ? `<img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+        const photo = p.photos && p.photos.length > 0 ? `<img src="${resolvePhotoUrl(p.photos[0])}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
         
         card.innerHTML = `
             <div class="like-card-photo">${photo}</div>
@@ -688,7 +712,7 @@ async function loadMatches() {
         item.onclick = () => openChatDetail(p.id, p.name);
         
         const avatar = p.photos && p.photos.length > 0 
-            ? `<img src="${p.photos[0]}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` 
+            ? `<img src="${resolvePhotoUrl(p.photos[0])}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` 
             : `👤`;
         
         item.innerHTML = `
@@ -791,16 +815,32 @@ function switchAdminTab(tabName) {
     }
 }
 
-function loadAdminStats() {
+async function loadAdminStats() {
     const tUsers = document.getElementById('adminTotalUsers');
     const aUsers = document.getElementById('adminActiveUsers');
     const rToday = document.getElementById('adminRegToday');
     const pUsers = document.getElementById('adminPremiumUsers');
     
-    if (tUsers) tUsers.textContent = "1,420";
-    if (aUsers) aUsers.textContent = "980";
-    if (rToday) rToday.textContent = "45";
-    if (pUsers) pUsers.textContent = "128";
+    try {
+        const res = await fetch(`${API_URL}/api/admin/stats`, { headers: getHeaders() });
+        const data = await res.json();
+        
+        if (data.status === "ok") {
+            if (tUsers) tUsers.textContent = data.stats.total_users;
+            if (aUsers) aUsers.textContent = data.stats.active_users;
+            if (rToday) rToday.textContent = data.stats.registered_today;
+            if (pUsers) pUsers.textContent = data.stats.premium_users;
+            return;
+        }
+    } catch (e) {
+        console.log("Error loading admin stats, using fallback details");
+    }
+    
+    // Standalone fallback stats
+    if (tUsers) tUsers.textContent = DEMO_PROFILES.length;
+    if (aUsers) aUsers.textContent = DEMO_PROFILES.length;
+    if (rToday) rToday.textContent = "1";
+    if (pUsers) pUsers.textContent = "2";
 }
 
 function sendAdminBroadcast() {
@@ -883,5 +923,17 @@ function shareReferral() {
         tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`);
     } else {
         showToast('📋', "Havola nusxalandi!");
+    }
+}
+
+// Settings page language changer
+function changeSettingsLanguagePrompt() {
+    const selected = prompt("Tilni tanlang / Выберите язык / Choose language:\n1 - O'zbekcha\n2 - Русский\n3 - English");
+    if (selected === "1") {
+        saveProfileField("language", "uz");
+    } else if (selected === "2") {
+        saveProfileField("language", "ru");
+    } else if (selected === "3") {
+        saveProfileField("language", "en");
     }
 }
