@@ -806,6 +806,88 @@ async def handle_admin_broadcast(request):
 
 
 
+
+import base64
+import uuid
+
+async def handle_upload_photo(request):
+    """POST /api/profile/upload-photo - Base64 rasm yuklash."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    try:
+        data = await request.json()
+        base64_data = data.get("image")
+        if not base64_data:
+            return web.json_response({"status": "error", "message": "No image data"}, status=400)
+            
+        if "," in base64_data:
+            base64_data = base64_data.split(",")[1]
+            
+        image_bytes = base64.b64decode(base64_data)
+        
+        webapp_dir = os.path.dirname(os.path.abspath(__file__))
+        uploads_dir = os.path.join(webapp_dir, "static", "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        filename = f"{uuid.uuid4()}.jpg"
+        filepath = os.path.join(uploads_dir, filename)
+        
+        with open(filepath, "wb") as f:
+            f.write(image_bytes)
+            
+        file_url = f"/static/uploads/{filename}"
+        
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.telegram_id == tg_user["id"])
+            res = await session.execute(stmt)
+            user = res.scalar_one_or_none()
+            
+            if not user:
+                return web.json_response({"status": "error", "message": "User not found"}, status=404)
+                
+            photo = Photo(user_id=user.id, file_id=file_url)
+            session.add(photo)
+            await session.commit()
+            
+            return web.json_response({
+                "status": "ok",
+                "photo_url": file_url
+            })
+    except Exception as e:
+        logger.error(f"Upload photo error: {e}")
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+async def handle_delete_profile(request):
+    """POST /api/profile/delete - Hisobni o'chirish."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    try:
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.telegram_id == tg_user["id"])
+            res = await session.execute(stmt)
+            user = res.scalar_one_or_none()
+            
+            if not user:
+                return web.json_response({"status": "error", "message": "User not found"}, status=404)
+                
+            await session.execute(delete(Photo).where(Photo.user_id == user.id))
+            await session.execute(delete(Like).where(or_(Like.user_id == user.id, Like.target_id == user.id)))
+            await session.execute(delete(Match).where(or_(Match.user1_id == user.id, Match.user2_id == user.id)))
+            await session.execute(delete(Payment).where(Payment.user_id == user.id))
+            await session.delete(user)
+            await session.commit()
+            
+            return web.json_response({"status": "ok"})
+    except Exception as e:
+        logger.error(f"Delete profile error: {e}")
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
 async def handle_get_photo(request):
     """GET /api/photo/{file_id} - Telegram file_id-ni raster rasmga aylantiradi."""
     file_id = request.match_info.get("file_id")
@@ -876,6 +958,8 @@ def create_webapp_app() -> web.Application:
     app.router.add_post("/api/register", handle_register)
     app.router.add_get("/api/profile", handle_profile)
     app.router.add_post("/api/profile/update", handle_profile_update)
+    app.router.add_post("/api/profile/upload-photo", handle_upload_photo)
+    app.router.add_post("/api/profile/delete", handle_delete_profile)
     app.router.add_get("/api/profiles", handle_profiles)
     app.router.add_post("/api/swipe", handle_swipe)
     app.router.add_get("/api/matches", handle_matches)

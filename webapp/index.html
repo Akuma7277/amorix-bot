@@ -442,9 +442,9 @@
                     <div class="photo-manager-grid" id="profilePhotoGrid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom:12px;">
                         <!-- JS injected photos -->
                     </div>
-                    <div class="form-group row-group" style="margin-bottom:0; display: flex; gap: 8px;">
-                        <input type="text" id="addPhotoUrlInput" placeholder="Rasm havolasi yoki Telegram ID" class="form-input" style="font-size:12px; flex: 1;">
-                        <button class="btn-primary btn-inline" onclick="addNewProfilePhoto()" style="padding:10px 14px;" data-i18n="btn_add">Qo'shish</button>
+                    <div class="form-group" style="margin-bottom:0; width: 100%;">
+                        <input type="file" id="profilePhotoFileInput" accept="image/*" style="display:none;" onchange="uploadNewProfilePhoto(this)">
+                        <button class="btn-primary" onclick="document.getElementById('profilePhotoFileInput').click()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px;" data-i18n="btn_upload_gallery">➕ Rasm yuklash (Galereyadan)</button>
                     </div>
                 </div>
 
@@ -541,7 +541,8 @@
                     <div class="settings-item glass-card" onclick="toggleInvisibleMode()">
                         <span class="settings-icon">👻</span>
                         <span class="settings-text" data-i18n="set_incognito">Ko'rinmas rejim</span>
-                        <input type="checkbox" id="invisibleCheckbox" class="settings-toggle">
+                        <span id="incognitoLockIcon" style="color: var(--accent-pink); font-size: 13px; font-weight: 700; margin-left: auto; display: flex; align-items: center; gap: 4px;">🔒 VIP</span>
+                        <input type="checkbox" id="invisibleCheckbox" class="settings-toggle" style="display:none;">
                     </div>
                     <div class="settings-item glass-card" onclick="deleteAccountPrompt()">
                         <span class="settings-icon settings-danger">🗑️</span>

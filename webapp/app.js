@@ -336,7 +336,8 @@ const DEMO_PROFILES = [
         city: "Toshkent",
         bio: "Kofeman \u{2615}, Sayohat va fotografiya ixlosmandi \u{1F4DF}. Samimiy va quvnoq insonlar bilan tanishmoqchiman \u{2728}",
         interests: ["Sayohat", "Fotografiya", "Kofe", "Musiqa"],
-        premium_plan: "Gold",
+        premium_plan: "Gold", // VIP Gold
+        gender: "female",
         compatibility_score: 94,
         photos: ["https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80"]
     },
@@ -347,7 +348,8 @@ const DEMO_PROFILES = [
         city: "Toshkent",
         bio: "Dasturchi \u{1F4BB}. IT va sport bilan shug'ullanaman. Jiddiy munosabat uchun tanishaman \u{1F31F}",
         interests: ["Dasturlash", "Sport", "Fitness", "Kino"],
-        premium_plan: "Platinum",
+        premium_plan: "Platinum", // VIP Platinum
+        gender: "male",
         compatibility_score: 88,
         photos: ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80"]
     },
@@ -358,7 +360,8 @@ const DEMO_PROFILES = [
         city: "Samarqand",
         bio: "Arxitektura va san'at ixlosmandi \u{1F3A8}. Yaxshi suhbatdoshlarni hurmat qilaman \u{1F338}",
         interests: ["San'at", "Dizayn", "Kitoblar", "Musiqa"],
-        premium_plan: "Basic",
+        premium_plan: "Basic", // Simple
+        gender: "female",
         compatibility_score: 82,
         photos: ["https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80"]
     },
@@ -369,7 +372,8 @@ const DEMO_PROFILES = [
         city: "Buxoro",
         bio: "Tadbirkor \u{1F4BC}. Bo'sh vaqtimda futbol va avtomobillarga qiziqaman \u{1F697}",
         interests: ["Biznes", "Futbol", "Avto", "Sayohat"],
-        premium_plan: "Gold",
+        premium_plan: "Gold", // VIP Gold
+        gender: "male",
         compatibility_score: 91,
         photos: ["https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80"]
     }
@@ -683,6 +687,23 @@ function updateUI() {
     if (premBadge) premBadge.style.display = state.user.is_premium ? 'flex' : 'none';
     if (adminBadge) adminBadge.style.display = isSuperAdmin ? 'block' : 'none';
 
+    // Incognito settings Lock/Unlock visual
+    const hasPremium = state.user.is_premium || (state.user.premium_plan && state.user.premium_plan !== "Basic");
+    const lockIcon = document.getElementById('incognitoLockIcon');
+    const chk = document.getElementById('invisibleCheckbox');
+    if (lockIcon) {
+        if (hasPremium) {
+            lockIcon.style.display = 'none';
+            if (chk) {
+                chk.style.display = 'block';
+                chk.checked = !!state.user.is_invisible;
+            }
+        } else {
+            lockIcon.style.display = 'flex';
+            if (chk) chk.style.display = 'none';
+        }
+    }
+
     const eName = document.getElementById('editName');
     const eAge = document.getElementById('editAge');
     const eCity = document.getElementById('editCity');
@@ -777,13 +798,26 @@ async function loadProfiles() {
             state.currentProfileIndex = 0;
             displayCurrentProfile();
         } else {
-            state.profiles = DEMO_PROFILES;
-            displayCurrentProfile();
+            loadFallbackProfiles();
         }
     } catch (e) {
-        state.profiles = DEMO_PROFILES;
-        displayCurrentProfile();
+        loadFallbackProfiles();
     }
+}
+
+function loadFallbackProfiles() {
+    let filtered = DEMO_PROFILES;
+    if (state.user && state.user.looking_for) {
+        const lf = state.user.looking_for;
+        if (lf === "Ayolni" || lf === "Ayol") {
+            filtered = DEMO_PROFILES.filter(p => p.gender === "female");
+        } else if (lf === "Erkakni" || lf === "Erkak") {
+            filtered = DEMO_PROFILES.filter(p => p.gender === "male");
+        }
+    }
+    state.profiles = filtered;
+    state.currentProfileIndex = 0;
+    displayCurrentProfile();
 }
 
 function displayCurrentProfile() {
@@ -1082,17 +1116,52 @@ function saveProfileField(field, value) {
 }
 
 function toggleInvisibleMode() {
+    if (!state.user) return;
+    
+    // Only allow premium or VIP users
+    const hasPremium = state.user.is_premium || (state.user.premium_plan && state.user.premium_plan !== "Basic");
+    if (!hasPremium) {
+        showToast("\u{1F47B}", "Ko'rinmas rejim faqat VIP/Premium a'zolar uchun!");
+        setTimeout(() => navigateTo('premium'), 1500);
+        return;
+    }
+    
     const chk = document.getElementById('invisibleCheckbox');
-    if (!chk || !state.user) return;
-    state.user.is_invisible = !chk.checked;
+    if (!chk) return;
+    
+    state.user.is_invisible = !state.user.is_invisible;
     chk.checked = state.user.is_invisible;
+    
+    // Save to server
+    saveProfileField("is_invisible", state.user.is_invisible);
     showToast("\u{1F47B}", state.user.is_invisible ? "Ko'rinmas rejim yoqildi" : "Ko'rinmas rejim o'chirildi");
 }
 
-function deleteAccountPrompt() {
-    if (confirm("Hisobingizni butunlay o'chirishni xohlaysizmi?")) {
-        showToast("\u{1F5D1}\ufe0f", "Hisobingiz o'chirildi");
-        setTimeout(() => window.location.reload(), 1000);
+async function deleteAccountPrompt() {
+    const confirmMsg = state.user.language === 'ru' ? "Вы действительно хотите удалить свой аккаунт?" : "Hisobingizni butunlay o'chirishni xohlaysizmi?";
+    if (!confirm(confirmMsg)) return;
+    
+    showToast("\u{1F5D1}\ufe0f", "O'chirilmoqda...");
+    
+    try {
+        const response = await fetch(`${API_URL}/api/profile/delete`, {
+            method: "POST",
+            headers: getHeaders()
+        });
+        const data = await response.json();
+        if (data.status === "ok") {
+            showToast("\u{1F5D1}\ufe0f", "Hisobingiz o'chirildi!");
+            setTimeout(() => {
+                if (tg) tg.close();
+                else window.location.reload();
+            }, 1500);
+        } else {
+            showToast("⚠️", data.message || "Xatolik yuz berdi");
+        }
+    } catch (e) {
+        // Fallback local reset
+        showToast("\u{1F5D1}\ufe0f", "Hisobingiz o'chirildi (Demo)");
+        setTimeout(() => window.location.reload(), 1500);
     }
 }
 
@@ -1315,6 +1384,43 @@ async function setAppLanguage(lang) {
     }
     
     showToast("\u{1F310}", lang === 'uz' ? "Til o'zgartirildi" : lang === 'ru' ? "Язык изменен" : "Language changed");
+}
+
+
+// Gallery photo uploader via FileReader (base64)
+async function uploadNewProfilePhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    showToast("\u{23f3}", "Rasm yuklanmoqda...");
+    
+    const reader = new FileReader();
+    reader.onload = async function() {
+        const base64Data = reader.result;
+        try {
+            const response = await fetch(`${API_URL}/api/profile/upload-photo`, {
+                method: "POST",
+                headers: getHeaders(),
+                body: JSON.stringify({ image: base64Data })
+            });
+            const data = await response.json();
+            if (data.status === "ok") {
+                if (!state.user.photos) state.user.photos = [];
+                state.user.photos.push(data.photo_url);
+                updateUI();
+                showToast("\u{2705}", "Rasm muvaffaqiyatli qo'shildi!");
+            } else {
+                showToast("\u{26a1}", data.message || "Xatolik yuz berdi");
+            }
+        } catch (e) {
+            // Local fallback
+            if (!state.user.photos) state.user.photos = [];
+            state.user.photos.push(base64Data);
+            updateUI();
+            showToast("\u{2705}", "Rasm qo'shildi!");
+        }
+    };
+    reader.readAsDataURL(file);
 }
 
 // ===== PHOTOS MANAGER (ADD, DELETE, SET MAIN) =====

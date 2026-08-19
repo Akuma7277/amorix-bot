@@ -1017,3 +1017,78 @@ select.form-input {
     border-color: var(--accent-purple);
     color: white;
 }
+
+/* Larger Full-Bleed Swipe Card Layout */
+.swipe-card-stack {
+    width: 100%;
+    height: 480px; /* Increased from 380px to make it larger */
+    position: relative;
+    perspective: 1000px;
+    margin-bottom: 20px;
+}
+
+.swipe-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: var(--shadow-glass);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.swipe-card-photo {
+    width: 100%;
+    height: 340px; /* Increased height of photo container */
+    position: relative;
+    background: #000;
+}
+
+.swipe-card-info {
+    padding: 16px;
+    background: linear-gradient(to top, rgba(10,10,26,0.95), rgba(10,10,26,0.7));
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+/* Glowing Neon Borders for VIP & Premium */
+.glowing-vip-card {
+    border: 2px solid rgba(255, 183, 0, 0.8) !important;
+    box-shadow: 0 0 20px rgba(255, 183, 0, 0.4), var(--shadow-glass) !important;
+    animation: vipPulse 2s infinite alternate;
+}
+
+.glowing-premium-card {
+    border: 2px solid rgba(0, 240, 255, 0.8) !important;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4), var(--shadow-glass) !important;
+    animation: premiumPulse 2s infinite alternate;
+}
+
+@keyframes vipPulse {
+    0% { box-shadow: 0 0 10px rgba(255, 183, 0, 0.2), var(--shadow-glass); }
+    100% { box-shadow: 0 0 25px rgba(255, 183, 0, 0.6), var(--shadow-glass); }
+}
+
+@keyframes premiumPulse {
+    0% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.2), var(--shadow-glass); }
+    100% { box-shadow: 0 0 25px rgba(0, 240, 255, 0.6), var(--shadow-glass); }
+}
+
+/* Bottom Scroll Over-padding Fixes to prevent cut-offs */
+.pages-container {
+    height: calc(100vh - 130px);
+    overflow-y: auto !important;
+    padding-bottom: 120px !important; /* Ensure enough scroll space */
+    -webkit-overflow-scrolling: touch;
+}
+
+.page {
+    padding-bottom: 100px !important;
+    overflow-y: auto !important;
+}
