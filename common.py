@@ -1,7 +1,7 @@
 import logging
 from aiogram import Router, BaseMiddleware
 from aiogram.filters import CommandStart
-from aiogram.types import Message, TelegramObject, Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, MenuButtonWebApp
+from aiogram.types import Message, TelegramObject, Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, WebAppInfo, MenuButtonWebApp
 from aiogram import Router, BaseMiddleware, Bot
 from aiogram.fsm.context import FSMContext
  
