@@ -67,7 +67,7 @@ PAYMENT_CARD_NUMBER = os.getenv("PAYMENT_CARD_NUMBER", "9860 6004 3347 6527")
 # 1. WEBAPP_URL set in env
 # 2. RAILWAY_PUBLIC_DOMAIN / RAILWAY_STATIC_URL auto-detected from Railway
 # 3. GitHub CDN Fallback URL (100% working live HTTPS URL)
-DEFAULT_FALLBACK = "https://cdn.jsdelivr.net/gh/Akuma7277/amorix-bot@main/webapp/index.html"
+DEFAULT_FALLBACK = "https://akuma7277.github.io/amorix-bot/webapp/index.html"
 
 WEBAPP_URL = os.getenv("WEBAPP_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN") or os.getenv("RAILWAY_STATIC_URL") or os.getenv("PUBLIC_URL") or DEFAULT_FALLBACK
 
