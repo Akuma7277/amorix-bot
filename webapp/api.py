@@ -617,6 +617,46 @@ async def check_admin_access(request, session) -> bool:
     user = res.scalar_one_or_none()
     return user is not None and (user.is_admin or user.telegram_id in allowed_ids)
 
+
+async def handle_admin_stats(request):
+    """GET /api/admin/stats - Admin panel statistikasi."""
+    async with async_session_maker() as session:
+        if not await check_admin_access(request, session):
+            return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+            
+        total_users = await session.scalar(select(func.count(User.id)))
+        active_users = await session.scalar(select(func.count(User.id)).where(User.status == UserStatus.active))
+        
+        from sqlalchemy import Date, cast
+        today = datetime.now().date()
+        reg_today = await session.scalar(
+            select(func.count(User.id)).where(cast(User.registered_at, Date) == today)
+        )
+        
+        from models import PremiumPlan
+        premium_users = await session.scalar(
+            select(func.count(User.id)).where(
+                and_(
+                    User.premium_plan != PremiumPlan.basic,
+                    User.premium_expires_at > datetime.now()
+                )
+            )
+        )
+        
+        total_matches = await session.scalar(select(func.count(Match.id)))
+        
+        return web.json_response({
+            "status": "ok",
+            "stats": {
+                "total_users": total_users,
+                "active_users": active_users,
+                "registered_today": reg_today,
+                "premium_users": premium_users,
+                "total_matches": total_matches
+            }
+        })
+
+
 async def handle_admin_users(request):
     """GET /api/admin/users - Foydalanuvchilar ro'yxati (qidiruv bilan)."""
     search_query = request.query.get("search", "")
