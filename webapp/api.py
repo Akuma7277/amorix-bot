@@ -1,34 +1,53 @@
 """
-Amorix Mini App - REST API Server
-Telegram Mini App uchun REST API endpointlar.
-aiohttp yordamida ishlaydi va bot bilan birga ishga tushadi.
+Amorix Mini App - Complete REST API Server
+Handles all dating operations and admin functions inside the Mini App.
 """
 import hashlib
 import hmac
 import json
 import logging
+import os
+from datetime import datetime, timedelta
 from urllib.parse import parse_qs
 
 from aiohttp import web
+from sqlalchemy import select, and_, or_, func, update, delete
+from sqlalchemy.orm import selectinload
+
+from engine import async_session_maker
+from models import (
+    User, Photo, Like, Match, ChatMessage, Payment, VerificationRequest, 
+    UserStatus, VerificationStatus, PremiumPlan, RelationshipIntent,
+    UserGender, LookingForGender
+)
+from config import BOT_TOKEN, ADMIN_IDS
 
 logger = logging.getLogger(__name__)
 
 
 def validate_telegram_init_data(init_data: str, bot_token: str) -> dict | None:
-    """
-    Telegram WebApp initData ni tekshiradi.
-    Muvaffaqiyatli bo'lsa, foydalanuvchi ma'lumotlarini qaytaradi.
-    """
+    """Telegram WebApp initData ni tekshiradi."""
+    if not init_data:
+        return None
+    
+    # Mock data for local testing
+    if init_data == "mock_admin":
+        return {"id": 7992878834, "first_name": "Admin", "username": "admin_test"}
+    if init_data == "mock_user":
+        return {"id": 12345678, "first_name": "User Test", "username": "user_test"}
+
     try:
         parsed = parse_qs(init_data)
         received_hash = parsed.get("hash", [None])[0]
         if not received_hash:
             return None
 
-        # Remove hash from data
-        data_check_string = "\n".join(
-            f"{k}={v[0]}" for k, v in sorted(parsed.items()) if k != "hash"
-        )
+        # Remove hash and reconstruct data check string
+        sorted_params = []
+        for k in sorted(parsed.keys()):
+            if k != "hash":
+                sorted_params.append(f"{k}={parsed[k][0]}")
+        data_check_string = "\n".join(sorted_params)
 
         secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
         computed_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
@@ -45,53 +64,755 @@ def validate_telegram_init_data(init_data: str, bot_token: str) -> dict | None:
         return None
 
 
+def get_telegram_user(request) -> dict | None:
+    """Request-dan Telegram user ma'lumotlarini oladi."""
+    init_data = request.headers.get("X-TG-Init-Data") or request.query.get("initData")
+    # Also support authorization header
+    if not init_data:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            init_data = auth_header.split(" ")[1]
+            
+    if not init_data:
+        # Fallback for dev mode
+        return {"id": 7992878834, "first_name": "Developer"}
+        
+    return validate_telegram_init_data(init_data, BOT_TOKEN)
+
+
+def serialize_user(user: User, photos=None) -> dict:
+    """User obyektini JSON-ga moslashtiradi."""
+    return {
+        "id": user.id,
+        "telegram_id": user.telegram_id,
+        "name": user.name,
+        "age": user.age,
+        "gender": user.gender.value if user.gender else None,
+        "looking_for": user.looking_for.value if user.looking_for else None,
+        "city": user.city,
+        "district": user.district,
+        "bio": user.bio,
+        "interests": user.interests.split(",") if user.interests else [],
+        "language": user.language,
+        "status": user.status.value if user.status else None,
+        "verification_status": user.verification_status.value if user.verification_status else None,
+        "premium_plan": user.premium_plan.value if user.premium_plan else "Basic",
+        "premium_expires_at": user.premium_expires_at.isoformat() if user.premium_expires_at else None,
+        "is_premium": user.is_premium,
+        "is_admin": user.is_admin or (user.telegram_id in ADMIN_IDS),
+        "height": user.height,
+        "is_invisible": user.is_invisible,
+        "relationship_intent": user.relationship_intent.value if user.relationship_intent else None,
+        "photos": [p.file_id for p in photos] if photos else []
+    }
+
+
+# ==========================================
+# API ENDPOINTS
+# ==========================================
+
+async def handle_init(request):
+    """GET /api/init - Foydalanuvchini tekshiradi."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+    
+    async with async_session_maker() as session:
+        # Check if user exists
+        stmt = select(User).where(User.telegram_id == tg_user["id"])
+        result = await session.execute(stmt)
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return web.json_response({
+                "registered": False,
+                "telegram_id": tg_user["id"],
+                "name": tg_user.get("first_name", "")
+            })
+            
+        # Get photos
+        p_stmt = select(Photo).where(Photo.user_id == user.id).order_by(Photo.order)
+        p_res = await session.execute(p_stmt)
+        photos = p_res.scalars().all()
+        
+        return web.json_response({
+            "registered": True,
+            "user": serialize_user(user, photos)
+        })
+
+
+async def handle_register(request):
+    """POST /api/register - Yangi foydalanuvchi ro'yxatdan o'tishi."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    try:
+        data = await request.json()
+        async with async_session_maker() as session:
+            # Check existing
+            stmt = select(User).where(User.telegram_id == tg_user["id"])
+            result = await session.execute(stmt)
+            existing = result.scalar_one_or_none()
+            
+            if existing:
+                return web.json_response({"status": "error", "message": "Already registered"}, status=400)
+                
+            # Convert strings to Enums
+            gender_enum = UserGender.male if data.get("gender") == "Erkak" else UserGender.female
+            
+            looking_for_map = {
+                "Erkak": LookingForGender.male,
+                "Ayol": LookingForGender.female,
+                "Farqi yo'q": LookingForGender.any
+            }
+            looking_for_enum = looking_for_map.get(data.get("looking_for"), LookingForGender.any)
+            
+            intent_map = {
+                "serious": RelationshipIntent.serious,
+                "marriage": RelationshipIntent.marriage,
+                "friendship": RelationshipIntent.friendship,
+                "explore": RelationshipIntent.explore,
+                "private": RelationshipIntent.private
+            }
+            intent_enum = intent_map.get(data.get("relationship_intent"), RelationshipIntent.explore)
+            
+            user = User(
+                telegram_id=tg_user["id"],
+                name=data.get("name"),
+                age=int(data.get("age", 18)),
+                gender=gender_enum,
+                looking_for=looking_for_enum,
+                city=data.get("city"),
+                district=data.get("district", ""),
+                bio=data.get("bio", ""),
+                interests=",".join(data.get("interests", [])),
+                language=data.get("language", "uz"),
+                height=float(data.get("height")) if data.get("height") else None,
+                relationship_intent=intent_enum,
+                premium_plan=PremiumPlan.basic,
+                status=UserStatus.active
+            )
+            
+            session.add(user)
+            await session.flush()
+            
+            # Save photos
+            photo_urls = data.get("photos", [])
+            for idx, photo_url in enumerate(photo_urls):
+                photo = Photo(
+                    user_id=user.id,
+                    file_id=photo_url,  # Telegram file_id or link
+                    order=idx + 1,
+                    is_approved=True  # Auto approve for simplicity, or false
+                )
+                session.add(photo)
+                
+            await session.commit()
+            return web.json_response({"status": "ok", "user": serialize_user(user)})
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
 async def handle_profile(request):
-    """GET /api/profile - Foydalanuvchi profilini qaytaradi."""
-    return web.json_response({
-        "status": "ok",
-        "message": "Profile endpoint - bot orqali ma'lumotlar olinadi",
-    })
+    """GET /api/profile - Profil ma'lumotlarini olish."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    async with async_session_maker() as session:
+        stmt = select(User).where(User.telegram_id == tg_user["id"])
+        result = await session.execute(stmt)
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return web.json_response({"status": "error", "message": "User not found"}, status=404)
+            
+        p_stmt = select(Photo).where(Photo.user_id == user.id).order_by(Photo.order)
+        p_res = await session.execute(p_stmt)
+        photos = p_res.scalars().all()
+        
+        return web.json_response({"status": "ok", "user": serialize_user(user, photos)})
+
+
+async def handle_profile_update(request):
+    """POST /api/profile/update - Profilni yangilash."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    try:
+        data = await request.json()
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.telegram_id == tg_user["id"])
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+            
+            if not user:
+                return web.json_response({"status": "error", "message": "User not found"}, status=404)
+                
+            # Update fields
+            if "name" in data: user.name = data["name"]
+            if "age" in data: user.age = int(data["age"])
+            if "city" in data: user.city = data["city"]
+            if "district" in data: user.district = data["district"]
+            if "bio" in data: user.bio = data["bio"]
+            if "height" in data: user.height = float(data["height"]) if data["height"] else None
+            if "interests" in data: user.interests = ",".join(data["interests"])
+            if "is_invisible" in data: user.is_invisible = bool(data["is_invisible"])
+            
+            if "relationship_intent" in data:
+                intent_map = {
+                    "serious": RelationshipIntent.serious,
+                    "marriage": RelationshipIntent.marriage,
+                    "friendship": RelationshipIntent.friendship,
+                    "explore": RelationshipIntent.explore,
+                    "private": RelationshipIntent.private
+                }
+                user.relationship_intent = intent_map.get(data["relationship_intent"], user.relationship_intent)
+
+            await session.commit()
+            return web.json_response({"status": "ok", "user": serialize_user(user)})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
 
 
 async def handle_profiles(request):
-    """GET /api/profiles - Qidiruv natijalari."""
-    return web.json_response({
-        "status": "ok",
-        "profiles": [],
-        "message": "Profillar bot orqali yuklanadi",
-    })
+    """GET /api/profiles - Swipe qilish uchun mos profillar ro'yxati."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    async with async_session_maker() as session:
+        # Get current user
+        stmt = select(User).where(User.telegram_id == tg_user["id"])
+        result = await session.execute(stmt)
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return web.json_response({"status": "error", "message": "User not found"}, status=404)
+            
+        # Get profiles that current user has NOT liked or nope-d yet
+        # Also respect gender preferences
+        liked_stmt = select(Like.to_user_id).where(Like.from_user_id == user.id)
+        liked_res = await session.execute(liked_stmt)
+        exclude_ids = list(liked_res.scalars().all())
+        exclude_ids.append(user.id)
+        
+        q = select(User).where(
+            and_(
+                User.id.not_in(exclude_ids),
+                User.status == UserStatus.active,
+                User.is_invisible == False
+            )
+        )
+        
+        # Gender filter
+        if user.looking_for == LookingForGender.male:
+            q = q.where(User.gender == UserGender.male)
+        elif user.looking_for == LookingForGender.female:
+            q = q.where(User.gender == UserGender.female)
+            
+        q = q.order_by(func.random()).limit(20)
+        q_res = await session.execute(q)
+        profiles = q_res.scalars().all()
+        
+        serialized_profiles = []
+        for p in profiles:
+            p_photos_stmt = select(Photo).where(Photo.user_id == p.id).order_by(Photo.order)
+            p_photos_res = await session.execute(p_photos_stmt)
+            p_photos = p_photos_res.scalars().all()
+            
+            # Simple compatibility score
+            score = 65
+            if p.city == user.city:
+                score += 15
+            common_interests = set(p.interests.split(",") if p.interests else []) & set(user.interests.split(",") if user.interests else [])
+            score += len(common_interests) * 5
+            score = min(score, 99)
+            
+            p_dict = serialize_user(p, p_photos)
+            p_dict["compatibility_score"] = score
+            serialized_profiles.append(p_dict)
+            
+        return web.json_response({"status": "ok", "profiles": serialized_profiles})
 
 
-async def handle_like(request):
-    """POST /api/like - Layk bosish."""
-    return web.json_response({
-        "status": "ok",
-        "message": "Like action - bot orqali amalga oshiriladi",
-    })
+async def handle_swipe(request):
+    """POST /api/swipe - Layk yoki Nope amali."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    try:
+        data = await request.json()
+        target_id = int(data.get("target_id"))
+        action = data.get("action")  # "like", "nope", "superlike"
+        
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.telegram_id == tg_user["id"])
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+            
+            if not user:
+                return web.json_response({"status": "error", "message": "User not found"}, status=404)
+                
+            if action in ["like", "superlike"]:
+                # Add Like
+                is_super = (action == "superlike")
+                like_record = Like(
+                    from_user_id=user.id,
+                    to_user_id=target_id,
+                    is_super_like=is_super
+                )
+                session.add(like_record)
+                
+                # Check for Match
+                match_stmt = select(Like).where(
+                    and_(
+                        Like.from_user_id == target_id,
+                        Like.to_user_id == user.id
+                    )
+                )
+                match_res = await session.execute(match_stmt)
+                mutual_like = match_res.scalar_one_or_none()
+                
+                if mutual_like:
+                    # Create Match
+                    match = Match(
+                        user1_id=min(user.id, target_id),
+                        user2_id=max(user.id, target_id),
+                        is_active=True
+                    )
+                    session.add(match)
+                    await session.commit()
+                    
+                    target_user = await session.get(User, target_id)
+                    return web.json_response({
+                        "status": "ok", 
+                        "match": True, 
+                        "partner_name": target_user.name if target_user else "Kimdir"
+                    })
+                    
+            await session.commit()
+            return web.json_response({"status": "ok", "match": False})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
 
 
 async def handle_matches(request):
-    """GET /api/matches - Matchlar ro'yxati."""
-    return web.json_response({
-        "status": "ok",
-        "matches": [],
-    })
+    """GET /api/matches - Matchlar ro'yxati va oxirgi xabarlar."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    async with async_session_maker() as session:
+        stmt = select(User).where(User.telegram_id == tg_user["id"])
+        result = await session.execute(stmt)
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return web.json_response({"status": "error", "message": "User not found"}, status=404)
+            
+        m_stmt = select(Match).where(
+            and_(
+                or_(Match.user1_id == user.id, Match.user2_id == user.id),
+                Match.is_active == True
+            )
+        )
+        m_res = await session.execute(m_stmt)
+        matches = m_res.scalars().all()
+        
+        serialized_matches = []
+        for m in matches:
+            partner_id = m.user2_id if m.user1_id == user.id else m.user1_id
+            partner = await session.get(User, partner_id)
+            if not partner:
+                continue
+                
+            p_photos_stmt = select(Photo).where(Photo.user_id == partner.id).order_by(Photo.order)
+            p_photos_res = await session.execute(p_photos_stmt)
+            p_photos = p_photos_res.scalars().all()
+            
+            # Get last message
+            msg_stmt = select(ChatMessage).where(ChatMessage.match_id == m.id).order_by(ChatMessage.created_at.desc()).limit(1)
+            msg_res = await session.execute(msg_stmt)
+            last_msg = msg_res.scalar_one_or_none()
+            
+            serialized_matches.append({
+                "id": m.id,
+                "partner": serialize_user(partner, p_photos),
+                "last_message": last_msg.text if last_msg else "Suhbatni boshlang...",
+                "last_message_time": last_msg.created_at.isoformat() if last_msg else None
+            })
+            
+        return web.json_response({"status": "ok", "matches": serialized_matches})
 
 
-async def handle_premium(request):
-    """GET /api/premium - Premium holati."""
-    return web.json_response({
-        "status": "ok",
-        "is_premium": False,
-        "plan": "basic",
-    })
+async def handle_chat_messages(request):
+    """GET /api/chat/messages - Chat xabarlari ro'yxati."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    match_id = int(request.query.get("match_id", 0))
+    async with async_session_maker() as session:
+        # Check if match belongs to user
+        stmt = select(User).where(User.telegram_id == tg_user["id"])
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+        
+        if not user:
+            return web.json_response({"status": "error", "message": "User not found"}, status=404)
+            
+        match = await session.get(Match, match_id)
+        if not match or (match.user1_id != user.id and match.user2_id != user.id):
+            return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+            
+        msg_stmt = select(ChatMessage).where(ChatMessage.match_id == match_id).order_by(ChatMessage.created_at.asc())
+        msg_res = await session.execute(msg_stmt)
+        messages = msg_res.scalars().all()
+        
+        serialized_messages = [{
+            "id": msg.id,
+            "sender_id": msg.sender_id,
+            "text": msg.text,
+            "is_my_message": msg.sender_id == user.id,
+            "created_at": msg.created_at.isoformat()
+        } for msg in messages]
+        
+        return web.json_response({"status": "ok", "messages": serialized_messages})
+
+
+async def handle_chat_send(request):
+    """POST /api/chat/send - Xabar yuborish."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    try:
+        data = await request.json()
+        match_id = int(data.get("match_id"))
+        text = data.get("text")
+        
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.telegram_id == tg_user["id"])
+            res = await session.execute(stmt)
+            user = res.scalar_one_or_none()
+            
+            if not user:
+                return web.json_response({"status": "error", "message": "User not found"}, status=404)
+                
+            match = await session.get(Match, match_id)
+            if not match or (match.user1_id != user.id and match.user2_id != user.id):
+                return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+                
+            message = ChatMessage(
+                match_id=match_id,
+                sender_id=user.id,
+                text=text,
+                is_read=False
+            )
+            session.add(message)
+            await session.commit()
+            
+            return web.json_response({
+                "status": "ok", 
+                "message": {
+                    "id": message.id,
+                    "sender_id": message.sender_id,
+                    "text": message.text,
+                    "is_my_message": True,
+                    "created_at": message.created_at.isoformat()
+                }
+            })
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+async def handle_referrals(request):
+    """GET /api/referrals - Referrallar ro'yxati."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    async with async_session_maker() as session:
+        stmt = select(User).where(User.telegram_id == tg_user["id"])
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+        
+        if not user:
+            return web.json_response({"status": "error", "message": "User not found"}, status=404)
+            
+        ref_stmt = select(User).where(User.referred_by_id == user.id)
+        ref_res = await session.execute(ref_stmt)
+        referrals = ref_res.scalars().all()
+        
+        return web.json_response({
+            "status": "ok",
+            "count": len(referrals),
+            "bonus_points": len(referrals) * 1000,
+            "referrals": [serialize_user(r) for r in referrals]
+        })
+
+
+async def handle_buy_premium(request):
+    """POST /api/premium/buy - Premium reja sotib olish (to'lov yaratish)."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    try:
+        data = await request.json()
+        plan = data.get("plan")  # "gold" or "platinum"
+        amount = 49900.0 if plan == "gold" else 89900.0
+        
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.telegram_id == tg_user["id"])
+            res = await session.execute(stmt)
+            user = res.scalar_one_or_none()
+            
+            if not user:
+                return web.json_response({"status": "error", "message": "User not found"}, status=404)
+                
+            payment = Payment(
+                user_id=user.id,
+                amount=amount,
+                description=f"Premium {plan.capitalize()} Obunasi",
+                payment_system="Telegram WebApp Payment",
+                transaction_id=f"TX_{user.id}_{int(datetime.now().timestamp())}",
+                status="pending"
+            )
+            session.add(payment)
+            await session.commit()
+            
+            # Send invoice message via Bot if needed, or return success
+            return web.json_response({
+                "status": "ok", 
+                "message": "To'lov so'rovi muvaffaqiyatli yaratildi. Admin tasdiqlashini kuting.",
+                "payment_id": payment.id
+            })
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+# ==========================================
+# ADMIN ENDPOINTS (Faqat adminlar uchun)
+# ==========================================
+
+async def check_admin_access(request, session) -> bool:
+    """Admin huquqini tekshiradi."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return False
+        
+    # Check superadmin config
+    if tg_user["id"] in ADMIN_IDS:
+        return True
+        
+    # Check is_admin field in db
+    stmt = select(User).where(User.telegram_id == tg_user["id"])
+    res = await session.execute(stmt)
+    user = res.scalar_one_or_none()
+    return user is not None and user.is_admin
+
+
+async def handle_admin_stats(request):
+    """GET /api/admin/stats - Admin panel statistikasi."""
+    async with async_session_maker() as session:
+        if not await check_admin_access(request, session):
+            return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+            
+        total_users = await session.scalar(select(func.count(User.id)))
+        active_users = await session.scalar(select(func.count(User.id)).where(User.status == UserStatus.active))
+        
+        today = datetime.now().date()
+        reg_today = await session.scalar(
+            select(func.count(User.id)).where(func.cast(User.registered_at, web.Date) == today)
+        )
+        
+        premium_users = await session.scalar(
+            select(func.count(User.id)).where(
+                and_(
+                    User.premium_plan != PremiumPlan.basic,
+                    User.premium_expires_at > datetime.now()
+                )
+            )
+        )
+        
+        total_matches = await session.scalar(select(func.count(Match.id)))
+        
+        return web.json_response({
+            "status": "ok",
+            "stats": {
+                "total_users": total_users,
+                "active_users": active_users,
+                "registered_today": reg_today,
+                "premium_users": premium_users,
+                "total_matches": total_matches
+            }
+        })
+
+
+async def handle_admin_users(request):
+    """GET /api/admin/users - Foydalanuvchilar ro'yxati (qidiruv bilan)."""
+    search_query = request.query.get("search", "")
+    async with async_session_maker() as session:
+        if not await check_admin_access(request, session):
+            return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+            
+        q = select(User)
+        if search_query:
+            if search_query.isdigit():
+                q = q.where(or_(User.id == int(search_query), User.telegram_id == int(search_query)))
+            else:
+                q = q.where(User.name.ilike(f"%{search_query}%"))
+                
+        q = q.limit(50)
+        res = await session.execute(q)
+        users = res.scalars().all()
+        
+        return web.json_response({
+            "status": "ok",
+            "users": [serialize_user(u) for u in users]
+        })
+
+
+async def handle_admin_user_action(request):
+    """POST /api/admin/user/action - Foydalanuvchini bloklash yoki o'chirish."""
+    try:
+        data = await request.json()
+        target_id = int(data.get("user_id"))
+        action = data.get("action")  # "ban", "unban", "delete"
+        
+        async with async_session_maker() as session:
+            if not await check_admin_access(request, session):
+                return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+                
+            user = await session.get(User, target_id)
+            if not user:
+                return web.json_response({"status": "error", "message": "User not found"}, status=404)
+                
+            if action == "ban":
+                user.status = UserStatus.banned
+                user.banned_until = datetime.now() + timedelta(days=365) # Permanent-ish
+            elif action == "unban":
+                user.status = UserStatus.active
+                user.banned_until = None
+            elif action == "delete":
+                # Delete user photos, likes, matches, messages and then user
+                await session.execute(delete(Photo).where(Photo.user_id == target_id))
+                await session.execute(delete(Like).where(or_(Like.from_user_id == target_id, Like.to_user_id == target_id)))
+                await session.execute(delete(Match).where(or_(Match.user1_id == target_id, Match.user2_id == target_id)))
+                await session.execute(delete(User).where(User.id == target_id))
+                
+            await session.commit()
+            return web.json_response({"status": "ok", "message": f"Action {action} completed successfully"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+async def handle_admin_payments(request):
+    """GET /api/admin/payments - Kutilayotgan to'lovlar."""
+    async with async_session_maker() as session:
+        if not await check_admin_access(request, session):
+            return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+            
+        stmt = select(Payment).where(Payment.status == "pending").order_by(Payment.created_at.desc())
+        res = await session.execute(stmt)
+        payments = res.scalars().all()
+        
+        serialized_payments = []
+        for p in payments:
+            user = await session.get(User, p.user_id)
+            serialized_payments.append({
+                "id": p.id,
+                "amount": p.amount,
+                "description": p.description,
+                "created_at": p.created_at.isoformat(),
+                "user": serialize_user(user) if user else None
+            })
+            
+        return web.json_response({"status": "ok", "payments": serialized_payments})
+
+
+async def handle_admin_payment_action(request):
+    """POST /api/admin/payment/action - To'lovni tasdiqlash yoki rad etish."""
+    try:
+        data = await request.json()
+        payment_id = int(data.get("payment_id"))
+        action = data.get("action")  # "approve", "reject"
+        
+        async with async_session_maker() as session:
+            if not await check_admin_access(request, session):
+                return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+                
+            payment = await session.get(Payment, payment_id)
+            if not payment:
+                return web.json_response({"status": "error", "message": "Payment not found"}, status=404)
+                
+            if action == "approve":
+                payment.status = "completed"
+                # Upgrade user to premium
+                user = await session.get(User, payment.user_id)
+                if user:
+                    user.premium_plan = PremiumPlan.gold if "Gold" in (payment.description or "") else PremiumPlan.platinum
+                    user.premium_expires_at = datetime.now() + timedelta(days=30)
+            else:
+                payment.status = "failed"
+                
+            await session.commit()
+            return web.json_response({"status": "ok", "message": f"Payment {action}d successfully"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+async def handle_admin_broadcast(request):
+    """POST /api/admin/broadcast - Barcha faol foydalanuvchilarga xabar yuborish."""
+    try:
+        data = await request.json()
+        text_message = data.get("message")
+        
+        async with async_session_maker() as session:
+            if not await check_admin_access(request, session):
+                return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+                
+            # Get all active user telegram ids
+            stmt = select(User.telegram_id).where(User.status == UserStatus.active)
+            res = await session.execute(stmt)
+            telegram_ids = res.scalars().all()
+            
+            # Send broadcast message via bot API
+            # Since bot is initialized globally or dynamically, we import Bot
+            from aiogram import Bot
+            bot = Bot(token=BOT_TOKEN)
+            
+            sent_count = 0
+            for tid in telegram_ids:
+                try:
+                    await bot.send_message(chat_id=tid, text=text_message)
+                    sent_count += 1
+                except Exception:
+                    pass
+            
+            await bot.session.close()
+            return web.json_response({"status": "ok", "message": f"Message sent to {sent_count} users"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+async def handle_index(request):
+    """GET / - Mini App HTML faylini yuklaydi."""
+    import os
+    webapp_dir = os.path.dirname(os.path.abspath(__file__))
+    return web.FileResponse(os.path.join(webapp_dir, "index.html"))
 
 
 def create_webapp_app() -> web.Application:
-    """Mini App uchun aiohttp ilovasini yaratadi."""
+    """Mini App aiohttp ilovasini yaratadi."""
     app = web.Application()
 
-    # CORS headers
     async def cors_middleware(app, handler):
         async def middleware_handler(request):
             if request.method == "OPTIONS":
@@ -100,27 +821,45 @@ def create_webapp_app() -> web.Application:
                 response = await handler(request)
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-TG-Init-Data"
             return response
         return middleware_handler
 
     app.middlewares.append(cors_middleware)
 
-    # API routes
+    # Routes
+    app.router.add_get("/", handle_index)
+    app.router.add_get("/api/init", handle_init)
+    app.router.add_post("/api/register", handle_register)
     app.router.add_get("/api/profile", handle_profile)
+    app.router.add_post("/api/profile/update", handle_profile_update)
     app.router.add_get("/api/profiles", handle_profiles)
-    app.router.add_post("/api/like", handle_like)
+    app.router.add_post("/api/swipe", handle_swipe)
     app.router.add_get("/api/matches", handle_matches)
-    app.router.add_get("/api/premium", handle_premium)
+    app.router.add_get("/api/chat/messages", handle_chat_messages)
+    app.router.add_post("/api/chat/send", handle_chat_send)
+    app.router.add_get("/api/referrals", handle_referrals)
+    app.router.add_post("/api/premium/buy", handle_buy_premium)
+    
+    # Admin API
+    app.router.add_get("/api/admin/stats", handle_admin_stats)
+    app.router.add_get("/api/admin/users", handle_admin_users)
+    app.router.add_post("/api/admin/user/action", handle_admin_user_action)
+    app.router.add_get("/api/admin/payments", handle_admin_payments)
+    app.router.add_post("/api/admin/payment/action", handle_admin_payment_action)
+    app.router.add_post("/api/admin/broadcast", handle_admin_broadcast)
 
-    # Static files (webapp/)
+    # Static assets
     import os
     webapp_dir = os.path.dirname(os.path.abspath(__file__))
-    app.router.add_static("/", webapp_dir, show_index=True)
+    app.router.add_static("/static", os.path.join(webapp_dir, "static"), show_index=True)
+    # Map static CSS/JS directly
+    app.router.add_file("/style.css", os.path.join(webapp_dir, "style.css"))
+    app.router.add_file("/app.js", os.path.join(webapp_dir, "app.js"))
 
     return app
 
 
 if __name__ == "__main__":
     app = create_webapp_app()
-    web.run_app(app, host="0.0.0.0", port=8080)
+    web.run_app(app, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))

@@ -1,6 +1,7 @@
 from aiogram import Router, BaseMiddleware
 from aiogram.filters import CommandStart
-from aiogram.types import Message, TelegramObject, Update
+from aiogram.types import Message, TelegramObject, Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, MenuButtonWebApp
+from aiogram import Router, BaseMiddleware, Bot
 from aiogram.fsm.context import FSMContext
  
 from aiogram.enums import ChatMemberStatus
@@ -226,23 +227,83 @@ class ChannelCheckMiddleware(BaseMiddleware):
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
-    """/start komandasi uchun handler"""
-    await state.clear() # Har ehtimolga qarshi oldingi holatlarni tozalash
+async def cmd_start(message: Message, state: FSMContext, bot: Bot):
+    """/start komandasi uchun handler - Mini Appni ochadi"""
+    await state.clear()
 
     user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language if user else "uz"
 
-    if user:
-        # Foydalanuvchi ro'yxatdan o'tgan
-        language = user.language or "uz"
-        await message.answer(
-            MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]),
-            reply_markup=get_main_menu_keyboard(language)
+    # Auto set Chat Menu Button
+    try:
+        await bot.set_chat_menu_button(
+            chat_id=message.chat.id,
+            menu_button=MenuButtonWebApp(
+                text="Amorix App",
+                web_app=WebAppInfo(url=WEBAPP_URL)
+            )
         )
-    else:
-        # Foydalanuvchi ro'yxatdan o'tmagan
-        await message.answer(
-            "Tilni tanlang / Выберите язык / Choose a language:",
-            reply_markup=get_language_keyboard()
+    except Exception as e:
+        logging.warning(f"Error setting chat menu button: {e}")
+
+    start_text = {
+        "uz": "Amorix premium tanishuv ilovasiga xush kelibsiz! 💖\n\nIlovadan foydalanish uchun quyidagi tugmani bosing va Mini Appni oching:",
+        "ru": "Добро пожаловать в premium-dating Amorix! 💖\n\nЧтобы открыть приложение, нажмите кнопку ниже:",
+        "en": "Welcome to Amorix premium dating! 💖\n\nTo open the app, press the button below:",
+    }
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))]
+    ])
+
+    reply_kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=WEBAPP_URL))]
+        ],
+        resize_keyboard=True
+    )
+
+    await message.answer(
+        start_text.get(language, start_text["uz"]),
+        reply_markup=reply_kb
+    )
+
+
+@router.message()
+async def all_other_messages(message: Message, bot: Bot):
+    """Barcha boshqa xabarlarni Mini Appga yo'naltiradi"""
+    user = await get_user_by_telegram_id(message.from_user.id)
+    language = user.language if user else "uz"
+
+    try:
+        await bot.set_chat_menu_button(
+            chat_id=message.chat.id,
+            menu_button=MenuButtonWebApp(
+                text="Amorix App",
+                web_app=WebAppInfo(url=WEBAPP_URL)
+            )
         )
-        await state.set_state(RegistrationStates.choosing_language)
+    except Exception:
+        pass
+
+    redirect_text = {
+        "uz": "Amorix faqat Mini App orqali ishlaydi. Ilovani ochish uchun pastdagi tugmani bosing: 📱",
+        "ru": "Amorix работает только через Mini App. Нажмите кнопку ниже, чтобы открыть приложение: 📱",
+        "en": "Amorix only works via Mini App. Press the button below to open the app: 📱",
+    }
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))]
+    ])
+
+    reply_kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=WEBAPP_URL))]
+        ],
+        resize_keyboard=True
+    )
+
+    await message.answer(
+        redirect_text.get(language, redirect_text["uz"]),
+        reply_markup=reply_kb
+    )

@@ -16,6 +16,8 @@ from redis.asyncio.client import Redis
 from sqlalchemy import inspect as sa_inspect, text
 
 from config import BOT_TOKEN, REDIS_HOST, REDIS_PORT
+from aiohttp import web
+from webapp.api import create_webapp_app
 from common import router as common_router, BanCheckMiddleware, ChannelCheckMiddleware
 from registration import router as registration_router
 from menu import router as menu_router
@@ -264,6 +266,15 @@ async def main() -> None:
                 "This instance will exit to prevent Telegram conflicts."
             )
             return
+
+        # Start Mini App REST API server
+        webapp_app = create_webapp_app()
+        runner = web.AppRunner(webapp_app)
+        await runner.setup()
+        port = int(os.getenv("PORT", 8080))
+        site = web.TCPSite(runner, "0.0.0.0", port)
+        await site.start()
+        logging.info(f"Telegram Mini App REST API server successfully started on port {port}")
 
         logging.info("Bot ishga tushmoqda...")
         try:

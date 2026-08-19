@@ -18,7 +18,7 @@
     <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
         <div class="loading-logo">
-            <div class="loading-heart">💕</div>
+            <div class="loading-heart">💖</div>
             <h1 class="loading-title">Amorix</h1>
             <p class="loading-subtitle">Premium Dating</p>
             <div class="loading-bar">
@@ -38,7 +38,12 @@
                 </button>
                 <h1 class="header-title" id="headerTitle">Amorix</h1>
             </div>
+            
             <div class="header-right">
+                <!-- Admin Panel Button (Only visible to admin) -->
+                <button class="admin-panel-badge" id="adminPanelBadge" style="display:none;" onclick="navigateTo('admin')">
+                    🛡️ Admin Panel
+                </button>
                 <div class="header-premium-badge" id="premiumBadge" style="display:none;">
                     <span>👑</span> Premium
                 </div>
@@ -48,12 +53,89 @@
         <!-- Pages Container -->
         <main class="pages-container" id="pagesContainer">
 
+            <!-- REGISTRATION PAGE -->
+            <section class="page" id="page-registration">
+                <div class="reg-container glass-card">
+                    <div class="reg-logo">💖</div>
+                    <h2>Ro'yxatdan o'tish</h2>
+                    <p class="reg-subtitle">Barcha bo'limlarni to'ldiring</p>
+                    
+                    <div class="reg-steps" id="regSteps">
+                        <!-- Step 1: Language & Name -->
+                        <div class="reg-step active" data-step="1">
+                            <div class="form-group">
+                                <label>Ismingiz</label>
+                                <input type="text" id="regName" placeholder="Ismingizni kiriting" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Yoshingiz</label>
+                                <input type="number" id="regAge" placeholder="Masalan: 22" class="form-input" min="18" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Bo'yingiz (sm)</label>
+                                <input type="number" id="regHeight" placeholder="Masalan: 175" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Gender & City -->
+                        <div class="reg-step" data-step="2" style="display:none;">
+                            <div class="form-group">
+                                <label>Jinsingiz</label>
+                                <select id="regGender" class="form-input">
+                                    <option value="Erkak">Erkak</option>
+                                    <option value="Ayol">Ayol</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Kimni qidiryapsiz?</label>
+                                <select id="regLookingFor" class="form-input">
+                                    <option value="Ayolni">Ayolni</option>
+                                    <option value="Erkakni">Erkakni</option>
+                                    <option value="Farqi yo'q">Farqi yo'q</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Munosabatdan maqsad</label>
+                                <select id="regIntent" class="form-input">
+                                    <option value="serious">Jiddiy munosabat</option>
+                                    <option value="marriage">Nikohga tayyorgarlik</option>
+                                    <option value="friendship">Do'stlik va suhbat</option>
+                                    <option value="explore">Yangi insonlar bilan tanishish</option>
+                                    <option value="private">Niyatimni yashiraman</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Bio & Interests -->
+                        <div class="reg-step" data-step="3" style="display:none;">
+                            <div class="form-group">
+                                <label>Shahar</label>
+                                <input type="text" id="regCity" placeholder="Shahar (Masalan: Toshkent)" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>O'zingiz haqingizda (Bio)</label>
+                                <textarea id="regBio" placeholder="O'zingiz haqingizda batafsilroq..." class="form-input" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Rasm manzili (file_id yoki rasm URL-i)</label>
+                                <input type="text" id="regPhoto" placeholder="https://example.com/photo.jpg" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reg-navigation">
+                        <button class="btn-secondary" id="btnRegPrev" style="display:none;" onclick="prevRegStep()">Orqaga</button>
+                        <button class="btn-primary" id="btnRegNext" onclick="nextRegStep()">Keyingisi</button>
+                    </div>
+                </div>
+            </section>
+
             <!-- HOME PAGE -->
             <section class="page active" id="page-home">
                 <!-- Profile Card -->
                 <div class="profile-card glass-card" id="myProfileCard">
                     <div class="profile-card-avatar">
-                        <div class="avatar-placeholder">
+                        <div class="avatar-placeholder" id="myAvatar">
                             <span>👤</span>
                         </div>
                         <div class="profile-online-dot"></div>
@@ -79,12 +161,12 @@
                     <div class="stat-card glass-card" onclick="navigateTo('likes')">
                         <div class="stat-icon">❤️</div>
                         <div class="stat-value" id="statLikes">0</div>
-                        <div class="stat-label">Layklar</div>
+                        <div class="stat-label">Menga yoqqanlar</div>
                     </div>
                     <div class="stat-card glass-card" onclick="navigateTo('matches')">
                         <div class="stat-icon">💬</div>
                         <div class="stat-value" id="statMatches">0</div>
-                        <div class="stat-label">Matchlar</div>
+                        <div class="stat-label">Suhbatlar</div>
                     </div>
                     <div class="stat-card glass-card" onclick="navigateTo('views')">
                         <div class="stat-icon">👁️</div>
@@ -122,8 +204,8 @@
                     <div class="action-card glass-card gradient-green" onclick="navigateTo('referrals')">
                         <div class="action-icon">🎁</div>
                         <div class="action-text">
-                            <h3>Do'stlarni taklif qiling</h3>
-                            <p>Bonus oling</p>
+                            <h3>Taklifnomalar</h3>
+                            <p>Bonus va sovg'alar oling</p>
                         </div>
                         <div class="action-arrow">→</div>
                     </div>
@@ -135,10 +217,10 @@
                 <div class="search-container">
                     <div class="swipe-card-stack" id="swipeCardStack">
                         <div class="swipe-card glass-card" id="currentSwipeCard">
-                            <div class="swipe-card-photo">
+                            <div class="swipe-card-photo" id="swipePhoto">
                                 <div class="photo-placeholder">
                                     <span>📷</span>
-                                    <p>Profil yuklanmoqda...</p>
+                                    <p>Rasm yuklanmoqda...</p>
                                 </div>
                                 <div class="swipe-card-overlay-like">LIKE ❤️</div>
                                 <div class="swipe-card-overlay-nope">NOPE ✖️</div>
@@ -180,14 +262,10 @@
             <!-- LIKES PAGE -->
             <section class="page" id="page-likes">
                 <div class="section-header">
-                    <h2>❤️ Sizni yoqtirganlar</h2>
+                    <h2>❤️ Menga yoqqanlar</h2>
                 </div>
                 <div class="likes-grid" id="likesGrid">
-                    <div class="empty-state">
-                        <div class="empty-icon">💔</div>
-                        <h3>Hali hech kim yoqtirmagan</h3>
-                        <p>Profilingizni to'ldiring va qidiruvni boshlang!</p>
-                    </div>
+                    <!-- Dinamik yuklanadi -->
                 </div>
             </section>
 
@@ -197,10 +275,19 @@
                     <h2>💬 Suhbatlaringiz</h2>
                 </div>
                 <div class="matches-list" id="matchesList">
-                    <div class="empty-state">
-                        <div class="empty-icon">💬</div>
-                        <h3>Hali suhbat yo'q</h3>
-                        <p>Qidiruvni boshlang va juftingizni toping!</p>
+                    <!-- Dinamik yuklanadi -->
+                </div>
+            </section>
+
+            <!-- CHAT DETAIL PAGE -->
+            <section class="page" id="page-chat-detail">
+                <div class="chat-container glass-card">
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Messages dynamically added here -->
+                    </div>
+                    <div class="chat-input-bar">
+                        <input type="text" id="chatMessageInput" placeholder="Xabaringizni yozing..." class="form-input">
+                        <button class="btn-primary" id="btnSendChat" onclick="sendChatMessage()">Yuborish</button>
                     </div>
                 </div>
             </section>
@@ -235,20 +322,6 @@
                             <p>30 daqiqa davomida tepada ko'ring</p>
                         </div>
                     </div>
-                    <div class="feature-item glass-card">
-                        <span class="feature-icon">⭐</span>
-                        <div>
-                            <h4>Super Like</h4>
-                            <p>O'zingizni ajratib ko'rsating</p>
-                        </div>
-                    </div>
-                    <div class="feature-item glass-card">
-                        <span class="feature-icon">❤️</span>
-                        <div>
-                            <h4>Kim yoqtirganini ko'ring</h4>
-                            <p>Sizni yoqtirganlarni darhol ko'ring</p>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="premium-plans">
@@ -259,13 +332,7 @@
                             <span class="price-amount">49,900</span>
                             <span class="price-currency">so'm/oy</span>
                         </div>
-                        <ul class="plan-features">
-                            <li>✅ Cheksiz layklar</li>
-                            <li>✅ 5 ta Super Like/kun</li>
-                            <li>✅ Kim yoqtirganini ko'rish</li>
-                            <li>✅ Profil Boost (1/kun)</li>
-                        </ul>
-                        <button class="btn-primary plan-btn">Tanlash</button>
+                        <button class="btn-primary plan-btn">Sotib olish</button>
                     </div>
                     <div class="plan-card glass-card plan-platinum" onclick="selectPlan('platinum')">
                         <div class="plan-badge plan-badge-premium">👑 Eng yaxshi</div>
@@ -274,14 +341,7 @@
                             <span class="price-amount">89,900</span>
                             <span class="price-currency">so'm/oy</span>
                         </div>
-                        <ul class="plan-features">
-                            <li>✅ Gold'dagi hamma narsa</li>
-                            <li>✅ Cheksiz Super Like</li>
-                            <li>✅ Kim ko'rganini bilish</li>
-                            <li>✅ Cheksiz Boost</li>
-                            <li>✅ Maxfiy rejim</li>
-                        </ul>
-                        <button class="btn-primary btn-platinum plan-btn">Tanlash</button>
+                        <button class="btn-primary btn-platinum plan-btn">Sotib olish</button>
                     </div>
                 </div>
             </section>
@@ -292,7 +352,7 @@
                     <h2>✏️ Profil tahrirlash</h2>
                 </div>
                 <div class="profile-edit-form">
-                    <div class="edit-field glass-card" onclick="sendAction('edit_name')">
+                    <div class="edit-field glass-card" onclick="editFieldPrompt('name')">
                         <div class="edit-field-icon">👤</div>
                         <div class="edit-field-content">
                             <label>Ism</label>
@@ -300,7 +360,7 @@
                         </div>
                         <div class="edit-field-arrow">›</div>
                     </div>
-                    <div class="edit-field glass-card" onclick="sendAction('edit_age')">
+                    <div class="edit-field glass-card" onclick="editFieldPrompt('age')">
                         <div class="edit-field-icon">🎂</div>
                         <div class="edit-field-content">
                             <label>Yosh</label>
@@ -308,7 +368,7 @@
                         </div>
                         <div class="edit-field-arrow">›</div>
                     </div>
-                    <div class="edit-field glass-card" onclick="sendAction('edit_city')">
+                    <div class="edit-field glass-card" onclick="editFieldPrompt('city')">
                         <div class="edit-field-icon">📍</div>
                         <div class="edit-field-content">
                             <label>Shahar</label>
@@ -316,7 +376,7 @@
                         </div>
                         <div class="edit-field-arrow">›</div>
                     </div>
-                    <div class="edit-field glass-card" onclick="sendAction('edit_bio')">
+                    <div class="edit-field glass-card" onclick="editFieldPrompt('bio')">
                         <div class="edit-field-icon">💬</div>
                         <div class="edit-field-content">
                             <label>Bio</label>
@@ -324,26 +384,10 @@
                         </div>
                         <div class="edit-field-arrow">›</div>
                     </div>
-                    <div class="edit-field glass-card" onclick="sendAction('edit_photos')">
-                        <div class="edit-field-icon">📷</div>
-                        <div class="edit-field-content">
-                            <label>Rasmlar</label>
-                            <span id="editPhotos">Tahrirlash</span>
-                        </div>
-                        <div class="edit-field-arrow">›</div>
-                    </div>
-                    <div class="edit-field glass-card" onclick="sendAction('edit_interests')">
-                        <div class="edit-field-icon">🎯</div>
-                        <div class="edit-field-content">
-                            <label>Qiziqishlar</label>
-                            <span id="editInterests">—</span>
-                        </div>
-                        <div class="edit-field-arrow">›</div>
-                    </div>
-                    <div class="edit-field glass-card" onclick="sendAction('edit_height')">
+                    <div class="edit-field glass-card" onclick="editFieldPrompt('height')">
                         <div class="edit-field-icon">📏</div>
                         <div class="edit-field-content">
-                            <label>Bo'y</label>
+                            <label>Bo'yingiz</label>
                             <span id="editHeight">—</span>
                         </div>
                         <div class="edit-field-arrow">›</div>
@@ -364,7 +408,7 @@
                         </div>
                         <div class="ref-stat">
                             <span class="ref-stat-value" id="refBonus">0</span>
-                            <span class="ref-stat-label">Bonus</span>
+                            <span class="ref-stat-label">Bonus (so'm)</span>
                         </div>
                     </div>
                     <button class="btn-primary" onclick="shareReferral()">📤 Havolani ulashish</button>
@@ -392,30 +436,82 @@
                     <h2>⚙️ Sozlamalar</h2>
                 </div>
                 <div class="settings-list">
-                    <div class="settings-item glass-card" onclick="sendAction('change_language')">
-                        <span class="settings-icon">🌐</span>
-                        <span class="settings-text">Tilni o'zgartirish</span>
-                        <span class="settings-arrow">›</span>
-                    </div>
-                    <div class="settings-item glass-card" onclick="sendAction('toggle_invisible')">
+                    <div class="settings-item glass-card" onclick="toggleInvisibleMode()">
                         <span class="settings-icon">👻</span>
                         <span class="settings-text">Ko'rinmas rejim</span>
-                        <span class="settings-arrow">›</span>
+                        <input type="checkbox" id="invisibleCheckbox" class="settings-toggle">
                     </div>
-                    <div class="settings-item glass-card" onclick="sendAction('verify')">
-                        <span class="settings-icon">✅</span>
-                        <span class="settings-text">Hisobni tasdiqlash</span>
-                        <span class="settings-arrow">›</span>
+                    <div class="settings-item glass-card" onclick="deleteAccountPrompt()">
+                        <span class="settings-icon settings-danger">🗑️</span>
+                        <span class="settings-text settings-danger">Hisobni o'chirish</span>
                     </div>
-                    <div class="settings-item glass-card" onclick="sendAction('security_info')">
-                        <span class="settings-icon">🛡️</span>
-                        <span class="settings-text">Xavfsizlik</span>
-                        <span class="settings-arrow">›</span>
+                </div>
+            </section>
+
+            <!-- ADMIN PAGE -->
+            <section class="page" id="page-admin">
+                <div class="section-header">
+                    <h2>🛡️ Admin Dashboard</h2>
+                </div>
+
+                <!-- Admin Statistics -->
+                <div class="admin-stats-grid">
+                    <div class="admin-stat-card glass-card">
+                        <h4 id="adminTotalUsers">0</h4>
+                        <p>Jami foydalanuvchilar</p>
                     </div>
-                    <div class="settings-item glass-card settings-danger" onclick="sendAction('delete_account')">
-                        <span class="settings-icon">🗑️</span>
-                        <span class="settings-text">Hisobni o'chirish</span>
-                        <span class="settings-arrow">›</span>
+                    <div class="admin-stat-card glass-card">
+                        <h4 id="adminActiveUsers">0</h4>
+                        <p>Faol</p>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <h4 id="adminRegToday">0</h4>
+                        <p>Bugun qo'shilganlar</p>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <h4 id="adminPremiumUsers">0</h4>
+                        <p>Premium</p>
+                    </div>
+                </div>
+
+                <!-- Admin Sections Toggle -->
+                <div class="admin-tabs">
+                    <button class="admin-tab active" onclick="switchAdminTab('broadcast')">📣 Broadcast</button>
+                    <button class="admin-tab" onclick="switchAdminTab('payments')">💳 To'lovlar</button>
+                    <button class="admin-tab" onclick="switchAdminTab('users')">👤 Qidiruv</button>
+                </div>
+
+                <!-- Broadcast Section -->
+                <div class="admin-section active" id="admin-sec-broadcast">
+                    <div class="glass-card admin-inner-card">
+                        <h3>📣 Broadcast yuborish</h3>
+                        <p class="admin-desc">Barcha faol foydalanuvchilarga xabar yuborish</p>
+                        <textarea id="adminBroadcastText" class="form-input" rows="4" placeholder="Xabarni shu yerga yozing..."></textarea>
+                        <button class="btn-primary" onclick="sendAdminBroadcast()">Yuborish</button>
+                    </div>
+                </div>
+
+                <!-- Payments Section -->
+                <div class="admin-section" id="admin-sec-payments" style="display:none;">
+                    <div class="glass-card admin-inner-card">
+                        <h3>💳 Kutilayotgan to'lovlar</h3>
+                        <div class="admin-payments-list" id="adminPaymentsList">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Section -->
+                <div class="admin-section" id="admin-sec-users" style="display:none;">
+                    <div class="glass-card admin-inner-card">
+                        <h3>🔍 Foydalanuvchilarni boshqarish</h3>
+                        <div class="form-group row-group">
+                            <input type="text" id="adminUserSearchInput" placeholder="Telegram ID yoki ism..." class="form-input">
+                            <button class="btn-primary btn-inline" onclick="searchAdminUsers()">Qidirish</button>
+                        </div>
+                        <div class="admin-users-list" id="adminUsersList">
+                            <!-- Dynamically populated -->
+                        </div>
                     </div>
                 </div>
             </section>
@@ -434,13 +530,11 @@
             </button>
             <button class="nav-item" data-page="likes" onclick="navigateTo('likes')">
                 <span class="nav-icon">❤️</span>
-                <span class="nav-label">Layklar</span>
-                <span class="nav-badge" id="likesBadge" style="display:none;">0</span>
+                <span class="nav-label">Yoqqanlar</span>
             </button>
             <button class="nav-item" data-page="matches" onclick="navigateTo('matches')">
                 <span class="nav-icon">💬</span>
                 <span class="nav-label">Chatlar</span>
-                <span class="nav-badge" id="matchesBadge" style="display:none;">0</span>
             </button>
             <button class="nav-item" data-page="settings" onclick="navigateTo('settings')">
                 <span class="nav-icon">⚙️</span>
