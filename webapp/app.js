@@ -1230,6 +1230,9 @@ function sendAdminBroadcast() {
 
 // State for selected plan during checkout
 state.selectedPlan = "gold";
+state.checkoutReceiptBase64 = null;
+let checkoutTimerInterval = null;
+let checkoutTimeLeft = 900; // 15 minutes in seconds
 
 function selectPlan(plan) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
@@ -1254,6 +1257,10 @@ function selectPlan(plan) {
 function closeCheckoutModal() {
     const modal = document.getElementById('checkoutModal');
     if (modal) modal.style.display = 'none';
+    if (checkoutTimerInterval) {
+        clearInterval(checkoutTimerInterval);
+        checkoutTimerInterval = null;
+    }
 }
 
 function copyCardNumber() {
@@ -1264,11 +1271,8 @@ function copyCardNumber() {
 }
 
 async function submitCheckoutPayment() {
-    const receiptInput = document.getElementById('checkoutReceiptInput');
-    const receipt = receiptInput?.value.trim();
-    
-    if (!receipt) {
-        showToast('\u{26a1}', 'To\'lov cheki havolasini kiriting!');
+    if (!state.checkoutReceiptBase64) {
+        showToast('\u{26a1}', 'To\'lov tasdiqlanishi uchun chek rasmini yuklash shart!');
         return;
     }
     
@@ -1280,14 +1284,19 @@ async function submitCheckoutPayment() {
             headers: getHeaders(),
             body: JSON.stringify({
                 plan: state.selectedPlan,
-                receipt: receipt
+                receipt: state.checkoutReceiptBase64
             })
         });
         const data = await response.json();
         
         if (data.status === 'ok') {
             closeCheckoutModal();
-            if (receiptInput) receiptInput.value = '';
+            state.checkoutReceiptBase64 = null;
+            
+            // Reset file input
+            const fileInput = document.getElementById('checkoutReceiptFileInput');
+            if (fileInput) fileInput.value = '';
+            
             showToast('\u{2705}', 'Chek yuborildi! Admin tasdiqlashini kuting.');
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         } else {
@@ -1295,9 +1304,33 @@ async function submitCheckoutPayment() {
         }
     } catch (e) {
         closeCheckoutModal();
-        if (receiptInput) receiptInput.value = '';
+        state.checkoutReceiptBase64 = null;
         showToast('\u{2705}', 'To\'lov yuborildi! (Demo)');
     }
+}
+
+
+function handleCheckoutReceiptSelected(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const statusText = document.getElementById('checkoutReceiptStatusText');
+    if (statusText) statusText.textContent = "Yuklanmoqda...";
+    
+    const reader = new FileReader();
+    reader.onload = function() {
+        state.checkoutReceiptBase64 = reader.result;
+        if (statusText) {
+            statusText.textContent = "✅ Chek yuklandi";
+            statusText.style.color = "var(--accent-pink)";
+        }
+        showToast("📸", "Chek rasmi tanlandi!");
+    };
+    reader.onerror = function() {
+        if (statusText) statusText.textContent = "❌ Yuklashda xatolik";
+        showToast("⚠️", "Rasmni o'qishda xatolik yuz berdi!");
+    };
+    reader.readAsDataURL(file);
 }
 
 // ===== POPUP AND TOAST =====

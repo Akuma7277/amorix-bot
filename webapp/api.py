@@ -762,6 +762,7 @@ async def handle_admin_payment_action(request):
                 if user:
                     user.premium_plan = PremiumPlan.gold if "Gold" in (payment.description or "") else PremiumPlan.platinum
                     user.premium_expires_at = datetime.now() + timedelta(days=30)
+                    user.is_premium = True
             else:
                 payment.status = "failed"
                 
