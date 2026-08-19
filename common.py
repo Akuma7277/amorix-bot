@@ -12,6 +12,15 @@ from states import RegistrationStates
 from inline import get_language_keyboard, get_subscribe_keyboard
 from reply import get_main_menu_keyboard
 from config import WEBAPP_URL
+
+def get_webapp_url() -> str:
+    """Telegram keshini tozalash uchun dinamik havola (har daqiqa yangilanadi)"""
+    import time
+    if not WEBAPP_URL:
+        return ""
+    t = int(time.time() // 60)
+    return f"{WEBAPP_URL}&v={t}" if "?" in WEBAPP_URL else f"{WEBAPP_URL}?v={t}"
+
 from models import UserStatus
 
 router = Router()
@@ -241,7 +250,7 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
             chat_id=message.chat.id,
             menu_button=MenuButtonWebApp(
                 text="Kairyx App",
-                web_app=WebAppInfo(url=WEBAPP_URL)
+                web_app=WebAppInfo(url=get_webapp_url())
             )
         )
     except Exception as e:
@@ -254,12 +263,12 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     }
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))]
+        [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=get_webapp_url()))]
     ])
 
     reply_kb = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=WEBAPP_URL))]
+            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=get_webapp_url()))]
         ],
         resize_keyboard=True
     )
@@ -281,7 +290,7 @@ async def all_other_messages(message: Message, bot: Bot):
             chat_id=message.chat.id,
             menu_button=MenuButtonWebApp(
                 text="Kairyx App",
-                web_app=WebAppInfo(url=WEBAPP_URL)
+                web_app=WebAppInfo(url=get_webapp_url())
             )
         )
     except Exception:
@@ -295,7 +304,7 @@ async def all_other_messages(message: Message, bot: Bot):
 
     reply_kb = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=WEBAPP_URL))]
+            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=get_webapp_url()))]
         ],
         resize_keyboard=True
     )
