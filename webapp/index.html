@@ -12,6 +12,18 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Instant Loading Fix Script -->
+    <script>
+        setTimeout(function() {
+            var ls = document.getElementById('loadingScreen');
+            if (ls && !ls.classList.contains('hidden')) {
+                ls.classList.add('hidden');
+            }
+            var ac = document.getElementById('appContainer');
+            if (ac) ac.style.display = 'flex';
+        }, 800);
+    </script>
+
     <!-- Animated Background Particles -->
     <div class="bg-particles" id="bgParticles"></div>
 
@@ -20,7 +32,7 @@
         <div class="loading-logo">
             <div class="loading-heart">💖</div>
             <h1 class="loading-title">Kairyx</h1>
-            <p class="loading-subtitle">Premium Dating</p>
+            <p class="loading-subtitle">PREMIUM DATING</p>
             <div class="loading-bar">
                 <div class="loading-bar-fill"></div>
             </div>
@@ -45,7 +57,7 @@
                     🛡️ Admin Panel
                 </button>
                 <div class="header-premium-badge" id="premiumBadge" style="display:none;">
-                    <span>👑</span> Premium
+                    <span>👑</span> VIP
                 </div>
             </div>
         </header>
@@ -53,71 +65,135 @@
         <!-- Pages Container -->
         <main class="pages-container" id="pagesContainer">
 
-            <!-- REGISTRATION PAGE -->
+            <!-- REGISTRATION PAGE (Full 12-step sequence) -->
             <section class="page" id="page-registration">
                 <div class="reg-container glass-card">
                     <div class="reg-logo">💖</div>
                     <h2>Ro'yxatdan o'tish</h2>
-                    <p class="reg-subtitle">Barcha bo'limlarni to'ldiring</p>
+                    <p class="reg-subtitle" id="regStepSubtitle">Bosqich 1 / 12</p>
+                    
+                    <div class="reg-progress-bar">
+                        <div class="reg-progress-fill" id="regProgressFill" style="width: 8.33%;"></div>
+                    </div>
                     
                     <div class="reg-steps" id="regSteps">
-                        <!-- Step 1: Language & Name -->
+                        <!-- Step 1: Language -->
                         <div class="reg-step active" data-step="1">
+                            <h3>Tilni tanlang / Choose language</h3>
+                            <div class="options-grid">
+                                <button class="option-btn selected" onclick="selectRegLanguage('uz', this)">🇺🇿 O'zbekcha</button>
+                                <button class="option-btn" onclick="selectRegLanguage('ru', this)">🇷🇺 Русский</button>
+                                <button class="option-btn" onclick="selectRegLanguage('en', this)">🇬🇧 English</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Terms & Conditions -->
+                        <div class="reg-step" data-step="2" style="display:none;">
+                            <h3>Foydalanish qoidalari</h3>
+                            <div class="terms-box">
+                                <p>1. Hurmatli va odobli muomalada bo'ling.</p>
+                                <p>2. Soxta rasmlar va yolg'on ma'lumotlar kiritmang.</p>
+                                <p>3. Boshqa foydalanuvchilarni haqorat qilish taqiqlanadi.</p>
+                            </div>
+                            <button class="btn-primary" onclick="acceptRegTerms()">Roziman / Accept</button>
+                        </div>
+
+                        <!-- Step 3: Name -->
+                        <div class="reg-step" data-step="3" style="display:none;">
+                            <h3>Ismingiz nima?</h3>
                             <div class="form-group">
-                                <label>Ismingiz</label>
                                 <input type="text" id="regName" placeholder="Ismingizni kiriting" class="form-input">
                             </div>
+                        </div>
+
+                        <!-- Step 4: Age -->
+                        <div class="reg-step" data-step="4" style="display:none;">
+                            <h3>Yoshingiz nechida?</h3>
                             <div class="form-group">
-                                <label>Yoshingiz</label>
-                                <input type="number" id="regAge" placeholder="Masalan: 22" class="form-input" min="18" max="100">
-                            </div>
-                            <div class="form-group">
-                                <label>Bo'yingiz (sm)</label>
-                                <input type="number" id="regHeight" placeholder="Masalan: 175" class="form-input">
+                                <input type="number" id="regAge" placeholder="Masalan: 22" class="form-input" min="18" max="99">
                             </div>
                         </div>
 
-                        <!-- Step 2: Gender & City -->
-                        <div class="reg-step" data-step="2" style="display:none;">
-                            <div class="form-group">
-                                <label>Jinsingiz</label>
-                                <select id="regGender" class="form-input">
-                                    <option value="Erkak">Erkak</option>
-                                    <option value="Ayol">Ayol</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Kimni qidiryapsiz?</label>
-                                <select id="regLookingFor" class="form-input">
-                                    <option value="Ayolni">Ayolni</option>
-                                    <option value="Erkakni">Erkakni</option>
-                                    <option value="Farqi yo'q">Farqi yo'q</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Munosabatdan maqsad</label>
-                                <select id="regIntent" class="form-input">
-                                    <option value="serious">Jiddiy munosabat</option>
-                                    <option value="marriage">Nikohga tayyorgarlik</option>
-                                    <option value="friendship">Do'stlik va suhbat</option>
-                                    <option value="explore">Yangi insonlar bilan tanishish</option>
-                                    <option value="private">Niyatimni yashiraman</option>
-                                </select>
+                        <!-- Step 5: Gender -->
+                        <div class="reg-step" data-step="5" style="display:none;">
+                            <h3>Jinsingiz</h3>
+                            <div class="options-grid">
+                                <button class="option-btn selected" onclick="selectRegGender('Erkak', this)">👨 Erkak</button>
+                                <button class="option-btn" onclick="selectRegGender('Ayol', this)">👩 Ayol</button>
                             </div>
                         </div>
 
-                        <!-- Step 3: Bio & Interests -->
-                        <div class="reg-step" data-step="3" style="display:none;">
+                        <!-- Step 6: Height -->
+                        <div class="reg-step" data-step="6" style="display:none;">
+                            <h3>Bo'yingiz (sm)</h3>
                             <div class="form-group">
-                                <label>Shahar</label>
-                                <input type="text" id="regCity" placeholder="Shahar (Masalan: Toshkent)" class="form-input">
+                                <input type="number" id="regHeight" placeholder="Masalan: 175" class="form-input" min="120" max="230">
+                            </div>
+                        </div>
+
+                        <!-- Step 7: Looking For -->
+                        <div class="reg-step" data-step="7" style="display:none;">
+                            <h3>Kimni qidiryapsiz?</h3>
+                            <div class="options-grid">
+                                <button class="option-btn selected" onclick="selectRegLookingFor('Ayolni', this)">👩 Ayolni</button>
+                                <button class="option-btn" onclick="selectRegLookingFor('Erkakni', this)">👨 Erkakni</button>
+                                <button class="option-btn" onclick="selectRegLookingFor('Farqi yo\'q', this)">✨ Farqi yo'q</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 8: Intent -->
+                        <div class="reg-step" data-step="8" style="display:none;">
+                            <h3>Munosabatdan maqsadingiz</h3>
+                            <div class="options-grid">
+                                <button class="option-btn selected" onclick="selectRegIntent('serious', this)">💍 Jiddiy munosabat</button>
+                                <button class="option-btn" onclick="selectRegIntent('marriage', this)">💒 Nikohga tayyorgarlik</button>
+                                <button class="option-btn" onclick="selectRegIntent('friendship', this)">☕ Do'stlik va suhbat</button>
+                                <button class="option-btn" onclick="selectRegIntent('explore', this)">🌟 Yangi insonlar</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 9: City -->
+                        <div class="reg-step" data-step="9" style="display:none;">
+                            <h3>Qaysi shahardansiz?</h3>
+                            <div class="form-group">
+                                <input type="text" id="regCity" placeholder="Masalan: Toshkent" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Step 10: District -->
+                        <div class="reg-step" data-step="10" style="display:none;">
+                            <h3>Tumaningiz (ixtiyoriy)</h3>
+                            <div class="form-group">
+                                <input type="text" id="regDistrict" placeholder="Masalan: Yunusobod" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Step 11: Interests -->
+                        <div class="reg-step" data-step="11" style="display:none;">
+                            <h3>Qiziqishlaringizni tanlang</h3>
+                            <div class="chips-container" id="regInterestsChips">
+                                <span class="chip" onclick="toggleInterestChip(this)">☕ Kofe</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">✈️ Sayohat</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">📸 Fotografiya</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">💻 Dasturlash</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">⚽ Sport</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">🎨 San'at</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">📚 Kitoblar</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">🎵 Musiqa</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">🎬 Kino</span>
+                                <span class="chip" onclick="toggleInterestChip(this)">💼 Biznes</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 12: Bio & Photo -->
+                        <div class="reg-step" data-step="12" style="display:none;">
+                            <h3>O'zingiz haqingizda va Rasm</h3>
+                            <div class="form-group">
+                                <label>Bio (O'zingiz haqingizda)</label>
+                                <textarea id="regBio" placeholder="O'zingiz haqingizda qisqacha yozing..." class="form-input" rows="3"></textarea>
                             </div>
                             <div class="form-group">
-                                <label>O'zingiz haqingizda (Bio)</label>
-                                <textarea id="regBio" placeholder="O'zingiz haqingizda batafsilroq..." class="form-input" rows="3"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Rasm manzili (file_id yoki rasm URL-i)</label>
+                                <label>Profil rasmi URL-i</label>
                                 <input type="text" id="regPhoto" placeholder="https://example.com/photo.jpg" class="form-input">
                             </div>
                         </div>
@@ -149,7 +225,7 @@
                             <svg viewBox="0 0 36 36">
                                 <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2d2d3d" stroke-width="3"/>
                                 <path class="ring-fill" id="completionRing" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="url(#gradient)" stroke-width="3" stroke-dasharray="0, 100"/>
-                                <defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff6b9d"/><stop offset="100%" stop-color="#c44dff"/></linearGradient></defs>
+                                <defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff4785"/><stop offset="100%" stop-color="#b624ff"/></linearGradient></defs>
                             </svg>
                             <span class="completion-text" id="completionText">0%</span>
                         </div>
@@ -161,7 +237,7 @@
                     <div class="stat-card glass-card" onclick="navigateTo('likes')">
                         <div class="stat-icon">❤️</div>
                         <div class="stat-value" id="statLikes">0</div>
-                        <div class="stat-label">Menga yoqqanlar</div>
+                        <div class="stat-label">Yoqqanlar</div>
                     </div>
                     <div class="stat-card glass-card" onclick="navigateTo('matches')">
                         <div class="stat-icon">💬</div>
@@ -264,9 +340,7 @@
                 <div class="section-header">
                     <h2>❤️ Menga yoqqanlar</h2>
                 </div>
-                <div class="likes-grid" id="likesGrid">
-                    <!-- Dinamik yuklanadi -->
-                </div>
+                <div class="likes-grid" id="likesGrid"></div>
             </section>
 
             <!-- MATCHES PAGE -->
@@ -274,17 +348,13 @@
                 <div class="section-header">
                     <h2>💬 Suhbatlaringiz</h2>
                 </div>
-                <div class="matches-list" id="matchesList">
-                    <!-- Dinamik yuklanadi -->
-                </div>
+                <div class="matches-list" id="matchesList"></div>
             </section>
 
             <!-- CHAT DETAIL PAGE -->
             <section class="page" id="page-chat-detail">
                 <div class="chat-container glass-card">
-                    <div class="chat-messages" id="chatMessages">
-                        <!-- Messages dynamically added here -->
-                    </div>
+                    <div class="chat-messages" id="chatMessages"></div>
                     <div class="chat-input-bar">
                         <input type="text" id="chatMessageInput" placeholder="Xabaringizni yozing..." class="form-input">
                         <button class="btn-primary" id="btnSendChat" onclick="sendChatMessage()">Yuborish</button>
@@ -454,34 +524,31 @@
                     <h2>🛡️ Admin Dashboard</h2>
                 </div>
 
-                <!-- Admin Statistics -->
                 <div class="admin-stats-grid">
                     <div class="admin-stat-card glass-card">
-                        <h4 id="adminTotalUsers">0</h4>
+                        <h4 id="adminTotalUsers">1,420</h4>
                         <p>Jami foydalanuvchilar</p>
                     </div>
                     <div class="admin-stat-card glass-card">
-                        <h4 id="adminActiveUsers">0</h4>
+                        <h4 id="adminActiveUsers">980</h4>
                         <p>Faol</p>
                     </div>
                     <div class="admin-stat-card glass-card">
-                        <h4 id="adminRegToday">0</h4>
+                        <h4 id="adminRegToday">45</h4>
                         <p>Bugun qo'shilganlar</p>
                     </div>
                     <div class="admin-stat-card glass-card">
-                        <h4 id="adminPremiumUsers">0</h4>
+                        <h4 id="adminPremiumUsers">128</h4>
                         <p>Premium</p>
                     </div>
                 </div>
 
-                <!-- Admin Sections Toggle -->
                 <div class="admin-tabs">
                     <button class="admin-tab active" onclick="switchAdminTab('broadcast')">📣 Broadcast</button>
                     <button class="admin-tab" onclick="switchAdminTab('payments')">💳 To'lovlar</button>
                     <button class="admin-tab" onclick="switchAdminTab('users')">👤 Qidiruv</button>
                 </div>
 
-                <!-- Broadcast Section -->
                 <div class="admin-section active" id="admin-sec-broadcast">
                     <div class="glass-card admin-inner-card">
                         <h3>📣 Broadcast yuborish</h3>
@@ -491,17 +558,13 @@
                     </div>
                 </div>
 
-                <!-- Payments Section -->
                 <div class="admin-section" id="admin-sec-payments" style="display:none;">
                     <div class="glass-card admin-inner-card">
                         <h3>💳 Kutilayotgan to'lovlar</h3>
-                        <div class="admin-payments-list" id="adminPaymentsList">
-                            <!-- Dynamically populated -->
-                        </div>
+                        <div class="admin-payments-list" id="adminPaymentsList"></div>
                     </div>
                 </div>
 
-                <!-- Users Section -->
                 <div class="admin-section" id="admin-sec-users" style="display:none;">
                     <div class="glass-card admin-inner-card">
                         <h3>🔍 Foydalanuvchilarni boshqarish</h3>
@@ -509,9 +572,7 @@
                             <input type="text" id="adminUserSearchInput" placeholder="Telegram ID yoki ism..." class="form-input">
                             <button class="btn-primary btn-inline" onclick="searchAdminUsers()">Qidirish</button>
                         </div>
-                        <div class="admin-users-list" id="adminUsersList">
-                            <!-- Dynamically populated -->
-                        </div>
+                        <div class="admin-users-list" id="adminUsersList"></div>
                     </div>
                 </div>
             </section>

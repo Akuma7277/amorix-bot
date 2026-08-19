@@ -1,5 +1,5 @@
 /* ============================================
-   KAIRYX MINI APP - CRASH-PROOF JAVASCRIPT
+   KAIRYX MINI APP - BULLETPROOF SPA JAVASCRIPT
    ============================================ */
 
 const tg = window.Telegram?.WebApp;
@@ -15,13 +15,17 @@ const state = {
     activeMatchId: null,
     chatInterval: null,
     registrationData: {
+        language: "uz",
+        termsAccepted: false,
         name: "",
         age: 18,
-        height: 175,
         gender: "Erkak",
+        height: 175,
         looking_for: "Ayolni",
         relationship_intent: "serious",
         city: "",
+        district: "",
+        interests: [],
         bio: "",
         photos: []
     },
@@ -76,7 +80,7 @@ const DEMO_PROFILES = [
     }
 ];
 
-// Helper: Telegram Init Headers
+// Helper: Headers
 function getHeaders() {
     const headers = { "Content-Type": "application/json" };
     if (tg && tg.initData) {
@@ -108,10 +112,12 @@ function initFallbackUser() {
     displayCurrentProfile();
 }
 
-// ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', () => {
+// Immediate Execution on DOM Ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
     initApp();
-});
+}
 
 async function initApp() {
     if (tg) {
@@ -121,13 +127,13 @@ async function initApp() {
             tg.setHeaderColor('#050510');
             tg.setBackgroundColor('#050510');
         } catch (err) {
-            console.log("TG WebApp expand error:", err);
+            console.log("TG WebApp error:", err);
         }
     }
 
     createParticles();
     
-    // Always hide loading screen within 1.2s max to prevent stuck screens
+    // Hide loading screen unconditionally after 600ms
     setTimeout(() => {
         const loadingScreen = document.getElementById('loadingScreen');
         if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
@@ -135,24 +141,23 @@ async function initApp() {
         }
         const appContainer = document.getElementById('appContainer');
         if (appContainer) appContainer.style.display = 'flex';
-    }, 1200);
+    }, 600);
 
-    // Try fetching from API
+    // Try API fetch
     try {
         const response = await fetch(`${API_URL}/api/init`, {
             method: "GET",
             headers: getHeaders()
         });
         
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
         
         if (data.registered === false) {
             state.registrationData.name = data.name || "";
             navigateTo('registration');
+            showRegStep(1);
         } else if (data.registered === true && data.user) {
             state.user = data.user;
             updateUI();
@@ -165,7 +170,7 @@ async function initApp() {
             navigateTo('home');
         }
     } catch (e) {
-        console.log("API server unavailable, loading standalone mode:", e);
+        console.log("API server fallback:", e);
         initFallbackUser();
         navigateTo('home');
     }
@@ -173,7 +178,7 @@ async function initApp() {
     setupSwipeGestures();
 }
 
-// ===== BACKGROUND PARTICLES =====
+// ===== PARTICLES =====
 function createParticles() {
     const container = document.getElementById('bgParticles');
     if (!container) return;
@@ -197,56 +202,98 @@ function createParticles() {
     }
 }
 
-// ===== REGISTRATION FLOW =====
+// ===== REGISTRATION FLOW (12 STEPS) =====
 function showRegStep(step) {
     document.querySelectorAll('.reg-step').forEach(s => s.style.display = 'none');
     const target = document.querySelector(`.reg-step[data-step="${step}"]`);
     if (target) target.style.display = 'block';
     
+    const subTitle = document.getElementById('regStepSubtitle');
+    if (subTitle) subTitle.textContent = `Bosqich ${step} / 12`;
+    
+    const progressFill = document.getElementById('regProgressFill');
+    if (progressFill) progressFill.style.width = `${(step / 12) * 100}%`;
+
     const prevBtn = document.getElementById('btnRegPrev');
     const nextBtn = document.getElementById('btnRegNext');
     if (prevBtn) prevBtn.style.display = step > 1 ? 'block' : 'none';
-    if (nextBtn) nextBtn.textContent = step === 3 ? "Tugatish" : "Keyingisi";
+    if (nextBtn) nextBtn.textContent = step === 12 ? "Tugatish" : "Keyingisi";
     
     state.currentRegStep = step;
 }
 
-function nextRegStep() {
-    if (state.currentRegStep === 1) {
-        const name = document.getElementById('regName')?.value.trim();
-        const age = document.getElementById('regAge')?.value;
-        const height = document.getElementById('regHeight')?.value;
-        
-        if (!name || !age) {
-            showToast("⚠️", "Ism va yoshni kiriting!");
-            return;
+function selectRegLanguage(lang, btn) {
+    state.registrationData.language = lang;
+    btn.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function acceptRegTerms() {
+    state.registrationData.termsAccepted = true;
+    nextRegStep();
+}
+
+function selectRegGender(gender, btn) {
+    state.registrationData.gender = gender;
+    btn.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function selectRegLookingFor(lf, btn) {
+    state.registrationData.looking_for = lf;
+    btn.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function selectRegIntent(intent, btn) {
+    state.registrationData.relationship_intent = intent;
+    btn.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function toggleInterestChip(chip) {
+    chip.classList.toggle('selected');
+    const interest = chip.textContent.replace(/^[^\s]+\s*/, '').trim();
+    if (chip.classList.contains('selected')) {
+        if (!state.registrationData.interests.includes(interest)) {
+            state.registrationData.interests.push(interest);
         }
+    } else {
+        state.registrationData.interests = state.registrationData.interests.filter(i => i !== interest);
+    }
+}
+
+function nextRegStep() {
+    const step = state.currentRegStep;
+    
+    if (step === 3) {
+        const name = document.getElementById('regName')?.value.trim();
+        if (!name) { showToast("⚠️", "Ismingizni kiriting!"); return; }
         state.registrationData.name = name;
+    } else if (step === 4) {
+        const age = document.getElementById('regAge')?.value;
+        if (!age || parseInt(age) < 18) { showToast("⚠️", "Yosh kamida 18 bo'lishi kerak!"); return; }
         state.registrationData.age = parseInt(age);
-        state.registrationData.height = height ? parseFloat(height) : null;
-        
-        showRegStep(2);
-    } else if (state.currentRegStep === 2) {
-        state.registrationData.gender = document.getElementById('regGender')?.value || "Erkak";
-        state.registrationData.looking_for = document.getElementById('regLookingFor')?.value || "Ayolni";
-        state.registrationData.relationship_intent = document.getElementById('regIntent')?.value || "serious";
-        
-        showRegStep(3);
-    } else if (state.currentRegStep === 3) {
+    } else if (step === 6) {
+        const height = document.getElementById('regHeight')?.value;
+        if (height) state.registrationData.height = parseFloat(height);
+    } else if (step === 9) {
         const city = document.getElementById('regCity')?.value.trim();
+        if (!city) { showToast("⚠️", "Shaharingizni kiriting!"); return; }
+        state.registrationData.city = city;
+    } else if (step === 10) {
+        const district = document.getElementById('regDistrict')?.value.trim();
+        if (district) state.registrationData.district = district;
+    } else if (step === 12) {
         const bio = document.getElementById('regBio')?.value.trim();
         const photo = document.getElementById('regPhoto')?.value.trim();
-        
-        if (!city) {
-            showToast("⚠️", "Shaharni kiriting!");
-            return;
-        }
-        state.registrationData.city = city;
-        state.registrationData.bio = bio;
+        state.registrationData.bio = bio || "";
         state.registrationData.photos = photo ? [photo] : ["https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"];
-        
         submitRegistration();
+        return;
     }
+    
+    showRegStep(step + 1);
 }
 
 function prevRegStep() {
@@ -275,7 +322,6 @@ async function submitRegistration() {
             showToast("⚠️", data.message || "Xatolik yuz berdi");
         }
     } catch (e) {
-        // Fallback local registration
         initFallbackUser();
         state.user.name = state.registrationData.name;
         state.user.age = state.registrationData.age;
@@ -825,7 +871,7 @@ function showToast(icon, message) {
 
     setTimeout(() => {
         toast.classList.add('removing');
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => toast.remove(), 2800);
     }, 2800);
 }
 

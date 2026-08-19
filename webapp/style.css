@@ -931,3 +931,81 @@ select.form-input {
 
 .toast-icon { font-size: 18px; }
 .toast-text { font-size: 13px; font-weight: 500; }
+
+/* Registration 12-Step Flow Styles */
+.reg-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    margin: 12px 0 20px 0;
+    overflow: hidden;
+}
+
+.reg-progress-fill {
+    height: 100%;
+    background: var(--gradient-main);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.option-btn {
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.option-btn:hover, .option-btn.selected {
+    background: var(--gradient-pink);
+    border-color: var(--accent-pink);
+    box-shadow: var(--shadow-glow-pink);
+}
+
+.terms-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-glass);
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.chip {
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chip.selected {
+    background: var(--accent-purple);
+    border-color: var(--accent-purple);
+    color: white;
+}
