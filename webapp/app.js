@@ -1,11 +1,11 @@
 /* ============================================
-   KAIRYX MINI APP - BULLETPROOF SPA JAVASCRIPT
+   KAIRYX MINI APP - SAFE UNICODE JAVASCRIPT
    ============================================ */
 
 const tg = window.Telegram?.WebApp;
 const ADMIN_TELEGRAM_ID = 7992878834;
 
-// Localization Dictionaries
+// Localization Dictionaries using Unicode Escape Sequences for Emojis
 const TRANSLATIONS = {
     uz: {
         nav_home: "Asosiy",
@@ -22,18 +22,18 @@ const TRANSLATIONS = {
         reg_name_title: "Ismingiz nima?",
         reg_age_title: "Yoshingiz nechida?",
         reg_gender_title: "Jinsingiz",
-        gender_male: "👨 Erkak",
-        gender_female: "👩 Ayol",
+        gender_male: "\u{1F468} Erkak",
+        gender_female: "\u{1F469} Ayol",
         reg_height_title: "Bo'yingiz (sm)",
         reg_looking_title: "Kimni qidiryapsiz?",
-        look_female: "👩 Ayolni",
-        look_male: "👨 Erkakni",
-        look_any: "✨ Farqi yo'q",
+        look_female: "\u{1F469} Ayolni",
+        look_male: "\u{1F468} Erkakni",
+        look_any: "\u{2728} Farqi yo'q",
         reg_intent_title: "Munosabatdan maqsadingiz",
-        intent_serious: "💍 Jiddiy munosabat",
-        intent_marriage: "💒 Nikohga tayyorgarlik",
-        intent_friendship: "☕ Do'stlik va suhbat",
-        intent_explore: "🌟 Yangi insonlar",
+        intent_serious: "\u{1F48D} Jiddiy munosabat",
+        intent_marriage: "\u{1F492} Nikohga tayyorgarlik",
+        intent_friendship: "\u{2615} Do'stlik va suhbat",
+        intent_explore: "\u{1F31F} Yangi insonlar",
         reg_city_title: "Qaysi shahardansiz?",
         reg_district_title: "Tumaningiz (ixtiyoriy)",
         reg_interests_title: "Qiziqishlaringizni tanlang",
@@ -57,8 +57,8 @@ const TRANSLATIONS = {
         search_empty_title: "Hozircha anketalar topilmadi",
         search_empty_desc: "Keyinroq qayta urinib ko'ring",
         search_btn_retry: "Qayta qidirish",
-        likes_header: "❤️ Menga yoqqanlar",
-        chats_header: "💬 Suhbatlaringiz",
+        likes_header: "\u{2764}\ufe0f Menga yoqqanlar",
+        chats_header: "\u{1F4AC} Suhbatlaringiz",
         btn_send: "Yuborish",
         prem_subtitle: "Cheksiz imkoniyatlarni oching",
         prem_f1_title: "Cheksiz layklar",
@@ -72,10 +72,10 @@ const TRANSLATIONS = {
         prem_f5_title: "Priority Matching",
         prem_f5_desc: "Mos juftlik topish imkoniyati 3 barobar oshiriladi",
         prem_badge_popular: "Mashhur",
-        prem_badge_best: "👑 Eng yaxshi",
+        prem_badge_best: "\u{1F451} Eng yaxshi",
         btn_buy: "Sotib olish",
-        edit_profile_header: "✏️ Profil tahrirlash",
-        edit_photos_title: "📸 Rasmlar galereyasi",
+        edit_profile_header: "\u{270F}\ufe0f Profil tahrirlash",
+        edit_photos_title: "\u{1F4DF} Rasmlar galereyasi",
         btn_add: "Qo'shish",
         edit_lbl_name: "Ism",
         edit_lbl_age: "Yosh",
@@ -85,19 +85,19 @@ const TRANSLATIONS = {
         ref_subtitle: "Har bir taklif uchun bonus oling!",
         ref_stat_count: "Takliflar",
         ref_stat_bonus: "Bonus (so'm)",
-        btn_share_link: "📤 Havolani ulashish",
-        views_header: "👁️ Profilingizni ko'rganlar",
+        btn_share_link: "\u{1F4E4} Havolani ulashish",
+        views_header: "\u{1F441}\ufe0f Profilingizni ko'rganlar",
         views_lock_title: "Premium funksiya",
         views_lock_desc: "Profilingizni kim ko'rganini bilish uchun Premium sotib oling",
-        btn_get_premium: "👑 Premium olish",
-        settings_header: "⚙️ Sozlamalar",
+        btn_get_premium: "\u{1F451} Premium olish",
+        settings_header: "\u{2699}\ufe0f Sozlamalar",
         set_lang: "Tilni o'zgartirish / Language",
         set_incognito: "Ko'rinmas rejim",
         set_delete_acc: "Hisobni o'chirish",
         match_title: "Bu Match!",
         match_body_1: "Siz va",
         match_body_2: "bir-biringizni yoqtirdingiz!",
-        match_btn_chat: "💬 Xabar yozish",
+        match_btn_chat: "\u{1F4AC} Xabar yozish",
         match_btn_continue: "Davom etish"
     },
     ru: {
@@ -115,18 +115,18 @@ const TRANSLATIONS = {
         reg_name_title: "Как вас зовут?",
         reg_age_title: "Сколько вам лет?",
         reg_gender_title: "Ваш пол",
-        gender_male: "👨 Мужчина",
-        gender_female: "👩 Женщина",
+        gender_male: "\u{1F468} Мужчина",
+        gender_female: "\u{1F469} Женщина",
         reg_height_title: "Ваш рост (см)",
         reg_looking_title: "Кого вы ищете?",
-        look_female: "👩 Женщину",
-        look_male: "👨 Мужчину",
-        look_any: "✨ Неважно",
+        look_female: "\u{1F469} Женщину",
+        look_male: "\u{1F468} Мужчину",
+        look_any: "\u{2728} Неважно",
         reg_intent_title: "Цель знакомства",
-        intent_serious: "💍 Серьезные отношения",
-        intent_marriage: "💒 Подготовка к браку",
-        intent_friendship: "☕ Дружба и общение",
-        intent_explore: "🌟 Новые люди",
+        intent_serious: "\u{1F48D} Серьезные отношения",
+        intent_marriage: "\u{1F492} Подготовка к браку",
+        intent_friendship: "\u{2615} Дружба и общение",
+        intent_explore: "\u{1F31F} Новые люди",
         reg_city_title: "Из какого вы города?",
         reg_district_title: "Ваш район (необязательно)",
         reg_interests_title: "Выберите ваши интересы",
@@ -150,8 +150,8 @@ const TRANSLATIONS = {
         search_empty_title: "Анкет пока не найдено",
         search_empty_desc: "Пожалуйста, попробуйте позже",
         search_btn_retry: "Повторить поиск",
-        likes_header: "❤️ Мои лайки",
-        chats_header: "💬 Ваши диалоги",
+        likes_header: "\u{2764}\ufe0f Мои лайки",
+        chats_header: "\u{1F4AC} Ваши диалоги",
         btn_send: "Отправить",
         prem_subtitle: "Откройте безлимитный доступ",
         prem_f1_title: "Безлимитные лайки",
@@ -165,10 +165,10 @@ const TRANSLATIONS = {
         prem_f5_title: "Priority Matching",
         prem_f5_desc: "Шанс найти пару увеличивается в 3 раза",
         prem_badge_popular: "Популярно",
-        prem_badge_best: "👑 Лучший выбор",
+        prem_badge_best: "\u{1F451} Лучший выбор",
         btn_buy: "Купить",
-        edit_profile_header: "✏️ Редактирование",
-        edit_photos_title: "📸 Галерея фотографий",
+        edit_profile_header: "\u{270F}\ufe0f Редактирование",
+        edit_photos_title: "\u{1F4DF} Галерея фотографий",
         btn_add: "Добавить",
         edit_lbl_name: "Имя",
         edit_lbl_age: "Возраст",
@@ -178,19 +178,19 @@ const TRANSLATIONS = {
         ref_subtitle: "Получайте бонусы за каждого друга!",
         ref_stat_count: "Приглашено",
         ref_stat_bonus: "Бонусы (сум)",
-        btn_share_link: "📤 Поделиться ссылкой",
-        views_header: "👁️ Кто смотрел профиль",
+        btn_share_link: "\u{1F4E4} Поделиться ссылкой",
+        views_header: "\u{1F441}\ufe0f Кто смотрел профиль",
         views_lock_title: "Премиум функция",
         views_lock_desc: "Купите Премиум, чтобы увидеть посетителей вашего профиля",
-        btn_get_premium: "👑 Взять Премиум",
-        settings_header: "⚙️ Настройки",
+        btn_get_premium: "\u{1F451} Взять Премиум",
+        settings_header: "\u{2699}\ufe0f Настройки",
         set_lang: "Сменить язык / Language",
         set_incognito: "Режим инкогнито",
         set_delete_acc: "Удалить аккаунт",
         match_title: "Это Мэтч!",
         match_body_1: "Вы и",
         match_body_2: "понравились друг другу!",
-        match_btn_chat: "💬 Написать сообщение",
+        match_btn_chat: "\u{1F4AC} Написать сообщение",
         match_btn_continue: "Продолжить"
     },
     en: {
@@ -208,18 +208,18 @@ const TRANSLATIONS = {
         reg_name_title: "What is your name?",
         reg_age_title: "How old are you?",
         reg_gender_title: "Your gender",
-        gender_male: "👨 Male",
-        gender_female: "👩 Female",
+        gender_male: "\u{1F468} Male",
+        gender_female: "\u{1F469} Female",
         reg_height_title: "Your height (cm)",
         reg_looking_title: "Who are you looking for?",
-        look_female: "👩 Woman",
-        look_male: "👨 Man",
-        look_any: "✨ Anyone",
+        look_female: "\u{1F469} Woman",
+        look_male: "\u{1F468} Man",
+        look_any: "\u{2728} Anyone",
         reg_intent_title: "Relationship Intent",
-        intent_serious: "💍 Serious relationship",
-        intent_marriage: "💒 Preparation for marriage",
-        intent_friendship: "☕ Friendship and chat",
-        intent_explore: "🌟 New people",
+        intent_serious: "\u{1F48D} Serious relationship",
+        intent_marriage: "\u{1F492} Preparation for marriage",
+        intent_friendship: "\u{2615} Friendship and chat",
+        intent_explore: "\u{1F31F} New people",
         reg_city_title: "Which city are you from?",
         reg_district_title: "Your district (optional)",
         reg_interests_title: "Select your interests",
@@ -243,8 +243,8 @@ const TRANSLATIONS = {
         search_empty_title: "No profiles found yet",
         search_empty_desc: "Please try again later",
         search_btn_retry: "Search again",
-        likes_header: "❤️ People I Liked",
-        chats_header: "💬 Your Chats",
+        likes_header: "\u{2764}\ufe0f People I Liked",
+        chats_header: "\u{1F4AC} Your Chats",
         btn_send: "Send",
         prem_subtitle: "Unlock unlimited access",
         prem_f1_title: "Unlimited Likes",
@@ -258,10 +258,10 @@ const TRANSLATIONS = {
         prem_f5_title: "Priority Matching",
         prem_f5_desc: "Get matched up to 3 times faster",
         prem_badge_popular: "Popular",
-        prem_badge_best: "👑 Best Choice",
+        prem_badge_best: "\u{1F451} Best Choice",
         btn_buy: "Buy Now",
-        edit_profile_header: "✏️ Edit Profile",
-        edit_photos_title: "📸 Photos Gallery",
+        edit_profile_header: "\u{270F}\ufe0f Edit Profile",
+        edit_photos_title: "\u{1F4DF} Photos Gallery",
         btn_add: "Add",
         edit_lbl_name: "Name",
         edit_lbl_age: "Age",
@@ -271,19 +271,19 @@ const TRANSLATIONS = {
         ref_subtitle: "Get bonuses for each friend invited!",
         ref_stat_count: "Invited",
         ref_stat_bonus: "Bonus (sum)",
-        btn_share_link: "📤 Share Link",
-        views_header: "👁️ Profile Visitors",
+        btn_share_link: "\u{1F4E4} Share Link",
+        views_header: "\u{1F441}\ufe0f Profile Visitors",
         views_lock_title: "Premium Feature",
         views_lock_desc: "Buy Premium to see who visited your profile",
-        btn_get_premium: "👑 Get Premium",
-        settings_header: "⚙️ Settings",
+        btn_get_premium: "\u{1F451} Get Premium",
+        settings_header: "\u{2699}\ufe0f Settings",
         set_lang: "Change Language / Language",
         set_incognito: "Incognito mode",
         set_delete_acc: "Delete Account",
         match_title: "It's a Match!",
         match_body_1: "You and",
         match_body_2: "liked each other!",
-        match_btn_chat: "💬 Write Message",
+        match_btn_chat: "\u{1F4AC} Write Message",
         match_btn_continue: "Continue"
     }
 };
@@ -299,8 +299,6 @@ function applyTranslations() {
         }
     });
 }
-
-const API_URL = "";
 
 // Global App State
 const state = {
@@ -336,7 +334,7 @@ const DEMO_PROFILES = [
         name: "Madina",
         age: 21,
         city: "Toshkent",
-        bio: "Kofeman ☕, Sayohat va fotografiya ixlosmandi 📸. Samimiy va quvnoq insonlar bilan tanishmoqchiman ✨",
+        bio: "Kofeman \u{2615}, Sayohat va fotografiya ixlosmandi \u{1F4DF}. Samimiy va quvnoq insonlar bilan tanishmoqchiman \u{2728}",
         interests: ["Sayohat", "Fotografiya", "Kofe", "Musiqa"],
         premium_plan: "Gold",
         compatibility_score: 94,
@@ -347,7 +345,7 @@ const DEMO_PROFILES = [
         name: "Jasur",
         age: 24,
         city: "Toshkent",
-        bio: "Dasturchi 💻. IT va sport bilan shug'ullanaman. Jiddiy munosabat uchun tanishaman 🎯",
+        bio: "Dasturchi \u{1F4BB}. IT va sport bilan shug'ullanaman. Jiddiy munosabat uchun tanishaman \u{1F31F}",
         interests: ["Dasturlash", "Sport", "Fitness", "Kino"],
         premium_plan: "Platinum",
         compatibility_score: 88,
@@ -358,7 +356,7 @@ const DEMO_PROFILES = [
         name: "Laylo",
         age: 22,
         city: "Samarqand",
-        bio: "Arxitektura va san'at ixlosmandi 🎨. Yaxshi suhbatdoshlarni hurmat qilaman 🌸",
+        bio: "Arxitektura va san'at ixlosmandi \u{1F3A8}. Yaxshi suhbatdoshlarni hurmat qilaman \u{1F338}",
         interests: ["San'at", "Dizayn", "Kitoblar", "Musiqa"],
         premium_plan: "Basic",
         compatibility_score: 82,
@@ -369,7 +367,7 @@ const DEMO_PROFILES = [
         name: "Sardor",
         age: 25,
         city: "Buxoro",
-        bio: "Tadbirkor 💼. Bo'sh vaqtimda futbol va avtomobillarga qiziqaman 🚗",
+        bio: "Tadbirkor \u{1F4BC}. Bo'sh vaqtimda futbol va avtomobillarga qiziqaman \u{1F697}",
         interests: ["Biznes", "Futbol", "Avto", "Sayohat"],
         premium_plan: "Gold",
         compatibility_score: 91,
@@ -377,12 +375,12 @@ const DEMO_PROFILES = [
     }
 ];
 
-
 // Helper: Resolve Telegram photo using local proxy
 function resolvePhotoUrl(photoId) {
     if (!photoId) return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80";
-    if (photoId.startsWith("http")) return photoId;
-    return `${API_URL}/api/photo/${photoId}`;
+    const photoStr = String(photoId);
+    if (photoStr.startsWith("http")) return photoStr;
+    return `${API_URL}/api/photo/${photoStr}`;
 }
 
 // Helper: Headers
@@ -406,7 +404,7 @@ function initFallbackUser() {
         name: tg?.initDataUnsafe?.user?.first_name || "Foydalanuvchi",
         age: 23,
         city: "Toshkent",
-        bio: "Kairyx Premium ilovasi foydalanuvchisi ✨",
+        bio: "Kairyx Premium ilovasi foydalanuvchisi \u{2728}",
         premium_plan: "Gold",
         is_premium: true,
         is_admin: isUserAdmin,
@@ -580,18 +578,18 @@ function nextRegStep() {
     
     if (step === 3) {
         const name = document.getElementById('regName')?.value.trim();
-        if (!name) { showToast("⚠️", "Ismingizni kiriting!"); return; }
+        if (!name) { showToast("\u{26a1}", "Ismingizni kiriting!"); return; }
         state.registrationData.name = name;
     } else if (step === 4) {
         const age = document.getElementById('regAge')?.value;
-        if (!age || parseInt(age) < 18) { showToast("⚠️", "Yosh kamida 18 bo'lishi kerak!"); return; }
+        if (!age || parseInt(age) < 18) { showToast("\u{26a1}", "Yosh kamida 18 bo'lishi kerak!"); return; }
         state.registrationData.age = parseInt(age);
     } else if (step === 6) {
         const height = document.getElementById('regHeight')?.value;
         if (height) state.registrationData.height = parseFloat(height);
     } else if (step === 9) {
         const city = document.getElementById('regCity')?.value.trim();
-        if (!city) { showToast("⚠️", "Shaharingizni kiriting!"); return; }
+        if (!city) { showToast("\u{26a1}", "Shaharingizni kiriting!"); return; }
         state.registrationData.city = city;
     } else if (step === 10) {
         const district = document.getElementById('regDistrict')?.value.trim();
@@ -615,7 +613,7 @@ function prevRegStep() {
 }
 
 async function submitRegistration() {
-    showToast("⏳", "Ro'yxatdan o'tilmoqda...");
+    showToast("\u{23f3}", "Ro'yxatdan o'tilmoqda...");
     try {
         const response = await fetch(`${API_URL}/api/register`, {
             method: "POST",
@@ -627,11 +625,11 @@ async function submitRegistration() {
         if (data.status === "ok") {
             state.user = data.user;
             updateUI();
-            showToast("🎉", "Muvaffaqiyatli ro'yxatdan o'tdingiz!");
+            showToast("\u{1f389}", "Muvaffaqiyatli ro'yxatdan o'tdingiz!");
             navigateTo('home');
             loadProfiles();
         } else {
-            showToast("⚠️", data.message || "Xatolik yuz berdi");
+            showToast("\u{26a1}", data.message || "Xatolik yuz berdi");
         }
     } catch (e) {
         initFallbackUser();
@@ -640,7 +638,7 @@ async function submitRegistration() {
         state.user.city = state.registrationData.city;
         state.user.bio = state.registrationData.bio;
         updateUI();
-        showToast("🎉", "Ro'yxatdan o'tdingiz!");
+        showToast("\u{1f389}", "Ro'yxatdan o'tdingiz!");
         navigateTo('home');
     }
 }
@@ -665,7 +663,7 @@ function updateUI() {
         if (state.user.photos && state.user.photos.length > 0) {
             myAvatar.innerHTML = `<img src="${resolvePhotoUrl(state.user.photos[0])}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
         } else {
-            myAvatar.innerHTML = `<span>👤</span>`;
+            myAvatar.innerHTML = `<span>\u{1F464}</span>`;
         }
     }
 
@@ -684,13 +682,6 @@ function updateUI() {
     const isSuperAdmin = (tg?.initDataUnsafe?.user?.id === ADMIN_TELEGRAM_ID || state.user.telegram_id === ADMIN_TELEGRAM_ID || state.user.is_admin);
     if (premBadge) premBadge.style.display = state.user.is_premium ? 'flex' : 'none';
     if (adminBadge) adminBadge.style.display = isSuperAdmin ? 'block' : 'none';
-    
-    // Update settings language label
-    const langLabel = document.getElementById('currentSettingsLang');
-    if (langLabel) {
-        const langMap = { "uz": "O'zbekcha", "ru": "Русский", "en": "English" };
-        langLabel.textContent = langMap[state.user.language] || "O'zbekcha";
-    }
 
     const eName = document.getElementById('editName');
     const eAge = document.getElementById('editAge');
@@ -819,12 +810,12 @@ function displayCurrentProfile() {
     if (photoContainer) {
         if (profile.photos && profile.photos.length > 0) {
             photoContainer.innerHTML = `<img src="${resolvePhotoUrl(profile.photos[0])}" style="width:100%;height:100%;object-fit:cover;">
-                <div class="swipe-card-overlay-like">LIKE ❤️</div>
-                <div class="swipe-card-overlay-nope">NOPE ✖️</div>`;
+                <div class="swipe-card-overlay-like">LIKE \u{2764}\ufe0f</div>
+                <div class="swipe-card-overlay-nope">NOPE \u{2716}\ufe0f</div>`;
         } else {
-            photoContainer.innerHTML = `<div class="photo-placeholder"><span>📷</span><p>Rasm yo'q</p></div>
-                <div class="swipe-card-overlay-like">LIKE ❤️</div>
-                <div class="swipe-card-overlay-nope">NOPE ✖️</div>`;
+            photoContainer.innerHTML = `<div class="photo-placeholder"><span>\u{1F4F7}</span><p>Rasm yo'q</p></div>
+                <div class="swipe-card-overlay-like">LIKE \u{2764}\ufe0f</div>
+                <div class="swipe-card-overlay-nope">NOPE \u{2716}\ufe0f</div>`;
         }
     }
     
@@ -832,7 +823,7 @@ function displayCurrentProfile() {
     if (swipeName) {
         if (profile.premium_plan && profile.premium_plan !== "Basic") {
             card.classList.add('glowing-premium-card');
-            swipeName.innerHTML = `${profile.name}, ${profile.age} <span class="premium-vip-badge">👑 VIP</span>`;
+            swipeName.innerHTML = `${profile.name}, ${profile.age} <span class="premium-vip-badge">\u{1F451} VIP</span>`;
         } else {
             card.classList.remove('glowing-premium-card');
             swipeName.textContent = `${profile.name}, ${profile.age}`;
@@ -841,7 +832,7 @@ function displayCurrentProfile() {
     
     const sLoc = document.getElementById('swipeLocation');
     const sBio = document.getElementById('swipeBio');
-    if (sLoc) sLoc.textContent = `📍 ${profile.city}`;
+    if (sLoc) sLoc.textContent = `\u{1F4CD} ${profile.city}`;
     if (sBio) sBio.textContent = profile.bio || "Bio ma'lumoti kiritilmagan.";
     
     const compatText = document.getElementById('compatText');
@@ -987,7 +978,7 @@ async function loadLikes() {
     DEMO_PROFILES.slice(0, 4).forEach(p => {
         const card = document.createElement('div');
         card.className = `like-card ${p.premium_plan !== 'Basic' ? 'glowing-premium-border' : ''}`;
-        card.onclick = () => showToast('❤️', `${p.name} sizga yoqdi!`);
+        card.onclick = () => showToast('\u{2764}\ufe0f', `${p.name} sizga yoqdi!`);
         
         const photo = p.photos && p.photos.length > 0 ? `<img src="${resolvePhotoUrl(p.photos[0])}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
         
@@ -1020,7 +1011,7 @@ async function loadMatches() {
         item.innerHTML = `
             <div class="match-avatar">${avatar}</div>
             <div class="match-info">
-                <h4>${p.name} ${p.premium_plan !== 'Basic' ? '👑' : ''}</h4>
+                <h4>${p.name} ${p.premium_plan !== 'Basic' ? '\u{1F451}' : ''}</h4>
                 <p>Salom, yaxshimisiz? 😊</p>
             </div>
             <div class="match-time">Hozir</div>
@@ -1087,7 +1078,7 @@ function saveProfileField(field, value) {
     if (!state.user) return;
     state.user[field] = value;
     updateUI();
-    showToast("✅", "O'zgarish saqlandi!");
+    showToast("\u{2705}", "O'zgarish saqlandi!");
 }
 
 function toggleInvisibleMode() {
@@ -1095,12 +1086,12 @@ function toggleInvisibleMode() {
     if (!chk || !state.user) return;
     state.user.is_invisible = !chk.checked;
     chk.checked = state.user.is_invisible;
-    showToast("👻", state.user.is_invisible ? "Ko'rinmas rejim yoqildi" : "Ko'rinmas rejim o'chirildi");
+    showToast("\u{1F47B}", state.user.is_invisible ? "Ko'rinmas rejim yoqildi" : "Ko'rinmas rejim o'chirildi");
 }
 
 function deleteAccountPrompt() {
     if (confirm("Hisobingizni butunlay o'chirishni xohlaysizmi?")) {
-        showToast("🗑️", "Hisobingiz o'chirildi");
+        showToast("\u{1F5D1}\ufe0f", "Hisobingiz o'chirildi");
         setTimeout(() => window.location.reload(), 1000);
     }
 }
@@ -1149,11 +1140,11 @@ function sendAdminBroadcast() {
     const input = document.getElementById('adminBroadcastText');
     const msg = input?.value.trim();
     if (!msg) {
-        showToast("⚠️", "Xabar matnini kiriting!");
+        showToast("\u{26a1}", "Xabar matnini kiriting!");
         return;
     }
     input.value = '';
-    showToast("📣", "Xabar 980 ta foydalanuvchiga yuborildi!");
+    showToast("\u{1F4E3}", "Xabar 980 ta foydalanuvchiga yuborildi!");
 }
 
 // State for selected plan during checkout
@@ -1171,11 +1162,11 @@ function selectPlan(plan) {
     const amt = document.getElementById('checkoutAmountText');
     
     if (plan === 'gold') {
-        if (title) title.innerHTML = '🥇 Gold Premium';
-        if (amt) amt.textContent = '49,900 so'm';
+        if (title) title.innerHTML = '\u{1F947} Gold Premium';
+        if (amt) amt.textContent = '49,900 so\'m';
     } else {
-        if (title) title.innerHTML = '💎 Platinum Premium';
-        if (amt) amt.textContent = '89,900 so'm';
+        if (title) title.innerHTML = '\u{1F48E} Platinum Premium';
+        if (amt) amt.textContent = '89,900 so\'m';
     }
 }
 
@@ -1187,7 +1178,7 @@ function closeCheckoutModal() {
 function copyCardNumber() {
     const cardNum = document.getElementById('checkoutCardNumber')?.textContent || "9860 6004 3347 6527";
     navigator.clipboard.writeText(cardNum.replace(/\s/g, ''));
-    showToast('📋', 'Karta raqami nusxalandi!');
+    showToast('\u{1F4CB}', 'Karta raqami nusxalandi!');
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }
 
@@ -1196,11 +1187,11 @@ async function submitCheckoutPayment() {
     const receipt = receiptInput?.value.trim();
     
     if (!receipt) {
-        showToast('⚠️', 'To'lov cheki havolasini kiriting!');
+        showToast('\u{26a1}', 'To\'lov cheki havolasini kiriting!');
         return;
     }
     
-    showToast('⏳', 'Yuborilmoqda...');
+    showToast('\u{23f3}', 'Yuborilmoqda...');
     
     try {
         const response = await fetch(`${API_URL}/api/premium/buy`, {
@@ -1216,15 +1207,15 @@ async function submitCheckoutPayment() {
         if (data.status === 'ok') {
             closeCheckoutModal();
             if (receiptInput) receiptInput.value = '';
-            showToast('✅', 'Chek yuborildi! Admin tasdiqlashini kuting.');
+            showToast('\u{2705}', 'Chek yuborildi! Admin tasdiqlashini kuting.');
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         } else {
-            showToast('⚠️', data.message || 'Xatolik yuz berdi');
+            showToast('\u{26a1}', data.message || 'Xatolik yuz berdi');
         }
     } catch (e) {
         closeCheckoutModal();
         if (receiptInput) receiptInput.value = '';
-        showToast('✅', 'To'lov yuborildi! (Demo)');
+        showToast('\u{2705}', 'To\'lov yuborildi! (Demo)');
     }
 }
 
@@ -1286,24 +1277,12 @@ function showToast(icon, message) {
 
 function shareReferral() {
     const shareUrl = `https://t.me/Ka1ryx_bot?start=ref_${state.user?.id || '1'}`;
-    const text = 'Kairyx - premium tanishuv ilovasi! Men foydalanyapman, siz ham qo\'shiling 💕';
+    const text = 'Kairyx - premium tanishuv ilovasi! Men foydalanyapman, siz ham qo\'shiling \u{1F495}';
     
     if (tg) {
         tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`);
     } else {
-        showToast('📋', "Havola nusxalandi!");
-    }
-}
-
-// Settings page language changer
-function changeSettingsLanguagePrompt() {
-    const selected = prompt("Tilni tanlang / Выберите язык / Choose language:\n1 - O'zbekcha\n2 - Русский\n3 - English");
-    if (selected === "1") {
-        saveProfileField("language", "uz");
-    } else if (selected === "2") {
-        saveProfileField("language", "ru");
-    } else if (selected === "3") {
-        saveProfileField("language", "en");
+        showToast('\u{1F4CB}', "Havola nusxalandi!");
     }
 }
 
@@ -1335,7 +1314,7 @@ async function setAppLanguage(lang) {
         console.log("Language save fallback");
     }
     
-    showToast("🌐", lang === 'uz' ? "Til o'zgartirildi" : lang === 'ru' ? "Язык изменен" : "Language changed");
+    showToast("\u{1F310}", lang === 'uz' ? "Til o'zgartirildi" : lang === 'ru' ? "Язык изменен" : "Language changed");
 }
 
 // ===== PHOTOS MANAGER (ADD, DELETE, SET MAIN) =====
@@ -1365,7 +1344,7 @@ function renderProfilePhotoGrid() {
         
         // Delete button (x)
         const delBtn = document.createElement('button');
-        delBtn.innerHTML = '✖️';
+        delBtn.innerHTML = '\u{2716}\ufe0f';
         delBtn.style.cssText = `
             position: absolute; top: 4px; right: 4px;
             background: rgba(0,0,0,0.6); border:none; border-radius:50%;
@@ -1382,7 +1361,7 @@ function renderProfilePhotoGrid() {
         // Star badge / Set Main button
         if (index === 0) {
             const badge = document.createElement('div');
-            badge.textContent = '⭐ Main';
+            badge.textContent = '\u{2B50} Main';
             badge.style.cssText = `
                 position: absolute; bottom: 4px; left: 4px; right: 4px;
                 background: var(--accent-pink); font-size: 8px; font-weight:800;
@@ -1392,7 +1371,7 @@ function renderProfilePhotoGrid() {
             item.appendChild(badge);
         } else {
             const starBtn = document.createElement('button');
-            starBtn.innerHTML = '⭐ Set Main';
+            starBtn.innerHTML = '\u{2B50} Set Main';
             starBtn.style.cssText = `
                 position: absolute; bottom: 4px; left: 4px; right: 4px;
                 background: rgba(0,0,0,0.6); font-size: 8px; font-weight:800;
@@ -1419,7 +1398,7 @@ function renderProfilePhotoGrid() {
             background: rgba(255,255,255,0.02);
         `;
         const inner = document.createElement('span');
-        inner.textContent = '📸';
+        inner.textContent = '\u{1F4F7}';
         inner.style.cssText = 'position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:20px;';
         placeholder.appendChild(inner);
         grid.appendChild(placeholder);
@@ -1430,7 +1409,7 @@ async function addNewProfilePhoto() {
     const input = document.getElementById('addPhotoUrlInput');
     const photoUrl = input?.value.trim();
     if (!photoUrl) {
-        showToast("⚠️", "Rasm havolasini yoki Telegram ID kiriting!");
+        showToast("\u{26a1}", "Rasm havolasini yoki Telegram ID kiriting!");
         return;
     }
     
@@ -1464,7 +1443,7 @@ async function savePhotosToServer() {
             headers: getHeaders(),
             body: JSON.stringify({ photos: state.user.photos })
         });
-        showToast("✅", "Galereya yangilandi!");
+        showToast("\u{2705}", "Galereya yangilandi!");
     } catch (e) {
         console.log("Photo update fallback");
     }
