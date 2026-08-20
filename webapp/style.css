@@ -1190,3 +1190,417 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.75'/%3E%3C/svg%3E");
   mix-blend-mode: screen;
 }
+
+
+/* ===== STATUS PAGES (Pending, Rejected, Blocked) ===== */
+.status-page-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.status-icon-wrapper {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.status-icon {
+    font-size: 56px;
+    z-index: 1;
+}
+
+/* Pending pulse animation */
+.pending-pulse {
+    background: linear-gradient(135deg, rgba(255, 159, 67, 0.15), rgba(255, 107, 53, 0.1));
+    border: 2px solid rgba(255, 159, 67, 0.3);
+    animation: pendingPulse 2s ease-in-out infinite;
+}
+
+@keyframes pendingPulse {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(255, 159, 67, 0.2), 0 0 60px rgba(255, 159, 67, 0.05);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 30px rgba(255, 159, 67, 0.4), 0 0 80px rgba(255, 159, 67, 0.1);
+        transform: scale(1.03);
+    }
+}
+
+/* Rejected glow */
+.rejected-glow {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.15), rgba(200, 30, 50, 0.1));
+    border: 2px solid rgba(255, 71, 87, 0.3);
+    box-shadow: 0 0 30px rgba(255, 71, 87, 0.15);
+}
+
+/* Blocked glow */
+.blocked-glow {
+    background: linear-gradient(135deg, rgba(100, 100, 120, 0.15), rgba(60, 60, 80, 0.1));
+    border: 2px solid rgba(100, 100, 120, 0.3);
+    box-shadow: 0 0 30px rgba(100, 100, 120, 0.15);
+}
+
+.status-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+}
+
+.status-description {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 300px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.status-note {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    margin-top: 16px;
+}
+
+.status-progress {
+    width: 80%;
+    max-width: 280px;
+    margin-top: 24px;
+}
+
+.progress-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+}
+
+.pending-progress {
+    width: 33%;
+    background: linear-gradient(90deg, #ff9f43, #ff6b35);
+    animation: progressPulse 2s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+    0%, 100% { width: 25%; opacity: 0.7; }
+    50% { width: 60%; opacity: 1; }
+}
+
+.progress-text {
+    font-size: 12px;
+    color: rgba(255, 159, 67, 0.8);
+    margin-top: 8px;
+    text-align: center;
+}
+
+/* Rejection reason box */
+.rejection-reason-box {
+    background: rgba(255, 71, 87, 0.08);
+    border: 1px solid rgba(255, 71, 87, 0.2);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    max-width: 320px;
+    width: 100%;
+}
+
+.rejection-label {
+    font-size: 12px;
+    color: rgba(255, 71, 87, 0.7);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rejection-reason {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+}
+
+/* Button neon style */
+.btn-neon {
+    background: linear-gradient(135deg, rgba(182, 36, 255, 0.2), rgba(255, 71, 133, 0.2));
+    border: 1px solid rgba(182, 36, 255, 0.4);
+    color: #fff;
+    padding: 14px 32px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.2px;
+}
+
+.btn-neon:hover, .btn-neon:active {
+    background: linear-gradient(135deg, rgba(182, 36, 255, 0.35), rgba(255, 71, 133, 0.35));
+    box-shadow: 0 0 25px rgba(182, 36, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+/* ===== ADMIN PENDING USERS ===== */
+.admin-pending-card {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+    transition: all 0.2s ease;
+}
+
+.admin-pending-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(182, 36, 255, 0.15);
+}
+
+.pending-card-photo {
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pending-card-photo .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.pending-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pending-card-info h4 {
+    font-size: 15px;
+    color: #fff;
+    margin: 0 0 4px;
+    font-weight: 600;
+}
+
+.pending-card-info p {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pending-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: fit-content;
+}
+
+.btn-approve {
+    background: linear-gradient(135deg, rgba(46, 213, 115, 0.2), rgba(38, 166, 91, 0.15));
+    border: 1px solid rgba(46, 213, 115, 0.35);
+    color: #2ed573;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-approve:hover {
+    background: linear-gradient(135deg, rgba(46, 213, 115, 0.35), rgba(38, 166, 91, 0.3));
+    box-shadow: 0 0 15px rgba(46, 213, 115, 0.15);
+}
+
+.btn-reject {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.15), rgba(200, 30, 50, 0.1));
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    color: #ff4757;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-reject:hover {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.3), rgba(200, 30, 50, 0.2));
+    box-shadow: 0 0 15px rgba(255, 71, 87, 0.15);
+}
+
+.pending-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ff9f43, #ff6b35);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    padding: 0 6px;
+    margin-left: 8px;
+}
+
+/* ===== REJECT MODAL ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+}
+
+.modal-card {
+    background: linear-gradient(145deg, #1a1a2e, #16162a);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 24px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-card h3 {
+    font-size: 18px;
+    color: #fff;
+    margin: 0;
+    font-weight: 700;
+}
+
+.modal-textarea {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+    padding: 12px;
+    resize: vertical;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.modal-textarea:focus {
+    border-color: rgba(182, 36, 255, 0.4);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.btn-cancel {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-reject-confirm {
+    flex: 1;
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.25), rgba(200, 30, 50, 0.2));
+    border: 1px solid rgba(255, 71, 87, 0.4);
+    color: #ff4757;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-reject-confirm:hover {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.4), rgba(200, 30, 50, 0.35));
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.2);
+}
+
+/* ===== ADMIN SECTION TOGGLE ===== */
+.admin-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.admin-section-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.toggle-arrow {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 32px 16px;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.empty-state h3 {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
+.loading-text {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    padding: 24px;
+    font-size: 14px;
+}

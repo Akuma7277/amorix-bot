@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=1.2.5">
+    <link rel="stylesheet" href="style.css?v=2.0.0">
 </head>
 <body>
     <!-- Instant Loading Fix Script -->
@@ -207,7 +207,64 @@
             </section>
 
             <!-- HOME PAGE -->
-            <section class="page active" id="page-home">
+        
+    <!-- ===== PENDING APPROVAL PAGE ===== -->
+    <section class="page" id="page-pending">
+      <div class="status-page-container">
+        <div class="status-icon-wrapper pending-pulse">
+          <div class="status-icon">⏳</div>
+        </div>
+        <h2 class="status-title">Profilingiz tekshirilmoqda</h2>
+        <p class="status-description">
+          Admin jamoamiz profilingizni ko'rib chiqmoqda. Bu odatda bir necha daqiqa ichida amalga oshiriladi.
+        </p>
+        <div class="status-progress">
+          <div class="progress-bar">
+            <div class="progress-fill pending-progress"></div>
+          </div>
+          <p class="progress-text">Tasdiqlash kutilmoqda...</p>
+        </div>
+        <button class="btn-neon" onclick="checkStatusManually()" style="margin-top:24px;">
+          🔄 Statusni tekshirish
+        </button>
+        <p class="status-note">Status har 15 soniyada avtomatik tekshiriladi</p>
+      </div>
+    </section>
+
+    <!-- ===== REJECTED PAGE ===== -->
+    <section class="page" id="page-rejected">
+      <div class="status-page-container">
+        <div class="status-icon-wrapper rejected-glow">
+          <div class="status-icon">❌</div>
+        </div>
+        <h2 class="status-title">Profil rad etildi</h2>
+        <div class="rejection-reason-box">
+          <p class="rejection-label">Rad etish sababi:</p>
+          <p class="rejection-reason" id="rejectionReasonText">-</p>
+        </div>
+        <p class="status-description">
+          Profilingizni tahrirlang va qaytadan yuboring.
+        </p>
+        <button class="btn-neon" onclick="resubmitRegistration()" style="margin-top:20px;">
+          📝 Qayta yuborish
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== BLOCKED PAGE ===== -->
+    <section class="page" id="page-blocked">
+      <div class="status-page-container">
+        <div class="status-icon-wrapper blocked-glow">
+          <div class="status-icon">🚫</div>
+        </div>
+        <h2 class="status-title">Hisob bloklangan</h2>
+        <p class="status-description">
+          Hisobingiz qoidalarni buzganlik sababli bloklangan. Agar bu xato deb hisoblasangiz, administratorga murojaat qiling.
+        </p>
+      </div>
+    </section>
+
+    <section class="page active" id="page-home">
                 <!-- Profile Card -->
                 <div class="profile-card glass-card" id="myProfileCard">
                     <div class="profile-card-avatar">
@@ -553,6 +610,17 @@
 
             <!-- ADMIN PAGE -->
             <section class="page" id="page-admin">
+      <!-- ADMIN: Pending Users Section -->
+      <div class="admin-section" id="adminPendingSection">
+        <div class="admin-section-header" onclick="toggleAdminSection('pendingSection')">
+          <h3>⏳ Tasdiqlash kutayotganlar <span class="pending-badge" id="pendingCount">0</span></h3>
+          <span class="toggle-arrow">▼</span>
+        </div>
+        <div class="admin-section-body" id="pendingSection">
+          <div id="pendingUsersList"></div>
+        </div>
+      </div>
+
                 <div class="section-header">
                     <h2>🛡️ Admin Dashboard</h2>
                 </div>
@@ -561,6 +629,18 @@
                     <div class="admin-stat-card glass-card">
                         <h4 id="adminTotalUsers">0</h4>
                         <p>Jami foydalanuvchilar</p>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <h4 id="adminApprovedUsers">0</h4>
+                        <p>Tasdiqlanganlar</p>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <h4 id="adminPendingApproval">0</h4>
+                        <p>Kutayotganlar</p>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <h4 id="adminRejectedUsers">0</h4>
+                        <p>Rad etilganlar</p>
                     </div>
                     <div class="admin-stat-card glass-card">
                         <h4 id="adminActiveUsers">0</h4>
@@ -574,6 +654,9 @@
                         <h4 id="adminPremiumUsers">0</h4>
                         <p>Premium</p>
                     </div>
+                </div>
+                <div style="text-align: center; margin-top: 12px; margin-bottom: 24px;">
+                    <button class="btn-neon" onclick="loadAdminStats()">🔄 Yangilash (Refresh)</button>
                 </div>
 
                 <div class="admin-tabs">
@@ -613,7 +696,21 @@
         </main>
 
         <!-- Bottom Navigation -->
-        <nav class="bottom-nav" id="bottomNav">
+    
+    <!-- REJECT MODAL -->
+    <div class="modal-overlay" id="rejectModal" style="display:none;">
+      <div class="modal-card">
+        <h3>❌ Foydalanuvchini rad etish</h3>
+        <p style="color:var(--text-muted);margin:8px 0 16px;">Rad etish sababini kiriting (majburiy):</p>
+        <textarea id="rejectReasonInput" class="modal-textarea" placeholder="Masalan: Rasm sifati past, Bio to'ldirilmagan..." rows="3"></textarea>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeRejectModal()">Bekor qilish</button>
+          <button class="btn-reject-confirm" onclick="confirmRejectUser()">Rad etish</button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" id="bottomNav">
             <button class="nav-item active" data-page="home" onclick="navigateTo('home')">
                 <span class="nav-icon">🏠</span>
                 <span class="nav-label" data-i18n="nav_home">Asosiy</span>
@@ -667,6 +764,6 @@
     <!-- Toast Notifications -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="app.js?v=1.2.5"></script>
+    <script src="app.js?v=2.0.0"></script>
 </body>
 </html>

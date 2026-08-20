@@ -1328,7 +1328,9 @@ async def approve_profile_handler(callback: CallbackQuery, bot: Bot):
         await callback.answer(USER_NOT_FOUND_TEXT["uz"], show_alert=True)
         return
 
+    from models import UserStatus
     await update_user_profile_field(user_id, "profile_approval_status", "approved")
+    await update_user_profile_field(user_id, "status", UserStatus.active)
     await create_admin_log(
         admin_id=callback.from_user.id,
         action=ActionType.approve_profile,
@@ -1381,7 +1383,10 @@ async def reject_profile_handler(callback: CallbackQuery, bot: Bot):
     except Exception as exc:
         logging.warning(f"Could not notify user {user.telegram_id} about profile rejection: {exc}")
     
+    from models import UserStatus
     await update_user_profile_field(user_id, "profile_approval_status", "rejected")
+    await update_user_profile_field(user_id, "status", UserStatus.rejected)
+    await update_user_profile_field(user_id, "rejection_reason", "Profil ma\'lumotlari talablarga javob bermaydi")
     await create_admin_log(
         admin_id=callback.from_user.id,
         action=ActionType.reject_profile,

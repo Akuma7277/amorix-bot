@@ -1021,6 +1021,12 @@ async def notify_admins_about_new_profile(bot: Bot, telegram_id: int) -> None:
             logging.warning(f"Admin {admin_id} ga yangi profil haqida xabar berib bo'lmadi: {exc}")
 
 
+PENDING_APPROVAL_BOT_TEXTS = {
+    "uz": "Profilingiz muvaffaqiyatli yuborildi! ⏳\n\nAdministrator uni tez orada ko\'zi yugurtirib chiqadi. Profilingiz faollashgach, sizga xabar yuboramiz. Ungacha ilovadan foydalana olmaysiz.",
+    "ru": "Ваш профиль успешно отправлен! ⏳\n\nАдминистратор рассмотрит его в ближайшее время. Мы сообщим вам, когда ваш профиль будет активирован.",
+    "en": "Your profile has been successfully submitted! ⏳\n\nAn administrator will review it shortly. We will notify you once your profile is activated."
+}
+
 @router.callback_query(RegistrationStates.reviewing_profile, F.data == "confirm_profile")
 async def profile_confirmed(callback: CallbackQuery, state: FSMContext, bot: Bot):
     data = await state.get_data()
@@ -1030,13 +1036,23 @@ async def profile_confirmed(callback: CallbackQuery, state: FSMContext, bot: Bot
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.answer()
 
+    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+    from common import get_webapp_url
+
     await callback.message.answer(
-        REGISTRATION_COMPLETE_TEXTS.get(language, REGISTRATION_COMPLETE_TEXTS["uz"])
+        PENDING_APPROVAL_BOT_TEXTS.get(language, PENDING_APPROVAL_BOT_TEXTS["uz"])
     )
-    # Asosiy menyuni ko'rsatish
+    
+    reply_kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=get_webapp_url()))]
+        ],
+        resize_keyboard=True
+    )
+    
     await callback.message.answer(
-        MAIN_MENU_TEXTS.get(language, MAIN_MENU_TEXTS["uz"]),
-        reply_markup=get_main_menu_keyboard(language)
+        "Ilova holatini tekshirish uchun Mini Appni oching:",
+        reply_markup=reply_kb
     )
     await state.clear()
 

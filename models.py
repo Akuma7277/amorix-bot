@@ -36,9 +36,13 @@ class RelationshipIntent(enum.Enum):
     private = "Niyatimni yashiraman"
 
 class UserStatus(enum.Enum):
-    active = "Faol"
+    draft = "Qoralama"                          # Telegram user aniqlandi, registration tugallanmagan
+    pending_approval = "Tasdiqlash kutilmoqda"    # Profil yuborilgan, admin tekshiruvida
+    active = "Faol"                               # Admin tasdiqlagan (APPROVED)
+    rejected = "Rad etilgan"                      # Admin rad etgan
     inactive = "Nofaol"
     banned = "Bloklangan"
+    deleted = "O\'chirilgan"                      # Hisob o\'chirilgan
 
 class VerificationStatus(enum.Enum):
     not_verified = "Tasdiqlanmagan"
@@ -124,6 +128,10 @@ class User(Base):
     height = Column(Float, nullable=True)  # new field
     is_invisible = Column(Boolean, default=False)  # new field
     relationship_intent = Column(Enum(RelationshipIntent), nullable=True)
+    # Admin tasdiqlash/rad etish ma'lumotlari
+    rejection_reason = Column(Text, nullable=True)       # Rad etish sababi
+    reviewed_by = Column(BigInteger, nullable=True)      # Tasdiqlagan/rad etgan admin Telegram ID
+    reviewed_at = Column(DateTime, nullable=True)        # Tasdiqlash/rad etish vaqti
 
     @property
     def is_premium(self) -> bool:

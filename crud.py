@@ -170,7 +170,7 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
                 target_user.interests = ",".join(user_data.get("interests", []))
                 target_user.relationship_intent = RelationshipIntent[user_data["relationship_intent"]] if user_data.get("relationship_intent") else None
                 target_user.language = user_data.get("language")
-                target_user.status = UserStatus.active
+                target_user.status = UserStatus.pending_approval
                 target_user.profile_approval_status = "pending"
                 # Eski rasmlar o'rniga yangi yuklangan rasmlar saqlanadi.
                 await session.execute(delete(Photo).where(Photo.user_id == target_user.id))
@@ -189,6 +189,7 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
                     relationship_intent=RelationshipIntent[user_data["relationship_intent"]] if user_data.get("relationship_intent") else None,
                     language=user_data.get("language"),
                     # Yangi profil har doim admin tasdig'ini kutadi.
+                    status=UserStatus.pending_approval,
                     profile_approval_status="pending",
                     # Boshqa maydonlar default qiymatlar bilan to'ldiriladi
                 )
@@ -214,6 +215,136 @@ async def create_user_profile(telegram_id: int, user_data: dict) -> User | None:
     except Exception as exc:
         import logging
         logging.warning(f"Database unavailable while creating user profile: {exc}")
+        return None
+
+
+
+
+# ===== ADMIN APPROVAL FUNCTIONS =====
+
+async def approve_user_profile(user_id: int, admin_telegram_id: int) -> User | None:
+    """Admin tasdiqlash: user statusini active ga o'zgartiradi."""
+    try:
+        async with async_session_maker() as session:
+            user = await session.get(User, user_id)
+            if not user:
+                return None
+            # Faqat pending_approval dan active ga o'tish mumkin
+            if user.status != UserStatus.pending_approval:
+                return None
+            user.status = UserStatus.active
+            user.profile_approval_status = "approved"
+            user.reviewed_by = admin_telegram_id
+            user.reviewed_at = datetime.now()
+            user.rejection_reason = None
+            
+            # Admin audit log
+            log = AdminLog(
+                admin_id=admin_telegram_id,
+                action_type=ActionType.approve_profile,
+                target_user_id=user.id,
+                comment="Profil tasdiqlandi"
+            )
+            session.add(log)
+            await session.commit()
+            await session.refresh(user)
+            return user
+    except Exception as exc:
+        import logging
+        logging.warning(f"Error approving user {user_id}: {exc}")
+        return None
+
+
+async def reject_user_profile(user_id: int, admin_telegram_id: int, reason: str) -> User | None:
+    """Admin rad etish: user statusini rejected ga o'zgartiradi."""
+    try:
+        async with async_session_maker() as session:
+            user = await session.get(User, user_id)
+            if not user:
+                return None
+            # Faqat pending_approval dan rejected ga o'tish mumkin
+            if user.status != UserStatus.pending_approval:
+                return None
+            user.status = UserStatus.rejected
+            user.profile_approval_status = "rejected"
+            user.rejection_reason = reason
+            user.reviewed_by = admin_telegram_id
+            user.reviewed_at = datetime.now()
+            
+            # Admin audit log
+            log = AdminLog(
+                admin_id=admin_telegram_id,
+                action_type=ActionType.reject_profile,
+                target_user_id=user.id,
+                comment=reason
+            )
+            session.add(log)
+            await session.commit()
+            await session.refresh(user)
+            return user
+    except Exception as exc:
+        import logging
+        logging.warning(f"Error rejecting user {user_id}: {exc}")
+        return None
+
+
+async def get_pending_users(limit: int = 50, offset: int = 0) -> list[User]:
+    """Tasdiqlash kutayotgan foydalanuvchilar ro'yxati."""
+    try:
+        async with async_session_maker() as session:
+            stmt = (
+                select(User)
+                .where(User.status == UserStatus.pending_approval)
+                .order_by(User.registered_at.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+    except Exception as exc:
+        import logging
+        logging.warning(f"Error getting pending users: {exc}")
+        return []
+
+
+async def get_pending_users_count() -> int:
+    """Tasdiqlash kutayotgan foydalanuvchilar soni."""
+    try:
+        async with async_session_maker() as session:
+            count = await session.scalar(
+                select(func.count(User.id)).where(User.status == UserStatus.pending_approval)
+            )
+            return count or 0
+    except Exception:
+        return 0
+
+
+async def resubmit_registration(user_id: int, user_data: dict) -> User | None:
+    """Rad etilgan user profilni qayta yuborishi."""
+    try:
+        async with async_session_maker() as session:
+            user = await session.get(User, user_id)
+            if not user or user.status != UserStatus.rejected:
+                return None
+            
+            user.name = user_data.get("name", user.name)
+            user.age = user_data.get("age", user.age)
+            user.bio = user_data.get("bio", user.bio)
+            user.city = user_data.get("city", user.city)
+            user.district = user_data.get("district", user.district)
+            user.interests = ",".join(user_data.get("interests", [])) if user_data.get("interests") else user.interests
+            user.status = UserStatus.pending_approval
+            user.profile_approval_status = "pending"
+            user.rejection_reason = None
+            user.reviewed_by = None
+            user.reviewed_at = None
+            
+            await session.commit()
+            await session.refresh(user)
+            return user
+    except Exception as exc:
+        import logging
+        logging.warning(f"Error resubmitting registration for user {user_id}: {exc}")
         return None
 
 

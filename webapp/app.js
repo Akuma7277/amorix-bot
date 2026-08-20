@@ -411,7 +411,7 @@ async function initApp() {
         if (appContainer) appContainer.style.display = 'flex';
     }, 600);
 
-    // Try API fetch
+    // Try API fetch with status-based routing
     try {
         const response = await fetch(`${API_URL}/api/init`, {
             method: "GET",
@@ -421,29 +421,247 @@ async function initApp() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
+        const userStatus = data.user_status || "draft";
         
-        if (data.registered === false) {
-            state.registrationData.name = data.name || "";
-            navigateTo('registration');
-            showRegStep(1);
-        } else if (data.registered === true && data.user) {
-            state.user = data.user;
-            updateUI();
-            navigateTo('home');
-            loadProfiles();
-            loadLikes();
-            loadMatches();
-        } else {
-            initFallbackUser();
-            navigateTo('home');
+        switch (userStatus) {
+            case "draft":
+                // User topilmadi yoki DRAFT — registration sahifasi
+                state.registrationData.name = data.name || "";
+                navigateTo('registration');
+                showRegStep(1);
+                break;
+                
+            case "pending_approval":
+                // Profil yuborilgan, admin tekshiruvida
+                if (data.user) state.user = data.user;
+                navigateTo('pending');
+                startStatusPolling();
+                break;
+                
+            case "rejected":
+                // Admin rad etgan
+                if (data.user) state.user = data.user;
+                state.rejectionReason = data.rejection_reason || "";
+                navigateTo('rejected');
+                break;
+                
+            case "active":
+                // Admin tasdiqlagan — to'liq kirish
+                state.user = data.user;
+                updateUI();
+                navigateTo('home');
+                loadProfiles();
+                loadLikes();
+                loadMatches();
+                break;
+                
+            case "banned":
+            case "deleted":
+                navigateTo('blocked');
+                break;
+                
+            default:
+                state.registrationData.name = data.name || "";
+                navigateTo('registration');
+                showRegStep(1);
+                break;
         }
     } catch (e) {
-        console.log("API server fallback:", e);
-        initFallbackUser();
-        navigateTo('home');
+        console.log("API server unavailable:", e);
+        // Xatolik paytida registration sahifasini ko'rsat (home EMAS!)
+        navigateTo('registration');
+        showRegStep(1);
     }
     
     setupSwipeGestures();
+}
+
+
+
+// ===== STATUS POLLING =====
+let statusPollingInterval = null;
+
+function startStatusPolling() {
+    stopStatusPolling();
+    statusPollingInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/init`, {
+                method: "GET",
+                headers: getHeaders()
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            const userStatus = data.user_status || "draft";
+            
+            if (userStatus === "active") {
+                stopStatusPolling();
+                state.user = data.user;
+                updateUI();
+                showToast("\u{1f389}", "Profilingiz tasdiqlandi! Xush kelibsiz!");
+                navigateTo('home');
+                loadProfiles();
+                loadLikes();
+                loadMatches();
+            } else if (userStatus === "rejected") {
+                stopStatusPolling();
+                state.rejectionReason = data.rejection_reason || "";
+                navigateTo('rejected');
+            }
+        } catch (e) {
+            console.log("Status polling error:", e);
+        }
+    }, 15000); // Har 15 soniyada tekshirish
+}
+
+function stopStatusPolling() {
+    if (statusPollingInterval) {
+        clearInterval(statusPollingInterval);
+        statusPollingInterval = null;
+    }
+}
+
+function checkStatusManually() {
+    stopStatusPolling();
+    startStatusPolling();
+    showToast("\u{1f504}", "Status tekshirilmoqda...");
+}
+
+// ===== REJECTED PAGE: RESUBMIT =====
+async function resubmitRegistration() {
+    showToast("\u{23f3}", "Qayta yuborilmoqda...");
+    try {
+        const response = await fetch(`${API_URL}/api/registration/resubmit`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({
+                name: state.user?.name,
+                age: state.user?.age,
+                bio: state.user?.bio,
+                city: state.user?.city,
+                interests: state.user?.interests
+            })
+        });
+        const data = await response.json();
+        if (data.status === "ok") {
+            showToast("\u{2705}", "Profil qayta yuborildi!");
+            navigateTo('pending');
+            startStatusPolling();
+        } else {
+            showToast("\u{26a1}", data.message || "Xatolik yuz berdi");
+        }
+    } catch (e) {
+        showToast("\u{26a1}", "Server bilan aloqa yo'q");
+    }
+}
+
+// ===== ADMIN: PENDING USERS =====
+async function loadPendingUsers() {
+    const container = document.getElementById('pendingUsersList');
+    if (!container) return;
+    container.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+    
+    try {
+        const response = await fetch(`${API_URL}/api/admin/pending-users`, {
+            headers: getHeaders()
+        });
+        const data = await response.json();
+        
+        if (data.status !== "ok" || !data.users || data.users.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">\u{2705}</div><h3>Tasdiqlash kutayotgan foydalanuvchilar yo\'q</h3></div>';
+            return;
+        }
+        
+        container.innerHTML = data.users.map(u => `
+            <div class="admin-pending-card" id="pending-card-${u.id}">
+                <div class="pending-card-photo">
+                    ${u.photos && u.photos.length > 0 
+                        ? '<img src="' + resolvePhotoUrl(u.photos[0]) + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">' 
+                        : '<div class="avatar-placeholder"><span>\u{1f464}</span></div>'}
+                </div>
+                <div class="pending-card-info">
+                    <h4>${u.name || 'Ism yo\'q'}, ${u.age || '?'}</h4>
+                    <p>\u{1f4cd} ${u.city || 'Shahar belgilanmagan'}</p>
+                    <p style="font-size:12px;color:var(--text-muted);">${u.bio || ''}</p>
+                    <p style="font-size:11px;color:var(--text-muted);">Qiziqishlar: ${(u.interests || []).join(', ') || '-'}</p>
+                </div>
+                <div class="pending-card-actions">
+                    <button class="btn-approve" onclick="adminApproveUser(${u.id})">\u{2705} Tasdiqlash</button>
+                    <button class="btn-reject" onclick="showRejectModal(${u.id})">\u{274c} Rad etish</button>
+                </div>
+            </div>
+        `).join('');
+        
+        // Update pending count badge
+        const badge = document.getElementById('pendingCount');
+        if (badge) badge.textContent = data.users.length;
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">\u{26a0}</div><h3>Xatolik yuz berdi</h3></div>';
+    }
+}
+
+async function adminApproveUser(userId) {
+    try {
+        const response = await fetch(`${API_URL}/api/admin/user/approve`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ user_id: userId })
+        });
+        const data = await response.json();
+        if (data.status === "ok") {
+            showToast("\u{2705}", "Foydalanuvchi tasdiqlandi!");
+            const card = document.getElementById('pending-card-' + userId);
+            if (card) card.remove();
+            loadAdminStats();
+        } else {
+            showToast("\u{26a1}", data.message || "Xatolik");
+        }
+    } catch (e) {
+        showToast("\u{26a1}", "Server xatoligi");
+    }
+}
+
+function showRejectModal(userId) {
+    state.rejectingUserId = userId;
+    const modal = document.getElementById('rejectModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        const input = document.getElementById('rejectReasonInput');
+        if (input) input.value = '';
+    }
+}
+
+function closeRejectModal() {
+    const modal = document.getElementById('rejectModal');
+    if (modal) modal.style.display = 'none';
+    state.rejectingUserId = null;
+}
+
+async function confirmRejectUser() {
+    const reason = document.getElementById('rejectReasonInput')?.value?.trim();
+    if (!reason) {
+        showToast("\u{26a1}", "Rad etish sababi majburiy!");
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/api/admin/user/reject`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ user_id: state.rejectingUserId, reason: reason })
+        });
+        const data = await response.json();
+        if (data.status === "ok") {
+            showToast("\u{274c}", "Foydalanuvchi rad etildi");
+            closeRejectModal();
+            const card = document.getElementById('pending-card-' + state.rejectingUserId);
+            if (card) card.remove();
+            loadAdminStats();
+        } else {
+            showToast("\u{26a1}", data.message || "Xatolik");
+        }
+    } catch (e) {
+        showToast("\u{26a1}", "Server xatoligi");
+    }
 }
 
 // ===== PARTICLES =====
@@ -581,23 +799,16 @@ async function submitRegistration() {
         const data = await response.json();
         
         if (data.status === "ok") {
-            state.user = data.user;
-            updateUI();
-            showToast("\u{1f389}", "Muvaffaqiyatli ro'yxatdan o'tdingiz!");
-            navigateTo('home');
-            loadProfiles();
+            if (data.user) state.user = data.user;
+            showToast("\u{2705}", "Profilingiz admin tekshiruviga yuborildi!");
+            navigateTo('pending');
+            startStatusPolling();
         } else {
             showToast("\u{26a1}", data.message || "Xatolik yuz berdi");
         }
     } catch (e) {
-        initFallbackUser();
-        state.user.name = state.registrationData.name;
-        state.user.age = state.registrationData.age;
-        state.user.city = state.registrationData.city;
-        state.user.bio = state.registrationData.bio;
-        updateUI();
-        showToast("\u{1f389}", "Ro'yxatdan o'tdingiz!");
-        navigateTo('home');
+        console.log("Registration error:", e);
+        showToast("\u{26a1}", "Server bilan aloqa yo'q. Qayta urinib ko'ring.");
     }
 }
 
@@ -1142,30 +1353,55 @@ function switchAdminTab(tabName) {
 
 async function loadAdminStats() {
     const tUsers = document.getElementById('adminTotalUsers');
-    const aUsers = document.getElementById('adminActiveUsers');
+    const apUsers = document.getElementById('adminApprovedUsers');
+    const penUsers = document.getElementById('adminPendingApproval');
+    const rejUsers = document.getElementById('adminRejectedUsers');
+    const actUsers = document.getElementById('adminActiveUsers');
     const rToday = document.getElementById('adminRegToday');
     const pUsers = document.getElementById('adminPremiumUsers');
+
+    const cards = [tUsers, apUsers, penUsers, rejUsers, actUsers, rToday, pUsers];
     
+    // Set skeleton loading state
+    cards.forEach(card => {
+        if (card) {
+            card.textContent = '...';
+            card.classList.add('loading-skeleton');
+        }
+    });
+
     try {
         const res = await fetch(`${API_URL}/api/admin/stats`, { headers: getHeaders() });
         const data = await res.json();
         
-        if (data.status === "ok") {
-            if (tUsers) tUsers.textContent = data.stats.total_users;
-            if (aUsers) aUsers.textContent = data.stats.active_users;
-            if (rToday) rToday.textContent = data.stats.registered_today;
-            if (pUsers) pUsers.textContent = data.stats.premium_users;
-            return;
+        // Remove loading skeletons
+        cards.forEach(card => {
+            if (card) card.classList.remove('loading-skeleton');
+        });
+
+        if (data.status === "ok" && data.stats) {
+            const stats = data.stats;
+            if (tUsers) tUsers.textContent = stats.totalUsers ?? 0;
+            if (apUsers) apUsers.textContent = stats.approvedUsers ?? 0;
+            if (penUsers) penUsers.textContent = stats.pendingApproval ?? 0;
+            if (rejUsers) rejUsers.textContent = stats.rejectedUsers ?? 0;
+            if (actUsers) actUsers.textContent = stats.activeUsers ?? 0;
+            if (rToday) rToday.textContent = stats.joinedToday ?? 0;
+            if (pUsers) pUsers.textContent = stats.premiumUsers ?? 0;
+        } else {
+            showToast("⚠️", "Statistikani yuklab bo'lmadi");
+            cards.forEach(card => { if (card) card.textContent = 'Xato'; });
         }
     } catch (e) {
-        console.log("Error loading admin stats, using fallback details");
+        console.log("Error loading admin stats:", e);
+        showToast("⚠️", "Tarmoq xatoligi");
+        cards.forEach(card => {
+            if (card) {
+                card.classList.remove('loading-skeleton');
+                card.textContent = 'Xato';
+            }
+        });
     }
-    
-    // Standalone fallback stats
-    if (tUsers) tUsers.textContent = DEMO_PROFILES.length;
-    if (aUsers) aUsers.textContent = DEMO_PROFILES.length;
-    if (rToday) rToday.textContent = "1";
-    if (pUsers) pUsers.textContent = "2";
 }
 
 function sendAdminBroadcast() {

@@ -313,3 +313,95 @@ async def all_other_messages(message: Message, bot: Bot):
         redirect_text.get(language, redirect_text["uz"]),
         reply_markup=reply_kb
     )
+
+
+class ApprovalCheckMiddleware(BaseMiddleware):
+    """Tasdiqlanmagan foydalanuvchilarning handlerga yetib borishini to'xtatadi."""
+
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        if not isinstance(event, Update):
+            return await handler(event, data)
+
+        telegram_user = None
+        reply_target = None
+        if event.message:
+            telegram_user = event.message.from_user
+            reply_target = event.message
+        elif event.callback_query:
+            telegram_user = event.callback_query.from_user
+            reply_target = event.callback_query
+
+        if telegram_user is None:
+            return await handler(event, data)
+
+        # /start komandasini o'tkazib yuborish
+        if event.message and event.message.text and event.message.text.startswith('/start'):
+            return await handler(event, data)
+
+        state: FSMContext = data.get("state")
+        if state:
+            current_state = await state.get_state()
+            if current_state and current_state.startswith("RegistrationStates"):
+                return await handler(event, data)
+
+        user = await get_user_by_telegram_id(telegram_user.id)
+        if user is None:
+            return await handler(event, data)
+
+        # Adminlar har doim o'tadi
+        from config import ADMIN_IDS
+        if telegram_user.id in ADMIN_IDS or user.is_admin:
+            return await handler(event, data)
+
+        if user.status == UserStatus.active:
+            return await handler(event, data)
+
+        if user.status == UserStatus.pending_approval:
+            text_map = {
+                "uz": "⏳ Sizning profilingiz hali ham moderatorlarimiz tomonidan tekshirilmoqda. Iltimos, tasdiqlashni kuting.",
+                "ru": "⏳ Ваш профиль все еще находится на модерации. Пожалуйста, ожидайте подтверждения.",
+                "en": "⏳ Your profile is still under review. Please wait for confirmation."
+            }
+            lang = user.language or "uz"
+            msg = text_map.get(lang, text_map["uz"])
+            
+            from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+            reply_kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=get_webapp_url()))]
+                ],
+                resize_keyboard=True
+            )
+            
+            if event.message:
+                await reply_target.answer(msg, reply_markup=reply_kb)
+            else:
+                await reply_target.message.answer(msg, reply_markup=reply_kb)
+                await reply_target.answer()
+            return None
+
+        if user.status == UserStatus.rejected:
+            text_map = {
+                "uz": f"❌ Sizning profilingiz rad etilgan.\n\nSababi: {user.rejection_reason or 'Keltirilmagan'}\n\nIltimos, Mini App ga kirib ma\'lumotlarni qaytadan yuboring.",
+                "ru": f"❌ Ваш профиль был отклонен.\n\nПричина: {user.rejection_reason or 'Не указана'}\n\nПожалуйста, откройте Mini App и отправьте данные заново.",
+                "en": f"❌ Your profile has been rejected.\n\nReason: {user.rejection_reason or 'Not specified'}\n\nPlease open the Mini App and resubmit your details."
+            }
+            lang = user.language or "uz"
+            msg = text_map.get(lang, text_map["uz"])
+            
+            from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+            reply_kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=get_webapp_url()))]
+                ],
+                resize_keyboard=True
+            )
+            
+            if event.message:
+                await reply_target.answer(msg, reply_markup=reply_kb)
+            else:
+                await reply_target.message.answer(msg, reply_markup=reply_kb)
+                await reply_target.answer()
+            return None
+
+        return await handler(event, data)

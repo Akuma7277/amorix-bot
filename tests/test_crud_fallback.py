@@ -335,7 +335,7 @@ class CrudFallbackTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.id, 42)
         self.assertEqual(result.name, "New Name")
         # Re-registering resets moderation state so the profile goes through approval again.
-        self.assertEqual(result.status, UserStatus.active)
+        self.assertEqual(result.status, UserStatus.pending_approval)
         self.assertEqual(result.profile_approval_status, "pending")
         self.assertTrue(maker.session.committed)
 
