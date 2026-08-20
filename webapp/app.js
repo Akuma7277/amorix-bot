@@ -400,6 +400,19 @@ if (document.readyState === 'loading') {
     initApp();
 }
 
+
+async function retryInitApp() {
+    const errScreen = document.getElementById('errorScreen');
+    if (errScreen) errScreen.style.display = 'none';
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) loadingScreen.classList.remove('hidden');
+    const appContainer = document.getElementById('appContainer');
+    if (appContainer) appContainer.style.display = 'none';
+    
+    // Restart initialization
+    await initApp();
+}
+
 async function initApp() {
     if (tg) {
         try {
@@ -421,15 +434,34 @@ async function initApp() {
             loadingScreen.classList.add('hidden');
         }
         const appContainer = document.getElementById('appContainer');
-        if (appContainer) appContainer.style.display = 'flex';
+        if (appContainer && !document.getElementById('errorScreen') || document.getElementById('errorScreen').style.display !== 'flex') {
+            appContainer.style.display = 'flex';
+        }
     }, 600);
 
-    // Try API fetch with status-based routing
+    // Hide error screen if visible
+    const errScreen = document.getElementById('errorScreen');
+    if (errScreen) errScreen.style.display = 'none';
+
+    // 15-second request timeout controller
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
-        const response = await fetch(`${API_URL}/api/init`, {
+        const queryParams = new URLSearchParams();
+        if (tg && tg.initData) {
+            queryParams.append("initData", tg.initData);
+        } else {
+            queryParams.append("initData", "mock_admin");
+        }
+
+        const response = await fetch(`${API_URL}/api/init?${queryParams.toString()}`, {
             method: "GET",
-            headers: getHeaders()
+            headers: getHeaders(),
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
@@ -497,22 +529,32 @@ async function initApp() {
                 break;
         }
     } catch (e) {
+        clearTimeout(timeoutId);
         console.log("API server error:", e);
-        // Show error state - don't go to registration on network error
-        // Try again after 3 seconds
+        
+        // Hide loading/app screen and show error overlay
         const loadingScreen = document.getElementById('loadingScreen');
         const appContainer = document.getElementById('appContainer');
         if (loadingScreen) loadingScreen.classList.add('hidden');
-        if (appContainer) appContainer.style.display = 'flex';
-        
-        // If no tg data, go to registration (new user)
-        if (!tg || !tg.initData) {
-            navigateTo('registration');
-            showRegStep(1);
+        if (appContainer) appContainer.style.display = 'none';
+
+        // Show error overlay
+        const errScreen = document.getElementById('errorScreen');
+        if (errScreen) {
+            errScreen.style.display = 'flex';
+            const subTitle = document.getElementById('errorSubtitleText');
+            if (subTitle) {
+                if (e.name === 'AbortError') {
+                    subTitle.textContent = "Server so'rovga vaqtida javob bermadi (Ulanish vaqti tugadi). Internetni tekshirib, qayta urining.";
+                } else {
+                    subTitle.textContent = "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring yoki keyinroq qayta urining.";
+                }
+            }
         } else {
-            // Network error - show home with error toast
+            // Fallback if errorScreen element is missing
+            if (appContainer) appContainer.style.display = 'flex';
             navigateTo('home');
-            setTimeout(() => showToast('⚠️', 'Serverga ulanishda xatolik. Qayta urinib ko\'ring.'), 1000);
+            showToast('⚠️', 'Serverga ulanishda xatolik yuz berdi.');
         }
     }
     

@@ -1470,6 +1470,34 @@ async def serve_app(request):
     return response
 
 
+
+async def handle_health(request):
+    """GET /health - Public endpoint to verify service is running."""
+    return web.json_response({
+        "status": "ok",
+        "service": "kairyx-api",
+        "timestamp": datetime.now().isoformat()
+    })
+
+async def handle_health_ready(request):
+    """GET /health/ready - Public endpoint to verify database readiness."""
+    try:
+        async with async_session_maker() as session:
+            await session.execute(select(1))
+        return web.json_response({
+            "status": "ready",
+            "database": "connected",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Health check /health/ready failed: {e}")
+        return web.json_response({
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e)
+        }, status=503)
+
+
 def create_webapp_app() -> web.Application:
     """Mini App aiohttp ilovasini yaratadi."""
     app = web.Application()
@@ -1490,6 +1518,8 @@ def create_webapp_app() -> web.Application:
 
     # Routes
     app.router.add_get("/", handle_index)
+    app.router.add_get("/health", handle_health)
+    app.router.add_get("/health/ready", handle_health_ready)
     app.router.add_get("/api/photo/{file_id}", handle_get_photo)
     app.router.add_get("/api/init", handle_init)
     app.router.add_post("/api/register", handle_register)
