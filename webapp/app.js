@@ -328,56 +328,7 @@ const state = {
 };
 
 // Fallback Profiles
-const DEMO_PROFILES = [
-    {
-        id: 101,
-        name: "Madina",
-        age: 21,
-        city: "Toshkent",
-        bio: "Kofeman \u{2615}, Sayohat va fotografiya ixlosmandi \u{1F4DF}. Samimiy va quvnoq insonlar bilan tanishmoqchiman \u{2728}",
-        interests: ["Sayohat", "Fotografiya", "Kofe", "Musiqa"],
-        premium_plan: "Gold", // VIP Gold
-        gender: "female",
-        compatibility_score: 94,
-        photos: ["https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80"]
-    },
-    {
-        id: 102,
-        name: "Jasur",
-        age: 24,
-        city: "Toshkent",
-        bio: "Dasturchi \u{1F4BB}. IT va sport bilan shug'ullanaman. Jiddiy munosabat uchun tanishaman \u{1F31F}",
-        interests: ["Dasturlash", "Sport", "Fitness", "Kino"],
-        premium_plan: "Platinum", // VIP Platinum
-        gender: "male",
-        compatibility_score: 88,
-        photos: ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80"]
-    },
-    {
-        id: 103,
-        name: "Laylo",
-        age: 22,
-        city: "Samarqand",
-        bio: "Arxitektura va san'at ixlosmandi \u{1F3A8}. Yaxshi suhbatdoshlarni hurmat qilaman \u{1F338}",
-        interests: ["San'at", "Dizayn", "Kitoblar", "Musiqa"],
-        premium_plan: "Basic", // Simple
-        gender: "female",
-        compatibility_score: 82,
-        photos: ["https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80"]
-    },
-    {
-        id: 104,
-        name: "Sardor",
-        age: 25,
-        city: "Buxoro",
-        bio: "Tadbirkor \u{1F4BC}. Bo'sh vaqtimda futbol va avtomobillarga qiziqaman \u{1F697}",
-        interests: ["Biznes", "Futbol", "Avto", "Sayohat"],
-        premium_plan: "Gold", // VIP Gold
-        gender: "male",
-        compatibility_score: 91,
-        photos: ["https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80"]
-    }
-];
+const DEMO_PROFILES = [];
 
 // Helper: Resolve Telegram photo using local proxy
 function resolvePhotoUrl(photoId) {
