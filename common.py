@@ -282,11 +282,7 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
             bilingual_start_text,
             reply_markup=keyboard
         )
-    # Always remove old reply keyboard
-    try:
-        await message.answer(".", reply_markup=ReplyKeyboardRemove())
-    except Exception:
-        pass
+
 
 
 @router.callback_query(F.data == "admin_enter_from_start")
