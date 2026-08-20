@@ -6,7 +6,7 @@ import hmac
 from datetime import datetime
 from urllib.parse import parse_qs
 from aiohttp import web
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, text
 
 from engine import async_session_maker
 from models import Base, User, UserStatus, Swipe, Match, Message
@@ -179,23 +179,19 @@ async def handle_register(request):
 
 # DATING ENDPOINTS
 async def handle_profiles(request):
-    """GET /api/profiles - Swiping uchun profillarni qaytaradi."""
     tg_user = get_telegram_user(request)
     if not tg_user:
         return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
 
     async with async_session_maker() as session:
-        # Get current user ID
         user_res = await session.execute(select(User.id).where(User.telegram_id == tg_user["id"]))
         curr_id = user_res.scalar()
         if not curr_id:
             return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
-        # Get list of swiped user IDs
         swipe_res = await session.execute(select(Swipe.swiped_id).where(Swipe.swiper_id == curr_id))
         swiped_ids = swipe_res.scalars().all()
 
-        # Query active APPROVED profiles (excluding self and already swiped)
         stmt = select(User).where(and_(
             User.status == UserStatus.APPROVED,
             User.id != curr_id,
@@ -219,7 +215,6 @@ async def handle_profiles(request):
         })
 
 async def handle_swipe(request):
-    """POST /api/swipe - Foydalanuvchini like/pass qiladi."""
     tg_user = get_telegram_user(request)
     if not tg_user:
         return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
@@ -241,11 +236,9 @@ async def handle_swipe(request):
         if not curr_id:
             return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
-        # Create Swipe Record
         swipe = Swipe(swiper_id=curr_id, swiped_id=target_id, is_like=is_like)
         session.add(swipe)
 
-        # Check Match
         match_created = False
         match_id = None
         if is_like:
@@ -258,17 +251,15 @@ async def handle_swipe(request):
             partner_swipe = res_match.scalar_one_or_none()
 
             if partner_swipe:
-                # We have a Match!
                 match = Match(user1_id=min(curr_id, target_id), user2_id=max(curr_id, target_id))
                 session.add(match)
                 await session.flush()
                 match_created = True
                 match_id = match.id
                 
-                # Auto-create greeting system message
                 sys_msg = Message(
                     match_id=match.id,
-                    sender_id=0, # 0 = System
+                    sender_id=0,
                     text="Sizlarda moslik bor! Suhbatni boshlang. У вас взаимная симпатия! Начните общение."
                 )
                 session.add(sys_msg)
@@ -281,7 +272,6 @@ async def handle_swipe(request):
         })
 
 async def handle_matches(request):
-    """GET /api/matches - Mos kelgan barcha juftliklarni qaytaradi."""
     tg_user = get_telegram_user(request)
     if not tg_user:
         return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
@@ -292,7 +282,6 @@ async def handle_matches(request):
         if not curr_id:
             return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
-        # Query all matches containing curr_id
         stmt = select(Match).where(or_(
             Match.user1_id == curr_id,
             Match.user2_id == curr_id
@@ -320,7 +309,6 @@ async def handle_matches(request):
         return web.json_response({"success": True, "matches": results})
 
 async def handle_chat_messages(request):
-    """GET /api/chat/messages?match_id=... - Chat xabarlarini qaytaradi."""
     tg_user = get_telegram_user(request)
     if not tg_user:
         return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
@@ -347,7 +335,6 @@ async def handle_chat_messages(request):
         })
 
 async def handle_chat_send(request):
-    """POST /api/chat/send - Yangi xabar yuboradi."""
     tg_user = get_telegram_user(request)
     if not tg_user:
         return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
@@ -369,7 +356,6 @@ async def handle_chat_send(request):
         if not curr_id:
             return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
-        # Save message
         msg = Message(match_id=int(match_id), sender_id=curr_id, text=text)
         session.add(msg)
         await session.commit()
@@ -527,13 +513,18 @@ def create_webapp_app() -> web.Application:
     app.middlewares.append(cors_middleware)
 
     async def on_startup(app):
+        # Drop legacy tables once on deploy to update PostgreSQL schema definitions
         import engine as engine_module
         try:
             async with engine_module.engine.begin() as conn:
+                await conn.execute(text("DROP TABLE IF EXISTS messages CASCADE;"))
+                await conn.execute(text("DROP TABLE IF EXISTS matches CASCADE;"))
+                await conn.execute(text("DROP TABLE IF EXISTS swipes CASCADE;"))
+                await conn.execute(text("DROP TABLE IF EXISTS users CASCADE;"))
                 await conn.run_sync(Base.metadata.create_all)
-            logger.info("Database schema auto-created on API startup.")
+            logger.info("Database schema dropped and successfully recreated from scratch.")
         except Exception as exc:
-            logger.warning(f"Database schema auto-creation failed: {exc}")
+            logger.warning(f"Database schema recreation failed: {exc}")
 
     app.on_startup.append(on_startup)
 
