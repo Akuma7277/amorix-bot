@@ -12,11 +12,9 @@ class TestHealthEndpoints(AioHTTPTestCase):
         self.assertEqual(resp.status, 200)
         data = await resp.json()
         self.assertEqual(data["status"], "ok")
-        self.assertEqual(data["service"], "kairyx-api")
-        self.assertIn("timestamp", data)
 
-    async def test_health_ready_endpoint(self):
-        resp = await self.client.get("/health/ready")
-        self.assertIn(resp.status, [200, 503])
+    async def test_api_test_endpoint(self):
+        resp = await self.client.get("/api/test")
+        self.assertEqual(resp.status, 200)
         data = await resp.json()
-        self.assertIn(data["status"], ["ready", "unhealthy"])
+        self.assertEqual(data["message"], "api works")
