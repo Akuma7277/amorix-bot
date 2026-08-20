@@ -4,7 +4,9 @@
 
 const tg = window.Telegram?.WebApp;
 const ADMIN_TELEGRAM_ID = 7992878834;
-const API_URL = window.location.origin;
+const API_URL = (window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1"))
+    ? window.location.origin
+    : "https://amorix-bot-production.up.railway.app";
 
 // Localization Dictionaries using Unicode Escape Sequences for Emojis
 const TRANSLATIONS = {

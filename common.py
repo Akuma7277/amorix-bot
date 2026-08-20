@@ -242,9 +242,6 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     """/start komandasi uchun handler - Mini Appni ochadi"""
     await state.clear()
 
-    user = await get_user_by_telegram_id(message.from_user.id)
-    language = user.language if user else "uz"
-
     # Auto set Chat Menu Button
     try:
         await bot.set_chat_menu_button(
@@ -257,31 +254,50 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     except Exception as e:
         logging.warning(f"Error setting chat menu button: {e}")
 
+    # Beautiful bilingual Uzbek / Russian start message
+    bilingual_start_text = (
+        "🇺🇿 <b>Kairyx premium tanishuv ilovasiga xush kelibsiz!</b> 💖\n\n"
+        "Kairyx — bu sizga mos va sifatli insonlarni xavfsiz topishga yordam beradigan premium muloqot maydonidir. "
+        "Ilovadan foydalanish va o\'z juftingizni izlashni boshlash uchun pastdagi <b>'Kairyx App' (Menu)</b> tugmasini bosing.\n\n"
+        "➖➖➖➖➖➖➖➖➖➖➖➖\n\n"
+        "🇷🇺 <b>Добро пожаловать в премиум-приложение знакомств Kairyx!</b> 💖\n\n"
+        "Kairyx — это премиальная платформа, которая поможет вам безопасно найти подходящих и качественных людей. "
+        "Чтобы открыть приложение и начать поиск, нажмите кнопку <b>'Kairyx App' (Menu)</b> внизу."
+    )
+
     if message.from_user.id == 7992878834:
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🔑 Admin Panelga kirish", callback_data="admin_enter_from_start")]
         ])
         await message.answer(
-            "Kairyx premium tanishuv ilovasiga xush kelibsiz! 💖\n\nIlovadan foydalanish uchun pastdagi 'Kairyx App' (Menu) tugmasini bosing.\n\nAdmin panelga kirish: /admin",
+            bilingual_start_text + "\n\n🔑 <b>Admin panelga kirish:</b> /admin",
             reply_markup=keyboard
         )
     else:
-        start_text = {
-            "uz": "Kairyx premium tanishuv ilovasiga xush kelibsiz! 💖\n\nIlovadan foydalanish uchun pastdagi 'Kairyx App' (Menu) tugmasini bosing.",
-            "ru": "Добро пожаловать в premium-dating Kairyx! 💖\n\nЧтобы открыть приложение, нажмите кнопку 'Kairyx App' (Menu) внизу.",
-            "en": "Welcome to Kairyx premium dating! 💖\n\nTo open the app, press the 'Kairyx App' (Menu) button below.",
-        }
         await message.answer(
-            start_text.get(language, start_text["uz"]),
+            bilingual_start_text,
             reply_markup=ReplyKeyboardRemove()
         )
 
 
 @router.callback_query(F.data == "admin_enter_from_start")
 async def admin_enter_from_start(callback: CallbackQuery, state: FSMContext):
-    # Try to redirect to admin command
-    from admin import cmd_admin
-    await cmd_admin(callback.message, state)
+    if callback.from_user.id != 7992878834:
+        await callback.answer("Sizda admin paneliga kirish huquqi yo'q.", show_alert=True)
+        return
+        
+    await state.clear()
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language if user else "uz"
+    
+    from reply import get_admin_main_menu_keyboard
+    from states import AdminStates
+    
+    await callback.message.answer(
+        "🛡️ Admin paneliga xush kelibsiz. Bu yerda foydalanuvchilar, to\'lovlar, moderatorlik va broadcastlarni boshqarishingiz mumkin.",
+        reply_markup=get_admin_main_menu_keyboard(language)
+    )
+    await state.set_state(AdminStates.main_menu)
     await callback.answer()
 
 
@@ -348,8 +364,7 @@ class ApprovalCheckMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         # Adminlar har doim o'tadi
-        from config import ADMIN_IDS
-        if telegram_user.id in ADMIN_IDS or user.is_admin:
+        if telegram_user.id == 7992878834:
             return await handler(event, data)
 
         if user.status == UserStatus.active:
