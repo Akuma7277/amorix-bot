@@ -2,15 +2,24 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kairyx Mini App - Phase 0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kairyx Mini App - Phase 1</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css?v=2.5.0">
 </head>
-<body style="background:#050510; color:#ffffff; font-family:sans-serif; text-align:center; padding:50px;">
+<body style="background:#050510; color:#ffffff; font-family:sans-serif; text-align:center; padding:30px;">
     <h1>Kairyx Mini App is running 🚀</h1>
-    <p>Phase 0: Hello World Connection Verification</p>
+    <p>Phase 1: Telegram WebApp Integration</p>
     
-    <div style="margin: 30px auto; max-width:320px; background:rgba(255,255,255,0.03); padding:20px; border-radius:12px; border:1px solid rgba(255,71,133,0.2);">
+    <!-- Telegram User Info Box -->
+    <div id="tgUserBox" style="margin: 20px auto; max-width:320px; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,71,133,0.2); text-align:left;">
+        <h3 style="margin-top:0;">Telegram User Info:</h3>
+        <p><strong>ID:</strong> <span id="tgId">Loading...</span></p>
+        <p><strong>First Name:</strong> <span id="tgName">Loading...</span></p>
+        <p><strong>Username:</strong> <span id="tgUsername">Loading...</span></p>
+    </div>
+
+    <div style="margin: 20px auto; max-width:320px; background:rgba(255,255,255,0.03); padding:20px; border-radius:12px; border:1px solid rgba(255,71,133,0.2);">
         <button id="btnTest" style="background:linear-gradient(135deg, #ff4785, #b624ff); color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">Test API Connection</button>
         <p id="apiResponse" style="margin-top:20px; font-size:14px; color:#ff4785; font-weight:bold;">Click the button to test ulanish...</p>
     </div>

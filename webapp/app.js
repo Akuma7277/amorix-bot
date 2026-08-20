@@ -1,6 +1,29 @@
+const tg = window.Telegram?.WebApp;
 const API_URL = (window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1"))
     ? window.location.origin
     : "https://amorix-bot-production.up.railway.app";
+
+// Initialize Telegram WebApp
+if (tg) {
+    try {
+        tg.ready();
+        tg.expand();
+        
+        // Show Telegram User details
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            document.getElementById('tgId').textContent = user.id;
+            document.getElementById('tgName').textContent = user.first_name || '—';
+            document.getElementById('tgUsername').textContent = user.username ? '@' + user.username : '—';
+        } else {
+            document.getElementById('tgUserBox').innerHTML = "<p style='color:#ff4785;'>No Telegram User Data (Open inside Telegram!)</p>";
+        }
+    } catch (e) {
+        console.error("Telegram WebApp Error:", e);
+    }
+} else {
+    document.getElementById('tgUserBox').innerHTML = "<p style='color:#ff4785;'>Telegram WebApp SDK not found.</p>";
+}
 
 document.getElementById('btnTest').addEventListener('click', async () => {
     const resText = document.getElementById('apiResponse');
