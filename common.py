@@ -1,7 +1,8 @@
 import logging
 from aiogram import Router, BaseMiddleware
 from aiogram.filters import CommandStart
-from aiogram.types import Message, TelegramObject, Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, WebAppInfo, MenuButtonWebApp
+from aiogram.types import Message, TelegramObject, Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, WebAppInfo, MenuButtonWebApp, CallbackQuery
+from aiogram import F
 from aiogram import Router, BaseMiddleware, Bot
 from aiogram.fsm.context import FSMContext
  
@@ -256,27 +257,32 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
     except Exception as e:
         logging.warning(f"Error setting chat menu button: {e}")
 
-    start_text = {
-        "uz": "Kairyx premium tanishuv ilovasiga xush kelibsiz! 💖\n\nIlovadan foydalanish uchun quyidagi tugmani bosing va Mini Appni oching:",
-        "ru": "Добро пожаловать в premium-dating Kairyx! 💖\n\nЧтобы открыть приложение, нажмите кнопку ниже:",
-        "en": "Welcome to Kairyx premium dating! 💖\n\nTo open the app, press the button below:",
-    }
+    if message.from_user.id == 7992878834:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔑 Admin Panelga kirish", callback_data="admin_enter_from_start")]
+        ])
+        await message.answer(
+            "Kairyx premium tanishuv ilovasiga xush kelibsiz! 💖\n\nIlovadan foydalanish uchun pastdagi 'Kairyx App' (Menu) tugmasini bosing.\n\nAdmin panelga kirish: /admin",
+            reply_markup=keyboard
+        )
+    else:
+        start_text = {
+            "uz": "Kairyx premium tanishuv ilovasiga xush kelibsiz! 💖\n\nIlovadan foydalanish uchun pastdagi 'Kairyx App' (Menu) tugmasini bosing.",
+            "ru": "Добро пожаловать в premium-dating Kairyx! 💖\n\nЧтобы открыть приложение, нажмите кнопку 'Kairyx App' (Menu) внизу.",
+            "en": "Welcome to Kairyx premium dating! 💖\n\nTo open the app, press the 'Kairyx App' (Menu) button below.",
+        }
+        await message.answer(
+            start_text.get(language, start_text["uz"]),
+            reply_markup=ReplyKeyboardRemove()
+        )
 
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=get_webapp_url()))]
-    ])
 
-    reply_kb = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=get_webapp_url()))]
-        ],
-        resize_keyboard=True
-    )
-
-    await message.answer(
-        start_text.get(language, start_text["uz"]),
-        reply_markup=reply_kb
-    )
+@router.callback_query(F.data == "admin_enter_from_start")
+async def admin_enter_from_start(callback: CallbackQuery, state: FSMContext):
+    # Try to redirect to admin command
+    from admin import cmd_admin
+    await cmd_admin(callback.message, state)
+    await callback.answer()
 
 
 @router.message()
@@ -297,21 +303,14 @@ async def all_other_messages(message: Message, bot: Bot):
         pass
 
     redirect_text = {
-        "uz": "Kairyx faqat Mini App orqali ishlaydi. Ilovani ochish uchun pastdagi tugmani bosing: 📱",
-        "ru": "Kairyx работает только через Mini App. Нажмите кнопку ниже, чтобы открыть приложение: 📱",
-        "en": "Kairyx only works via Mini App. Press the button below to open the app: 📱",
+        "uz": "Kairyx faqat Mini App orqali ishlaydi. Ilovani ochish uchun pastdagi 'Kairyx App' (Menu) tugmasini bosing: 📱",
+        "ru": "Kairyx работает только через Mini App. Нажмите кнопку 'Kairyx App' (Menu) внизу, чтобы открыть приложение: 📱",
+        "en": "Kairyx only works via Mini App. Press the 'Kairyx App' (Menu) button below to open the app: 📱",
     }
-
-    reply_kb = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=get_webapp_url()))]
-        ],
-        resize_keyboard=True
-    )
 
     await message.answer(
         redirect_text.get(language, redirect_text["uz"]),
-        reply_markup=reply_kb
+        reply_markup=ReplyKeyboardRemove()
     )
 
 

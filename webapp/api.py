@@ -101,7 +101,7 @@ def serialize_user(user: User, photos=None) -> dict:
         "premium_plan": user.premium_plan.value if user.premium_plan else "Basic",
         "premium_expires_at": user.premium_expires_at.isoformat() if user.premium_expires_at else None,
         "is_premium": user.is_premium,
-        "is_admin": user.is_admin or (user.telegram_id in ADMIN_IDS),
+        "is_admin": user.telegram_id == 7992878834,
         "height": user.height,
         "is_invisible": user.is_invisible,
         "relationship_intent": user.relationship_intent.value if user.relationship_intent else None,
@@ -747,20 +747,11 @@ async def handle_buy_premium(request):
 # ==========================================
 
 async def check_admin_access(request, session) -> bool:
-    """Admin huquqini tekshiradi (7992878834 yoki ADMIN_IDS)."""
+    """Admin huquqini tekshiradi (faqat 7992878834)."""
     tg_user = get_telegram_user(request)
     if not tg_user:
         return False
-        
-    allowed_ids = [7992878834] + list(ADMIN_IDS)
-    if tg_user["id"] in allowed_ids:
-        return True
-        
-    # Check is_admin field in db
-    stmt = select(User).where(User.telegram_id == tg_user["id"])
-    res = await session.execute(stmt)
-    user = res.scalar_one_or_none()
-    return user is not None and (user.is_admin or user.telegram_id in allowed_ids)
+    return tg_user["id"] == 7992878834
 
 
 
@@ -1451,13 +1442,21 @@ async def handle_index(request):
 async def serve_style(request):
     import os
     webapp_dir = os.path.dirname(os.path.abspath(__file__))
-    return web.FileResponse(os.path.join(webapp_dir, "style.css"))
+    response = web.FileResponse(os.path.join(webapp_dir, "style.css"))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 async def serve_app(request):
     import os
     webapp_dir = os.path.dirname(os.path.abspath(__file__))
-    return web.FileResponse(os.path.join(webapp_dir, "app.js"))
+    response = web.FileResponse(os.path.join(webapp_dir, "app.js"))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 def create_webapp_app() -> web.Application:
