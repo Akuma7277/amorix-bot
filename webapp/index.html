@@ -3,25 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kairyx Mini App - Phase 1</title>
+    <title>Kairyx Mini App - Phase 2</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css?v=2.5.0">
 </head>
 <body style="background:#050510; color:#ffffff; font-family:sans-serif; text-align:center; padding:30px;">
     <h1>Kairyx Mini App is running 🚀</h1>
-    <p>Phase 1: Telegram WebApp Integration</p>
+    <p>Phase 2: Authorization & Session Verification</p>
     
-    <!-- Telegram User Info Box -->
-    <div id="tgUserBox" style="margin: 20px auto; max-width:320px; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,71,133,0.2); text-align:left;">
-        <h3 style="margin-top:0;">Telegram User Info:</h3>
-        <p><strong>ID:</strong> <span id="tgId">Loading...</span></p>
-        <p><strong>First Name:</strong> <span id="tgName">Loading...</span></p>
-        <p><strong>Username:</strong> <span id="tgUsername">Loading...</span></p>
+    <!-- Status Card -->
+    <div id="statusCard" style="margin: 20px auto; max-width:320px; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,71,133,0.2); text-align:left;">
+        <h3 style="margin-top:0;">Session Status:</h3>
+        <p><strong>Status:</strong> <span id="userStatus" style="color:#ffb700; font-weight:bold;">Verifying...</span></p>
+        <p><strong>Telegram ID:</strong> <span id="tgId">—</span></p>
+        <p><strong>Username:</strong> <span id="tgUsername">—</span></p>
     </div>
 
-    <div style="margin: 20px auto; max-width:320px; background:rgba(255,255,255,0.03); padding:20px; border-radius:12px; border:1px solid rgba(255,71,133,0.2);">
-        <button id="btnTest" style="background:linear-gradient(135deg, #ff4785, #b624ff); color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">Test API Connection</button>
-        <p id="apiResponse" style="margin-top:20px; font-size:14px; color:#ff4785; font-weight:bold;">Click the button to test ulanish...</p>
+    <!-- Error Screen (Initially Hidden) -->
+    <div id="errorScreen" style="display:none; margin: 20px auto; max-width:320px; background:rgba(255,71,133,0.05); padding:20px; border-radius:12px; border:1px solid #ff4785;">
+        <h3 style="margin-top:0; color:#ff4785;">⚠️ Ulanishda xatolik</h3>
+        <p id="errorText" style="font-size:14px; color:rgba(255,255,255,0.8);">Serverga ulanish imkonsiz.</p>
+        <button id="btnRetry" style="background:#ff4785; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">Qayta urinish / Повторить</button>
     </div>
 
     <script src="app.js?v=2.5.0"></script>

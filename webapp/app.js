@@ -3,57 +3,73 @@ const API_URL = (window.location.origin.includes("localhost") || window.location
     ? window.location.origin
     : "https://amorix-bot-production.up.railway.app";
 
-// Initialize Telegram WebApp
-if (tg) {
-    try {
-        tg.ready();
-        tg.expand();
-        
-        // Show Telegram User details
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-            document.getElementById('tgId').textContent = user.id;
-            document.getElementById('tgName').textContent = user.first_name || '—';
-            document.getElementById('tgUsername').textContent = user.username ? '@' + user.username : '—';
-        } else {
-            document.getElementById('tgUserBox').innerHTML = "<p style='color:#ff4785;'>No Telegram User Data (Open inside Telegram!)</p>";
-        }
-    } catch (e) {
-        console.error("Telegram WebApp Error:", e);
+function getHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    if (tg && tg.initData) {
+        headers["X-TG-Init-Data"] = tg.initData;
+        headers["Authorization"] = "Bearer " + tg.initData;
+    } else {
+        headers["X-TG-Init-Data"] = "mock_user";
+        headers["Authorization"] = "Bearer mock_user";
     }
-} else {
-    document.getElementById('tgUserBox').innerHTML = "<p style='color:#ff4785;'>Telegram WebApp SDK not found.</p>";
+    return headers;
 }
 
-document.getElementById('btnTest').addEventListener('click', async () => {
-    const resText = document.getElementById('apiResponse');
-    resText.textContent = "Loading...";
-    resText.style.color = "#ffb700";
+async function verifySession() {
+    document.getElementById('userStatus').textContent = "Checking...";
+    document.getElementById('userStatus').style.color = "#ffb700";
+    document.getElementById('errorScreen').style.display = 'none';
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
     try {
-        const response = await fetch(`${API_URL}/api/test`, {
+        const queryParams = new URLSearchParams();
+        if (tg && tg.initData) {
+            queryParams.append("initData", tg.initData);
+        } else {
+            queryParams.append("initData", "mock_user");
+        }
+
+        const response = await fetch(`${API_URL}/api/session?${queryParams.toString()}`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: getHeaders(),
             signal: controller.signal
         });
         clearTimeout(timeout);
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        
-        resText.textContent = `Success: ${data.message}`;
-        resText.style.color = "#24ff8a";
+
+        if (data.success) {
+            document.getElementById('userStatus').textContent = data.user_status;
+            document.getElementById('userStatus').style.color = "#24ff8a";
+            document.getElementById('tgId').textContent = data.user.telegram_id;
+            document.getElementById('tgUsername').textContent = data.user.username ? '@' + data.user.username : '—';
+        } else {
+            throw new Error(data.error?.message || "Auth failed");
+        }
     } catch (e) {
         clearTimeout(timeout);
         console.error(e);
+        document.getElementById('userStatus').textContent = "ERROR";
+        document.getElementById('userStatus').style.color = "#ff4785";
+        
+        document.getElementById('errorScreen').style.display = 'block';
         if (e.name === 'AbortError') {
-            resText.textContent = "Error: Connection Timeout (10s)";
+            document.getElementById('errorText').textContent = "Ulanish vaqti tugadi (Timeout). Internetni tekshirib qayta urining.";
         } else {
-            resText.textContent = `Error: ${e.message}`;
+            document.getElementById('errorText').textContent = `Xatolik: ${e.message}`;
         }
-        resText.style.color = "#ff4785";
     }
-});
+}
+
+if (tg) {
+    try {
+        tg.ready();
+        tg.expand();
+    } catch(err) {}
+}
+
+document.getElementById('btnRetry').addEventListener('click', verifySession);
+verifySession();
