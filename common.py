@@ -267,6 +267,7 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
 
     if message.from_user.id == 7992878834:
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=get_webapp_url()))],
             [InlineKeyboardButton(text="🔑 Admin Panelga kirish", callback_data="admin_enter_from_start")]
         ])
         await message.answer(
@@ -274,18 +275,56 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
             reply_markup=keyboard
         )
     else:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=get_webapp_url()))]
+        ])
         await message.answer(
             bilingual_start_text,
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=keyboard
         )
+    # Always remove old reply keyboard
+    try:
+        await message.answer(".", reply_markup=ReplyKeyboardRemove())
+    except Exception:
+        pass
 
 
 @router.callback_query(F.data == "admin_enter_from_start")
 async def admin_enter_from_start(callback: CallbackQuery, state: FSMContext):
     if callback.from_user.id != 7992878834:
-        await callback.answer("Sizda admin paneliga kirish huquqi yo'q.", show_alert=True)
+        await callback.answer("Sizda admin paneliga kirish huquqi yo\'q.", show_alert=True)
         return
         
+    await state.clear()
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    language = user.language if user else "uz"
+    
+    from reply import get_admin_main_menu_keyboard
+    from states import AdminStates
+    
+    # Open admin panel inside Mini App via web_app link  
+    admin_webapp_url = get_webapp_url()
+    admin_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="🛡️ Admin Panelni Mini App'da ochish",
+            web_app=WebAppInfo(url=admin_webapp_url + ("&" if "?" in admin_webapp_url else "?") + "admin=1")
+        )],
+        [InlineKeyboardButton(text="📋 Bot Admin Menu", callback_data="admin_bot_menu")]
+    ])
+    
+    await callback.message.answer(
+        "🛡️ <b>Admin Panel</b>\n\nMini App'da admin bo\'limini ochish uchun quyidagi tugmani bosing, yoki bot admin menyusini oching:",
+        reply_markup=admin_keyboard
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin_bot_menu")
+async def admin_bot_menu_handler(callback: CallbackQuery, state: FSMContext):
+    if callback.from_user.id != 7992878834:
+        await callback.answer("Sizda admin paneliga kirish huquqi yo\'q.", show_alert=True)
+        return
+    
     await state.clear()
     user = await get_user_by_telegram_id(callback.from_user.id)
     language = user.language if user else "uz"

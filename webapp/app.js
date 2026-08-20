@@ -462,11 +462,27 @@ async function initApp() {
                 // Admin tasdiqlagan — to'liq kirish
                 state.user = data.user;
                 updateUI();
-                navigateTo('home');
-                loadProfiles();
-                loadLikes();
-                loadMatches();
-                loadNotifications();
+                
+                // Check if opened with admin=1 param
+                const urlParams = new URLSearchParams(window.location.search);
+                const isAdminOpen = urlParams.get('admin') === '1';
+                const isSuperAdminUser = (
+                    tg?.initDataUnsafe?.user?.id === 7992878834 ||
+                    String(tg?.initDataUnsafe?.user?.id) === "7992878834" ||
+                    state.user.telegram_id === 7992878834 ||
+                    String(state.user.telegram_id) === "7992878834" ||
+                    state.user.is_admin
+                );
+                
+                if (isAdminOpen && isSuperAdminUser) {
+                    navigateTo('admin');
+                } else {
+                    navigateTo('home');
+                    loadProfiles();
+                    loadLikes();
+                    loadMatches();
+                    loadNotifications();
+                }
                 break;
                 
             case "banned":
@@ -481,10 +497,23 @@ async function initApp() {
                 break;
         }
     } catch (e) {
-        console.log("API server unavailable:", e);
-        // Xatolik paytida registration sahifasini ko'rsat (home EMAS!)
-        navigateTo('registration');
-        showRegStep(1);
+        console.log("API server error:", e);
+        // Show error state - don't go to registration on network error
+        // Try again after 3 seconds
+        const loadingScreen = document.getElementById('loadingScreen');
+        const appContainer = document.getElementById('appContainer');
+        if (loadingScreen) loadingScreen.classList.add('hidden');
+        if (appContainer) appContainer.style.display = 'flex';
+        
+        // If no tg data, go to registration (new user)
+        if (!tg || !tg.initData) {
+            navigateTo('registration');
+            showRegStep(1);
+        } else {
+            // Network error - show home with error toast
+            navigateTo('home');
+            setTimeout(() => showToast('⚠️', 'Serverga ulanishda xatolik. Qayta urinib ko\'ring.'), 1000);
+        }
     }
     
     setupSwipeGestures();
