@@ -4,6 +4,7 @@
 
 const tg = window.Telegram?.WebApp;
 const ADMIN_TELEGRAM_ID = 7992878834;
+const API_URL = window.location.origin;
 
 // Localization Dictionaries using Unicode Escape Sequences for Emojis
 const TRANSLATIONS = {
@@ -1456,7 +1457,7 @@ function openChatDetail(matchId, partnerName, partnerId) {
     const pStatus = document.getElementById('chatPartnerStatus');
     if (pStatus) pStatus.textContent = 'online';
     
-    navigateTo('page-chat-detail');
+    navigateTo('chat-detail');
     
     if (state.chatInterval) clearInterval(state.chatInterval);
     loadChatMessages();
