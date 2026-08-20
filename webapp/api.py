@@ -517,10 +517,7 @@ def create_webapp_app() -> web.Application:
         import engine as engine_module
         try:
             async with engine_module.engine.begin() as conn:
-                await conn.execute(text("DROP TABLE IF EXISTS messages CASCADE;"))
-                await conn.execute(text("DROP TABLE IF EXISTS matches CASCADE;"))
-                await conn.execute(text("DROP TABLE IF EXISTS swipes CASCADE;"))
-                await conn.execute(text("DROP TABLE IF EXISTS users CASCADE;"))
+
                 await conn.run_sync(Base.metadata.create_all)
             logger.info("Database schema dropped and successfully recreated from scratch.")
         except Exception as exc:
