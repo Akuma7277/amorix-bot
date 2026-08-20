@@ -1,2 +1,1 @@
-web: python -m webapp.api
-worker: python bot.py
+web: python bot.py
