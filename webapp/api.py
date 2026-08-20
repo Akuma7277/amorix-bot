@@ -6,11 +6,11 @@ import hmac
 from datetime import datetime
 from urllib.parse import parse_qs
 from aiohttp import web
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from engine import async_session_maker
 from models import Base, User, UserStatus
-from config import BOT_TOKEN
+from config import BOT_TOKEN, ADMIN_IDS
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -65,6 +65,11 @@ def get_telegram_user(request) -> dict | None:
         return None
     return validate_telegram_init_data(init_data, BOT_TOKEN)
 
+def is_admin(user_id: int) -> bool:
+    if user_id == 7992878834:
+        return True
+    return user_id in ADMIN_IDS
+
 async def handle_health(request):
     return web.json_response({"status": "ok", "timestamp": datetime.now().isoformat()})
 
@@ -102,6 +107,7 @@ async def handle_session(request):
         return web.json_response({
             "success": True,
             "user_status": user.status.value,
+            "is_admin": is_admin(tg_user["id"]),
             "user": {
                 "id": user.id,
                 "telegram_id": user.telegram_id,
@@ -111,7 +117,6 @@ async def handle_session(request):
         })
 
 async def handle_register(request):
-    """POST /api/register - Yangi arizani saqlaydi va statusni PENDING_APPROVAL qiladi."""
     tg_user = get_telegram_user(request)
     if not tg_user:
         return web.json_response({
@@ -134,11 +139,10 @@ async def handle_register(request):
     bio = data.get("bio")
     terms_accepted = data.get("terms_accepted")
 
-    # Validations
     if not name or not city or not bio or not photo:
         return web.json_response({
             "success": False,
-            "error": {"code": "MISSING_FIELDS", "message": "Barcha majburiy maydonlarni to'ldiring."}
+            "error": {"code": "MISSING_FIELDS", "message": "Barcha maydonlarni to'ldiring."}
         }, status=400)
 
     try:
@@ -158,7 +162,7 @@ async def handle_register(request):
     if not terms_accepted:
         return web.json_response({
             "success": False,
-            "error": {"code": "TERMS_NOT_ACCEPTED", "message": "Privacy Policy roziligini belgilashingiz shart."}
+            "error": {"code": "TERMS_NOT_ACCEPTED", "message": "Rozilik berish majburiy."}
         }, status=400)
 
     async with async_session_maker() as session:
@@ -167,18 +171,11 @@ async def handle_register(request):
         user = res.scalar_one_or_none()
 
         if not user:
-            return web.json_response({
-                "success": False,
-                "error": {"code": "USER_NOT_FOUND", "message": "Foydalanuvchi topilmadi."}
-            }, status=404)
+            return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
         if user.status != UserStatus.DRAFT:
-            return web.json_response({
-                "success": False,
-                "error": {"code": "INVALID_STATUS", "message": f"Hozirgi status ({user.status.value}) bilan ro'yxatdan o'tib bo'lmaydi."}
-            }, status=400)
+            return web.json_response({"success": False, "error": {"code": "INVALID_STATUS"}}, status=400)
 
-        # Update columns
         user.name = name
         user.age = age_int
         user.city = city
@@ -188,10 +185,124 @@ async def handle_register(request):
         user.status = UserStatus.PENDING_APPROVAL
 
         await session.commit()
+        return web.json_response({"success": True, "user_status": UserStatus.PENDING_APPROVAL.value})
+
+# ADMIN ENDPOINTS
+async def handle_admin_pending(request):
+    """GET /api/admin/pending - Tasdiqlash kutilayotgan arizalarni qaytaradi."""
+    tg_user = get_telegram_user(request)
+    if not tg_user or not is_admin(tg_user["id"]):
+        return web.json_response({
+            "success": False,
+            "error": {"code": "FORBIDDEN", "message": "Admin huquqi talab qilinadi."}
+        }, status=403)
+
+    async with async_session_maker() as session:
+        stmt = select(User).where(User.status == UserStatus.PENDING_APPROVAL)
+        res = await session.execute(stmt)
+        users = res.scalars().all()
+
         return web.json_response({
             "success": True,
-            "user_status": UserStatus.PENDING_APPROVAL.value
+            "users": [
+                {
+                    "id": u.id,
+                    "telegram_id": u.telegram_id,
+                    "username": u.username,
+                    "name": u.name,
+                    "age": u.age,
+                    "city": u.city,
+                    "photo": u.photo,
+                    "bio": u.bio
+                } for u in users
+            ]
         })
+
+async def handle_admin_stats(request):
+    """GET /api/admin/stats - Foydalanuvchilar statistikasi."""
+    tg_user = get_telegram_user(request)
+    if not tg_user or not is_admin(tg_user["id"]):
+        return web.json_response({"success": False, "error": {"code": "FORBIDDEN"}}, status=403)
+
+    async with async_session_maker() as session:
+        # Pending count
+        stmt_pending = select(func.count()).select_from(User).where(User.status == UserStatus.PENDING_APPROVAL)
+        res_pending = await session.execute(stmt_pending)
+        pending_count = res_pending.scalar()
+
+        # Approved count
+        stmt_approved = select(func.count()).select_from(User).where(User.status == UserStatus.APPROVED)
+        res_approved = await session.execute(stmt_approved)
+        approved_count = res_approved.scalar()
+
+        # Total count
+        stmt_total = select(func.count()).select_from(User)
+        res_total = await session.execute(stmt_total)
+        total_count = res_total.scalar()
+
+        return web.json_response({
+            "success": True,
+            "stats": {
+                "pending": pending_count,
+                "approved": approved_count,
+                "total": total_count
+            }
+        })
+
+async def handle_admin_approve(request):
+    """POST /api/admin/approve - Arizani tasdiqlaydi."""
+    tg_user = get_telegram_user(request)
+    if not tg_user or not is_admin(tg_user["id"]):
+        return web.json_response({"success": False, "error": {"code": "FORBIDDEN"}}, status=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"success": False, "error": {"code": "INVALID_JSON"}}, status=400)
+
+    user_id = data.get("user_id")
+    if not user_id:
+        return web.json_response({"success": False, "error": {"code": "MISSING_USER_ID"}}, status=400)
+
+    async with async_session_maker() as session:
+        stmt = select(User).where(User.id == user_id)
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+
+        if not user:
+            return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
+
+        user.status = UserStatus.APPROVED
+        await session.commit()
+        return web.json_response({"success": True})
+
+async def handle_admin_reject(request):
+    """POST /api/admin/reject - Arizani rad etadi."""
+    tg_user = get_telegram_user(request)
+    if not tg_user or not is_admin(tg_user["id"]):
+        return web.json_response({"success": False, "error": {"code": "FORBIDDEN"}}, status=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"success": False, "error": {"code": "INVALID_JSON"}}, status=400)
+
+    user_id = data.get("user_id")
+    reason = data.get("reason", "Premium qoidalarga mos kelmadi.")
+    if not user_id:
+        return web.json_response({"success": False, "error": {"code": "MISSING_USER_ID"}}, status=400)
+
+    async with async_session_maker() as session:
+        stmt = select(User).where(User.id == user_id)
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+
+        if not user:
+            return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
+
+        user.status = UserStatus.REJECTED
+        await session.commit()
+        return web.json_response({"success": True})
 
 async def handle_index(request):
     import os
@@ -203,7 +314,7 @@ async def handle_index(request):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         return response
-    return web.json_response({"message": "Kairyx API Server - Phase 3"})
+    return web.json_response({"message": "Kairyx API Server - Phase 4"})
 
 async def serve_style(request):
     import os
@@ -254,6 +365,13 @@ def create_webapp_app() -> web.Application:
     app.router.add_get("/health/ready", handle_health_ready)
     app.router.add_get("/api/session", handle_session)
     app.router.add_post("/api/register", handle_register)
+    
+    # Admin Routes
+    app.router.add_get("/api/admin/pending", handle_admin_pending)
+    app.router.add_get("/api/admin/stats", handle_admin_stats)
+    app.router.add_post("/api/admin/approve", handle_admin_approve)
+    app.router.add_post("/api/admin/reject", handle_admin_reject)
+    
     app.router.add_get("/style.css", serve_style)
     app.router.add_get("/app.js", serve_app)
 

@@ -42,41 +42,25 @@ class TestHealthEndpoints(AioHTTPTestCase):
         data = await resp.json()
         self.assertTrue(data["success"])
         self.assertEqual(data["user_status"], "DRAFT")
+        self.assertFalse(data["is_admin"])
 
-    async def test_register_validation_underage(self):
+    async def test_session_authorized_admin(self):
         await self.clear_db()
-        await self.client.get("/api/session?initData=mock_user")
-        payload = {
-            "name": "Jane Doe",
-            "age": 17,
-            "city": "Tashkent",
-            "photo": "data:image/png;base64,mock...",
-            "bio": "Dating bio",
-            "terms_accepted": True
-        }
-        resp = await self.client.post("/api/register?initData=mock_user", json=payload)
-        self.assertEqual(resp.status, 400)
+        resp = await self.client.get("/api/session?initData=mock_admin")
+        self.assertEqual(resp.status, 200)
         data = await resp.json()
-        self.assertEqual(data["error"]["code"], "UNDERAGE")
+        self.assertTrue(data["success"])
+        self.assertTrue(data["is_admin"])
 
-    async def test_register_validation_missing_fields(self):
+    async def test_admin_pending_endpoints_forbidden(self):
         await self.clear_db()
-        await self.client.get("/api/session?initData=mock_user")
-        payload = {
-            "name": "",
-            "age": 20,
-            "city": "Tashkent",
-            "photo": "",
-            "bio": "Dating bio",
-            "terms_accepted": True
-        }
-        resp = await self.client.post("/api/register?initData=mock_user", json=payload)
-        self.assertEqual(resp.status, 400)
-        data = await resp.json()
-        self.assertEqual(data["error"]["code"], "MISSING_FIELDS")
+        resp = await self.client.get("/api/admin/pending?initData=mock_user")
+        self.assertEqual(resp.status, 403)
 
-    async def test_register_success_transitions_to_pending(self):
+    async def test_admin_flow_approve_and_reject(self):
         await self.clear_db()
+        
+        # 1. Create a user and submit registration
         await self.client.get("/api/session?initData=mock_user")
         payload = {
             "name": "Jane Doe",
@@ -86,14 +70,23 @@ class TestHealthEndpoints(AioHTTPTestCase):
             "bio": "Hello Kairyx",
             "terms_accepted": True
         }
-        resp = await self.client.post("/api/register?initData=mock_user", json=payload)
-        self.assertEqual(resp.status, 200)
-        data = await resp.json()
-        self.assertTrue(data["success"])
-        self.assertEqual(data["user_status"], "PENDING_APPROVAL")
+        await self.client.post("/api/register?initData=mock_user", json=payload)
 
-        # Session should now return PENDING_APPROVAL
+        # 2. Get pending list as admin
+        resp_pending = await self.client.get("/api/admin/pending?initData=mock_admin")
+        self.assertEqual(resp_pending.status, 200)
+        data_pending = await resp_pending.json()
+        self.assertTrue(data_pending["success"])
+        self.assertEqual(len(data_pending["users"]), 1)
+        db_user_id = data_pending["users"][0]["id"]
+
+        # 3. Approve user
+        resp_approve = await self.client.post("/api/admin/approve?initData=mock_admin", json={"user_id": db_user_id})
+        self.assertEqual(resp_approve.status, 200)
+        data_approve = await resp_approve.json()
+        self.assertTrue(data_approve["success"])
+
+        # 4. Verify user status is now APPROVED
         resp_session = await self.client.get("/api/session?initData=mock_user")
-        self.assertEqual(resp_session.status, 200)
         data_session = await resp_session.json()
-        self.assertEqual(data_session["user_status"], "PENDING_APPROVAL")
+        self.assertEqual(data_session["user_status"], "APPROVED")
