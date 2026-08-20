@@ -1446,7 +1446,11 @@ async def handle_index(request):
     """GET / - Mini App HTML faylini yuklaydi."""
     import os
     webapp_dir = os.path.dirname(os.path.abspath(__file__))
-    return web.FileResponse(os.path.join(webapp_dir, "index.html"))
+    response = web.FileResponse(os.path.join(webapp_dir, "index.html"))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 
