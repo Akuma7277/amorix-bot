@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     func,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -107,7 +108,7 @@ class User(Base):
     bio = Column(Text)
     interests = Column(Text) # Qiziqishlar vergul bilan ajratilgan string sifatida
     language = Column(String(10))
-    status = Column(Enum(UserStatus), default=UserStatus.active)
+    status = Column(Enum(UserStatus), default=UserStatus.active, index=True)
     # Muddatli ban uchun tugash sanasi. NULL + status=banned => doimiy ban.
     banned_until = Column(DateTime, nullable=True)
     verification_status = Column(Enum(VerificationStatus), default=VerificationStatus.not_verified)
@@ -153,6 +154,9 @@ class Photo(Base):
 
 class Like(Base):
     __tablename__ = "likes"
+    __table_args__ = (
+        UniqueConstraint("from_user_id", "to_user_id", name="uix_like_from_to"),
+    )
     id = Column(Integer, primary_key=True)
     from_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     to_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -161,6 +165,9 @@ class Like(Base):
 
 class Match(Base):
     __tablename__ = "matches"
+    __table_args__ = (
+        UniqueConstraint("user1_id", "user2_id", name="uix_match_user1_user2"),
+    )
     id = Column(Integer, primary_key=True)
     user1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -308,6 +315,18 @@ class UserEvent(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     event_type = Column(Enum(EventType), nullable=False)
     details = Column(Text, nullable=True) # e.g., viewed_user_id, match_id
+    created_at = Column(DateTime, server_default=func.now())
+
+    user = relationship("User")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String(100), nullable=False)
+    text = Column(Text, nullable=False)
+    type = Column(String(50), default="system")  # match, like, message, system
+    is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now())
 
     user = relationship("User")

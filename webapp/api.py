@@ -16,7 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from engine import async_session_maker
 from models import (
-    User, Photo, Like, Match, ChatMessage, Payment, VerificationRequest, BlockedUser, 
+    User, Photo, Like, Match, ChatMessage, Payment, VerificationRequest, BlockedUser, Notification, 
     UserStatus, VerificationStatus, PremiumPlan, RelationshipIntent,
     UserGender, LookingForGender
 )
@@ -325,6 +325,44 @@ async def handle_profiles(request):
         elif user.looking_for == LookingForGender.female:
             q = q.where(User.gender == UserGender.female)
             
+        # Parse query params
+        min_age = int(request.query.get("min_age", 18))
+        max_age = int(request.query.get("max_age", 100))
+        filter_city = request.query.get("city", "").strip()
+        filter_intent = request.query.get("intent", "").strip()
+        online_only = request.query.get("online", "false").lower() == "true"
+        verified_only = request.query.get("verified", "false").lower() == "true"
+        quick = request.query.get("quick", "all").strip()
+
+        # Apply age filter
+        q = q.where(and_(User.age >= min_age, User.age <= max_age))
+
+        # Apply city filter
+        if filter_city:
+            q = q.where(User.city == filter_city)
+
+        # Apply intent filter
+        if filter_intent:
+            from models import RelationshipIntent
+            try:
+                q = q.where(User.relationship_intent == RelationshipIntent[filter_intent])
+            except KeyError:
+                pass
+
+        # Apply online filter (active within 15 minutes)
+        if online_only or quick == "online":
+            from datetime import timedelta
+            q = q.where(User.last_activity >= datetime.now() - timedelta(minutes=15))
+
+        # Apply verified filter
+        if verified_only or quick == "verified":
+            from models import VerificationStatus
+            q = q.where(User.verification_status == VerificationStatus.verified)
+
+        # Apply quick Mening shahrim filter
+        if quick == "city":
+            q = q.where(User.city == user.city)
+
         q = q.order_by(func.random()).limit(20)
         q_res = await session.execute(q)
         profiles = q_res.scalars().all()
@@ -335,16 +373,52 @@ async def handle_profiles(request):
             p_photos_res = await session.execute(p_photos_stmt)
             p_photos = p_photos_res.scalars().all()
             
-            # Simple compatibility score
-            score = 65
+            # Detailed compatibility score and breakdown
+            score = 50
+            reasons = []
+            
+            # City compatibility
             if p.city == user.city:
                 score += 15
-            common_interests = set(p.interests.split(",") if p.interests else []) & set(user.interests.split(",") if user.interests else [])
-            score += len(common_interests) * 5
+                reasons.append(f"Ikkalangiz ham {user.city}da yashaysiz")
+                
+            # Intent compatibility
+            if p.relationship_intent and p.relationship_intent == user.relationship_intent:
+                score += 15
+                intent_vals = {
+                    "serious": "jiddiy munosabat",
+                    "marriage": "nikohga tayyorgarlik",
+                    "friendship": "do\'stlik va suhbat",
+                    "explore": "yangi insonlar bilan tanishish",
+                    "private": "niyatini yashirish"
+                }
+                intent_name = intent_vals.get(p.relationship_intent.name, "o\'xshash maqsadlar")
+                reasons.append(f"Ikkalangiz ham {intent_name} qidiryapsiz")
+                
+            # Interests compatibility
+            p_interests = set(p.interests.split(",") if p.interests else [])
+            u_interests = set(user.interests.split(",") if user.interests else [])
+            common_interests = p_interests & u_interests
+            if common_interests:
+                interests_list = list(common_interests)[:3]
+                score += len(common_interests) * 5
+                reasons.append("Umumiy qiziqishlar bor: " + ", ".join(interests_list))
+                
+            # Language compatibility
+            if p.language == user.language:
+                score += 10
+                lang_names = {"uz": "O\'zbek", "ru": "Rus", "en": "Ingliz"}
+                lang_name = lang_names.get(p.language, p.language)
+                reasons.append(f"Ikkalangiz ham {lang_name} tilida muloqot qilasiz")
+                
             score = min(score, 99)
             
             p_dict = serialize_user(p, p_photos)
             p_dict["compatibility_score"] = score
+            p_dict["compatibility"] = {
+                "score": score,
+                "reasons": reasons
+            }
             serialized_profiles.append(p_dict)
             
         return web.json_response({"status": "ok", "profiles": serialized_profiles})
@@ -385,16 +459,53 @@ async def handle_swipe(request):
                 mutual_like = match_res.scalar_one_or_none()
                 
                 if mutual_like:
-                    # Create Match
-                    match = Match(
-                        user1_id=min(user.id, target_id),
-                        user2_id=max(user.id, target_id),
-                        is_active=True
+                    # Check if Match already exists
+                    existing_match_stmt = select(Match).where(
+                        and_(
+                            Match.user1_id == min(user.id, target_id),
+                            Match.user2_id == max(user.id, target_id)
+                        )
                     )
-                    session.add(match)
-                    await session.commit()
+                    existing_match_res = await session.execute(existing_match_stmt)
+                    existing_match = existing_match_res.scalar_one_or_none()
                     
                     target_user = await session.get(User, target_id)
+                    
+                    if not existing_match:
+                        match = Match(
+                            user1_id=min(user.id, target_id),
+                            user2_id=max(user.id, target_id),
+                            is_active=True
+                        )
+                        session.add(match)
+                        
+                        # Create Notification in DB
+                        n1 = Notification(
+                            user_id=user.id,
+                            title="Yangi moslik (Match)! 💖",
+                            text=f"Tabriklaymiz! Sizda {target_user.name if target_user else 'kimdir'} bilan o\'zaro moslik paydo bo\'ldi. Suhbatni boshlang!",
+                            type="match"
+                        )
+                        n2 = Notification(
+                            user_id=target_id,
+                            title="Yangi moslik (Match)! 💖",
+                            text=f"Tabriklaymiz! Sizda {user.name} bilan o\'zaro moslik paydo bo\'ldi. Suhbatni boshlang!",
+                            type="match"
+                        )
+                        session.add_all([n1, n2])
+                        await session.commit()
+                        
+                        # Send Telegram notifications
+                        if target_user and target_user.telegram_id:
+                            await send_bot_notification(
+                                target_user.telegram_id,
+                                f"Tabriklaymiz! Sizda {user.name} bilan o\'zaro moslik (Match) paydo bo\'ldi! 💖\n\nSuhbatni boshlash uchun Kairyx App-ni oching!"
+                            )
+                        await send_bot_notification(
+                            user.telegram_id,
+                            f"Tabriklaymiz! Sizda {target_user.name if target_user else 'kimdir'} bilan o\'zaro moslik (Match) paydo bo\'ldi! 💖\n\nSuhbatni boshlash uchun Kairyx App-ni oching!"
+                        )
+                    
                     return web.json_response({
                         "status": "ok", 
                         "match": True, 
@@ -441,11 +552,22 @@ async def handle_matches(request):
             msg_res = await session.execute(msg_stmt)
             last_msg = msg_res.scalar_one_or_none()
             
+            # Get unread count
+            unread_stmt = select(func.count(ChatMessage.id)).where(
+                and_(
+                    ChatMessage.match_id == m.id,
+                    ChatMessage.sender_id != user.id,
+                    ChatMessage.is_read == False
+                )
+            )
+            unread_count = await session.scalar(unread_stmt)
+            
             serialized_matches.append({
                 "id": m.id,
                 "partner": serialize_user(partner, p_photos),
                 "last_message": last_msg.text if last_msg else "Suhbatni boshlang...",
-                "last_message_time": last_msg.created_at.isoformat() if last_msg else None
+                "last_message_time": last_msg.created_at.isoformat() if last_msg else None,
+                "unread_count": unread_count or 0
             })
             
         return web.json_response({"status": "ok", "matches": serialized_matches})
@@ -465,6 +587,21 @@ async def handle_chat_messages(request):
         if not match or (match.user1_id != user.id and match.user2_id != user.id):
             return web.json_response({"status": "error", "message": "Access denied"}, status=403)
             
+        # Mark messages as read
+        from sqlalchemy import update
+        await session.execute(
+            update(ChatMessage)
+            .where(
+                and_(
+                    ChatMessage.match_id == match_id,
+                    ChatMessage.sender_id != user.id,
+                    ChatMessage.is_read == False
+                )
+            )
+            .values(is_read=True)
+        )
+        await session.commit()
+            
         msg_stmt = select(ChatMessage).where(ChatMessage.match_id == match_id).order_by(ChatMessage.created_at.asc())
         msg_res = await session.execute(msg_stmt)
         messages = msg_res.scalars().all()
@@ -477,7 +614,20 @@ async def handle_chat_messages(request):
             "created_at": msg.created_at.isoformat()
         } for msg in messages]
         
-        return web.json_response({"status": "ok", "messages": serialized_messages})
+        # Check typing status
+        import time
+        is_partner_typing = False
+        typing_state = TYPING_STATES.get(match_id)
+        if typing_state:
+            partner_id = match.user2_id if match.user1_id == user.id else match.user1_id
+            if typing_state["user_id"] == partner_id and time.time() - typing_state["timestamp"] < 4:
+                is_partner_typing = True
+        
+        return web.json_response({
+            "status": "ok", 
+            "messages": serialized_messages,
+            "partner_typing": is_partner_typing
+        })
 
 
 async def handle_chat_send(request):
@@ -611,6 +761,221 @@ async def check_admin_access(request, session) -> bool:
     res = await session.execute(stmt)
     user = res.scalar_one_or_none()
     return user is not None and (user.is_admin or user.telegram_id in allowed_ids)
+
+
+
+
+# ===== TYPING STATE DICTIONARY & APIS =====
+import time
+TYPING_STATES = {}
+
+async def handle_chat_typing(request):
+    """POST /api/chat/typing - User typing state notification."""
+    try:
+        tg_user, user = await require_approved_user(request)
+    except web.HTTPException as ex:
+        raise ex
+    
+    try:
+        data = await request.json()
+        match_id = int(data.get("match_id"))
+        
+        TYPING_STATES[match_id] = {
+            "user_id": user.id,
+            "timestamp": time.time()
+        }
+        return web.json_response({"status": "ok"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+async def handle_chat_icebreaker(request):
+    """GET /api/chat/icebreaker - Generate 3 suhbat boshlash taklifi based on mutual interests."""
+    try:
+        tg_user, user = await require_approved_user(request)
+    except web.HTTPException as ex:
+        raise ex
+        
+    match_id = int(request.query.get("match_id", 0))
+    async with async_session_maker() as session:
+        match = await session.get(Match, match_id)
+        if not match or (match.user1_id != user.id and match.user2_id != user.id):
+            return web.json_response({"status": "error", "message": "Access denied"}, status=403)
+            
+        partner_id = match.user2_id if match.user1_id == user.id else match.user1_id
+        partner = await session.get(User, partner_id)
+        
+        # Find common interests
+        p_interests = set(partner.interests.split(",") if partner.interests else [])
+        u_interests = set(user.interests.split(",") if user.interests else [])
+        common = list(p_interests & u_interests)
+        
+        # Fallbacks
+        icebreakers = [
+            "Salom! Profilingiz juda qiziqarli ko'rindi. Nimalar bilan bandsiz?",
+            "Salom! Tanishganimdan xursandman. Bugungi kuningiz qanday o'tmoqda?",
+            "Salom! Ikkalamizda ham qiziqarli moslik chiqdi. Keling, yaqinroq tanishamiz!"
+        ]
+        
+        # If there are common interests, customize
+        if common:
+            interest = common[0].strip()
+            icebreakers = [
+                f"Salom! Ikkalamiz ham \'{interest}\'ga qiziqar ekanmiz. Qachondan beri shug\'ullanasiz?",
+                f"Salom! Mosligimiz uchun tabriklayman. Profilingizda \'{interest}\'ni ko\'rdim, men ham shuni yaxshi ko\'raman!",
+                f"Salom! Suhbatimizni nimadan boshlasak ekan? \'{interest}\' haqida gaplashamizlarmi? 😊"
+            ]
+            
+        return web.json_response({"status": "ok", "icebreakers": icebreakers})
+
+
+
+
+async def handle_user_block(request):
+    """POST /api/user/block - Foydalanuvchini bloklash."""
+    try:
+        tg_user, user = await require_approved_user(request)
+    except web.HTTPException as ex:
+        raise ex
+        
+    try:
+        data = await request.json()
+        blocked_id = int(data.get("blocked_id"))
+        
+        async with async_session_maker() as session:
+            # Check if block record already exists
+            stmt = select(BlockedUser).where(
+                and_(BlockedUser.blocker_id == user.id, BlockedUser.blocked_id == blocked_id)
+            )
+            res = await session.execute(stmt)
+            existing = res.scalar_one_or_none()
+            
+            if not existing:
+                block_record = BlockedUser(
+                    blocker_id=user.id,
+                    blocked_id=blocked_id
+                )
+                session.add(block_record)
+            
+            # Delete any active matches between these two users
+            match_stmt = select(Match).where(
+                or_(
+                    and_(Match.user1_id == user.id, Match.user2_id == blocked_id),
+                    and_(Match.user1_id == blocked_id, Match.user2_id == user.id)
+                )
+            )
+            match_res = await session.execute(match_stmt)
+            match = match_res.scalar_one_or_none()
+            if match:
+                await session.delete(match)
+                
+            await session.commit()
+            return web.json_response({"status": "ok"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+async def handle_user_report(request):
+    """POST /api/user/report - Foydalanuvchi ustidan shikoyat yuborish."""
+    try:
+        tg_user, user = await require_approved_user(request)
+    except web.HTTPException as ex:
+        raise ex
+        
+    try:
+        data = await request.json()
+        reported_id = int(data.get("reported_id"))
+        category_str = data.get("category", "other")
+        desc = data.get("description", "").strip()
+        
+        from models import Report, ReportCategory
+        try:
+            category = ReportCategory[category_str]
+        except KeyError:
+            category = ReportCategory.other
+            
+        async with async_session_maker() as session:
+            report_record = Report(
+                reporter_id=user.id,
+                reported_id=reported_id,
+                category=category,
+                description=desc
+            )
+            session.add(report_record)
+            await session.commit()
+            return web.json_response({"status": "ok"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
+
+
+async def handle_notifications(request):
+    """GET /api/notifications - Foydalanuvchi bildirishnomalari ro'yxati."""
+    try:
+        tg_user, user = await require_approved_user(request)
+    except web.HTTPException as ex:
+        raise ex
+        
+    async with async_session_maker() as session:
+        stmt = select(Notification).where(Notification.user_id == user.id).order_by(Notification.created_at.desc()).limit(50)
+        res = await session.execute(stmt)
+        notifications = res.scalars().all()
+        
+        unread_stmt = select(func.count(Notification.id)).where(
+            and_(Notification.user_id == user.id, Notification.is_read == False)
+        )
+        unread_count = await session.scalar(unread_stmt)
+        
+        serialized = [{
+            "id": n.id,
+            "title": n.title,
+            "text": n.text,
+            "type": n.type,
+            "is_read": n.is_read,
+            "created_at": n.created_at.isoformat()
+        } for n in notifications]
+        
+        return web.json_response({
+            "status": "ok",
+            "notifications": serialized,
+            "unread_count": unread_count or 0
+        })
+
+
+async def handle_notifications_read(request):
+    """POST /api/notifications/read - Barcha bildirishnomalarni o'qilgan deb belgilash."""
+    try:
+        tg_user, user = await require_approved_user(request)
+    except web.HTTPException as ex:
+        raise ex
+        
+    async with async_session_maker() as session:
+        from sqlalchemy import update
+        await session.execute(
+            update(Notification)
+            .where(and_(Notification.user_id == user.id, Notification.is_read == False))
+            .values(is_read=True)
+        )
+        await session.commit()
+        return web.json_response({"status": "ok"})
+
+
+
+
+async def send_bot_notification(telegram_id: int, message_text: str):
+    """Safar bot orqali foydalanuvchiga xabar yuborish."""
+    from aiogram import Bot
+    from config import BOT_TOKEN
+    if not BOT_TOKEN or BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
+        return
+    try:
+        bot = Bot(token=BOT_TOKEN)
+        await bot.send_message(chat_id=telegram_id, text=message_text)
+        await bot.session.close()
+    except Exception as e:
+        import logging
+        logging.warning(f"Error sending bot notification to {telegram_id}: {e}")
 
 
 async def require_approved_user(request) -> tuple:
@@ -1105,6 +1470,12 @@ def create_webapp_app() -> web.Application:
     app.router.add_post("/api/admin/user/reject", handle_admin_reject)
     app.router.add_get("/api/admin/pending-users", handle_admin_pending_users)
     app.router.add_post("/api/registration/resubmit", handle_registration_resubmit)
+    app.router.add_post("/api/chat/typing", handle_chat_typing)
+    app.router.add_get("/api/chat/icebreaker", handle_chat_icebreaker)
+    app.router.add_post("/api/user/block", handle_user_block)
+    app.router.add_post("/api/user/report", handle_user_report)
+    app.router.add_get("/api/notifications", handle_notifications)
+    app.router.add_post("/api/notifications/read", handle_notifications_read)
 
     # Static assets
     import os

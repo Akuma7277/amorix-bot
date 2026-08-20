@@ -1,37 +1,28 @@
-PHASE: Majburiy registration va admin approval + Stats
+PHASE: Phase P1: Core Dating Experience
 DONE: 
-- UserStatus enumga draft, pending_approval, rejected, deleted holatlari qo'shildi.
-- User modeliga rejection_reason, reviewed_by va reviewed_at maydonlari qo'shildi.
-- crud.py da admin tasdiqlash va rad etish funksiyalari (approve, reject, get_pending, resubmit) joriy etildi.
-- WebApp API da /api/init va /api/register statusga moslandi, protected API endpointlari (/api/profiles, /api/swipe, /api/matches, /api/chat/*, /api/premium/buy) uchun faqat APPROVED bo'lgan statusdagilarga ruxsat beruvchi require_approved_user route guards va server-side middleware qo'shildi.
-- Admin Panel statistikasi endi hardcoded qiymatlardan real aggregate database querylariga o'tkazildi va camelCase keys (totalUsers, approvedUsers, pendingApproval, rejectedUsers, activeUsers, joinedToday, premiumUsers) formatiga o'tkazildi.
-- Frontend initApp() va submitRegistration() status transitionsga asosan pending/rejected/blocked/home navigatsiya qilinishi ta'minlandi.
-- Telegram botda pending yoki rejected holatdagi foydalanuvchilar har qanday buyruq yuborganida ularni cheklovchi ApprovalCheckMiddleware joriy etildi va faqat Mini App havolasi ko'rsatiladi.
-- Barcha 82 ta pytest testlari muvaffaqiyatli topshirildi va barchasi o'tdi.
-- Kodlar GitHub repositoryga push qilindi, Railway avtomatik ravishda deploy qilmoqda.
+- models.py update unique constraints and notifications model
+- webapp/index.html search filter headers, chips, modal, chat details actions dropdown, typing indicator, AI icebreakers chips
+- webapp/style.css styled quick chips, select inputs, filter options, AI icebreaker tags
+- webapp/app.js wired loadProfiles filters params, display compatibility reasons, openChatDetail, typing alerts, block/report actions
+- webapp/api.py profiles search queries filters logic, detailed compatibility reasons generator, chat typing indicator route, AI icebreaker list, block & report api methods, notifications API endpoints
+- tests/test_p1_matching.py written and executed tests, all 84 test runs passing
 
 FILES_CHANGED:
-- admin.py
-- bot.py
-- common.py
-- crud.py
 - models.py
-- registration.py
-- tests/test_crud_fallback.py
-- webapp/api.py
-- webapp/app.js
 - webapp/index.html
 - webapp/style.css
+- webapp/app.js
+- webapp/api.py
+- tests/test_p1_matching.py
 
 MIGRATIONS:
-- run_lightweight_migrations() auto-executed on bot startup (adds columns: rejection_reason, reviewed_by, reviewed_at to users table).
+- run_lightweight_migrations() automatically creates the new notifications table on next app reboot.
 
 TESTS:
-- All 82 unit tests passed successfully.
+- All 84 tests passed successfully.
 
 ERRORS:
 - None.
 
 NEXT:
-- Manual testing of registration flow from mobile.
-- Admin verification and approval through Admin Panel.
+- Phase P2: VIP monetization, Stripe/Webhook billing integrations, boost profile matching.

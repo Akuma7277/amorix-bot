@@ -347,6 +347,18 @@
 
             <!-- SEARCH PAGE -->
             <section class="page" id="page-search">
+                <div class="search-header">
+                    <h2>🔍 Qidiruv</h2>
+                    <button class="btn-filter-toggle" onclick="openFilterModal()">
+                        <span>⚙️ Filterlar</span>
+                    </button>
+                </div>
+                <div class="quick-chips">
+                    <div class="chip active" id="chip-all" onclick="setQuickFilter('all')">Menga moslari</div>
+                    <div class="chip" id="chip-online" onclick="setQuickFilter('online')">Hozir online</div>
+                    <div class="chip" id="chip-verified" onclick="setQuickFilter('verified')">Verified ✅</div>
+                    <div class="chip" id="chip-city" onclick="setQuickFilter('city')">Mening shahrim</div>
+                </div>
                 <div class="search-container">
                     <div class="swipe-card-stack" id="swipeCardStack">
                         <div class="swipe-card glass-card" id="currentSwipeCard">
@@ -368,6 +380,7 @@
                                     </div>
                                     <span class="compat-text" id="compatText">0% mos</span>
                                 </div>
+                                <div class="swipe-compat-reasons" id="swipeCompatReasons" style="margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.5); text-align: left; display: flex; flex-direction: column; gap: 4px;"></div>
                                 <div class="swipe-interests" id="swipeInterests"></div>
                             </div>
                         </div>
@@ -411,9 +424,36 @@
             <!-- CHAT DETAIL PAGE -->
             <section class="page" id="page-chat-detail">
                 <div class="chat-container glass-card">
+                    <div class="chat-header" style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);position:relative;">
+                        <button class="chat-back-btn" onclick="navigateTo('matches')" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;margin-right:12px;">◀️</button>
+                        <div class="chat-header-info" style="flex:1;">
+                            <h3 id="chatPartnerName" style="font-size:15px;margin:0;color:#fff;">Partner Name</h3>
+                            <span id="chatPartnerStatus" style="font-size:11px;color:rgba(255,255,255,0.4);">offline</span>
+                        </div>
+                        <button class="chat-menu-btn" onclick="toggleChatMenu()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:4px 8px;">⋮</button>
+                        
+                        <!-- Chat Action Dropdown Menu -->
+                        <div class="chat-dropdown" id="chatDropdown" style="display:none;position:absolute;top:50px;right:16px;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;z-index:100;box-shadow:0 10px 30px rgba(0,0,0,0.5);width:160px;overflow:hidden;">
+                            <div class="dropdown-item" onclick="confirmBlockPartner()" style="padding:12px;font-size:13px;color:#ff4757;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='none'">🚫 Bloklash (Block)</div>
+                            <div class="dropdown-item" onclick="showReportModalFromChat()" style="padding:12px;font-size:13px;color:#ff9f43;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='none'">⚠️ Shikoyat (Report)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-safety-banner" style="background:rgba(182,36,255,0.08);border-bottom:1px solid rgba(182,36,255,0.15);padding:10px 16px;font-size:11px;color:rgba(255,255,255,0.7);line-height:1.4;">
+                        🛡️ <b>Uchrashuv xavfsizligi:</b> Birinchi uchrashuvni jamoat joyida o'tkazing, notanishlarga pul yoki karta raqamingizni yubormang.
+                    </div>
+                    
                     <div class="chat-messages" id="chatMessages"></div>
+                    
+                    <div id="chatPartnerTyping" style="display:none;font-size:11px;color:rgba(182,36,255,0.8);margin: 4px 16px;font-style:italic;">yozmoqda...</div>
+                    
+                    <div class="chat-icebreakers-container" id="chatIcebreakers" style="display:none;padding:8px 16px 4px;border-top:1px solid rgba(255,255,255,0.03);">
+                        <p style="font-size:10px;color:rgba(255,255,255,0.4);margin:0 0 6px;text-align:center;">💡 Suhbatni boshlash takliflari (AI Icebreakers):</p>
+                        <div class="icebreaker-chips" id="icebreakerChipsList" style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;"></div>
+                    </div>
+                    
                     <div class="chat-input-bar">
-                        <input type="text" id="chatMessageInput" placeholder="Xabaringizni yozing..." class="form-input">
+                        <input type="text" id="chatMessageInput" placeholder="Xabaringizni yozing..." class="form-input" oninput="sendTypingNotification()">
                         <button class="btn-primary" id="btnSendChat" onclick="sendChatMessage()" data-i18n="btn_send">Yuborish</button>
                     </div>
                 </div>
@@ -609,6 +649,16 @@
             </section>
 
             <!-- ADMIN PAGE -->
+            <!-- NOTIFICATIONS PAGE -->
+            <section class="page" id="page-notifications">
+                <div class="chat-header" style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <button class="chat-back-btn" onclick="navigateTo('home')" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;margin-right:12px;">◀️</button>
+                    <h3 style="font-size:15px;margin:0;color:#fff;flex:1;">🔔 Bildirishnomalar</h3>
+                    <button onclick="markAllNotificationsAsRead()" style="background:none;border:none;color:rgba(182,36,255,0.8);font-size:12px;font-weight:600;cursor:pointer;">Hammasini o'qish</button>
+                </div>
+                <div class="notifications-list" id="notificationsList" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;"></div>
+            </section>
+
             <section class="page" id="page-admin">
       <!-- ADMIN: Pending Users Section -->
       <div class="admin-section" id="adminPendingSection">
@@ -697,6 +747,98 @@
 
         <!-- Bottom Navigation -->
     
+
+    <!-- FILTER MODAL -->
+    <div class="modal-overlay" id="filterModal" style="display:none;">
+      <div class="modal-card">
+        <h3>⚙️ Qidiruv filterlari</h3>
+        <p style="color:var(--text-muted);margin:8px 0 16px;">Mos profillarni saralash parametrlari:</p>
+        
+        <div class="filter-group">
+          <label style="display:block;margin-bottom:6px;">Yosh oralig'i:</label>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="number" id="filterMinAge" min="18" max="99" value="18" class="modal-input" style="width:70px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;">
+            <span>dan</span>
+            <input type="number" id="filterMaxAge" min="18" max="99" value="45" class="modal-input" style="width:70px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;">
+            <span>gacha</span>
+          </div>
+        </div>
+
+        <div class="filter-group" style="margin-top:16px;">
+          <label style="display:block;margin-bottom:6px;">Shahar:</label>
+          <select id="filterCity" class="modal-select" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;outline:none;">
+            <option value="" style="background:#1a1a2e;">Farqi yo'q</option>
+            <option value="Toshkent" style="background:#1a1a2e;">Toshkent</option>
+            <option value="Samarqand" style="background:#1a1a2e;">Samarqand</option>
+            <option value="Buxoro" style="background:#1a1a2e;">Buxoro</option>
+            <option value="Andijon" style="background:#1a1a2e;">Andijon</option>
+            <option value="Farg'ona" style="background:#1a1a2e;">Farg'ona</option>
+            <option value="Namangan" style="background:#1a1a2e;">Namangan</option>
+            <option value="Xorazm" style="background:#1a1a2e;">Xorazm</option>
+            <option value="Qashqadaryo" style="background:#1a1a2e;">Qashqadaryo</option>
+            <option value="Surxondaryo" style="background:#1a1a2e;">Surxondaryo</option>
+            <option value="Jizzax" style="background:#1a1a2e;">Jizzax</option>
+            <option value="Sirdaryo" style="background:#1a1a2e;">Sirdaryo</option>
+            <option value="Navoiy" style="background:#1a1a2e;">Navoiy</option>
+            <option value="Qoraqalpog'iston" style="background:#1a1a2e;">Qoraqalpog'iston</option>
+          </select>
+        </div>
+
+        <div class="filter-group" style="margin-top:16px;">
+          <label style="display:block;margin-bottom:6px;">Tanishuv maqsadi:</label>
+          <select id="filterIntent" class="modal-select" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;outline:none;">
+            <option value="" style="background:#1a1a2e;">Farqi yo'q</option>
+            <option value="serious" style="background:#1a1a2e;">Jiddiy munosabat</option>
+            <option value="marriage" style="background:#1a1a2e;">Nikohga tayyorgarlik</option>
+            <option value="friendship" style="background:#1a1a2e;">Do'stlik va suhbat</option>
+            <option value="explore" style="background:#1a1a2e;">Yangi insonlar bilan tanishish</option>
+            <option value="private" style="background:#1a1a2e;">Niyatimni yashiraman</option>
+          </select>
+        </div>
+
+        <div class="filter-group" style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+          <label>Faqat online:</label>
+          <input type="checkbox" id="filterOnlineOnly" style="width:20px;height:20px;cursor:pointer;">
+        </div>
+
+        <div class="filter-group" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+          <label>Faqat verified profillar:</label>
+          <input type="checkbox" id="filterVerifiedOnly" style="width:20px;height:20px;cursor:pointer;">
+        </div>
+
+        <div class="modal-actions" style="margin-top:24px; display:flex; gap:10px;">
+          <button class="btn-cancel" onclick="closeFilterModal()" style="flex:1;">Bekor qilish</button>
+          <button class="btn-primary" onclick="applyFilters()" style="flex:1; padding:12px; border-radius:12px; font-weight:700; background:linear-gradient(135deg, #b624ff, #ff4785); color:#fff; border:none; cursor:pointer;">Saqlash</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- REPORT MODAL -->
+    <div class="modal-overlay" id="reportModal" style="display:none;">
+      <div class="modal-card">
+        <h3>⚠️ Shikoyat yuborish</h3>
+        <p style="color:var(--text-muted);margin:8px 0 16px;">Kategoriyani tanlang va shikoyat sababini kiriting:</p>
+        
+        <div class="filter-group" style="margin-bottom:12px;">
+          <select id="reportCategorySelect" class="modal-select" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;outline:none;">
+            <option value="fake_profile" style="background:#1a1a2e;">Soxta profil (Fake)</option>
+            <option value="inappropriate_content" style="background:#1a1a2e;">Nomaqbul kontent (Inappropriate)</option>
+            <option value="spam" style="background:#1a1a2e;">Spam / Reklama</option>
+            <option value="insult" style="background:#1a1a2e;">Qo'pol muomala / Haqorat</option>
+            <option value="other" style="background:#1a1a2e;">Boshqa sabab</option>
+          </select>
+        </div>
+        
+        <textarea id="reportDescriptionInput" class="modal-textarea" placeholder="Sababini to'liqroq yozing..." rows="3"></textarea>
+        
+        <div class="modal-actions" style="margin-top:20px; display:flex; gap:10px;">
+          <button class="btn-cancel" onclick="closeReportModal()">Bekor qilish</button>
+          <button class="btn-reject-confirm" onclick="submitUserReport()" style="background:linear-gradient(135deg, rgba(255,159,67,0.25), rgba(255,107,53,0.2)); border-color:rgba(255,159,67,0.4); color:#ff9f43;">Yuborish</button>
+        </div>
+      </div>
+    </div>
+
     <!-- REJECT MODAL -->
     <div class="modal-overlay" id="rejectModal" style="display:none;">
       <div class="modal-card">

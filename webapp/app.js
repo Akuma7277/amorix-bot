@@ -325,6 +325,16 @@ const state = {
         photos: []
     },
     currentRegStep: 1,
+    // Search & Swipe Filters
+    filters: {
+        minAge: 18,
+        maxAge: 50,
+        city: "",
+        intent: "",
+        onlineOnly: false,
+        verifiedOnly: false,
+        quick: "all"
+    }
 };
 
 // Fallback Profiles
@@ -453,6 +463,7 @@ async function initApp() {
                 loadProfiles();
                 loadLikes();
                 loadMatches();
+                loadNotifications();
                 break;
                 
             case "banned":
@@ -964,7 +975,16 @@ function goBack() {
 // ===== POTENTIAL MATCHES & SWIPE =====
 async function loadProfiles() {
     try {
-        const res = await fetch(`${API_URL}/api/profiles`, { headers: getHeaders() });
+        const queryParams = new URLSearchParams({
+            min_age: state.filters.minAge,
+            max_age: state.filters.maxAge,
+            city: state.filters.city,
+            intent: state.filters.intent,
+            online: state.filters.onlineOnly,
+            verified: state.filters.verifiedOnly,
+            quick: state.filters.quick
+        });
+        const res = await fetch(`${API_URL}/api/profiles?${queryParams.toString()}`, { headers: getHeaders() });
         const data = await res.json();
         
         if (data.status === "ok" && data.profiles && data.profiles.length > 0) {
@@ -972,10 +992,13 @@ async function loadProfiles() {
             state.currentProfileIndex = 0;
             displayCurrentProfile();
         } else {
-            loadFallbackProfiles();
+            state.profiles = [];
+            displayCurrentProfile();
         }
     } catch (e) {
-        loadFallbackProfiles();
+        console.log("Error loading profiles:", e);
+        state.profiles = [];
+        displayCurrentProfile();
     }
 }
 
@@ -992,6 +1015,111 @@ function loadFallbackProfiles() {
     state.profiles = filtered;
     state.currentProfileIndex = 0;
     displayCurrentProfile();
+}
+
+async function loadNotifications() {
+    const list = document.getElementById('notificationsList');
+    const badge = document.getElementById('unreadNotificationsBadge');
+    
+    try {
+        const res = await fetch(`${API_URL}/api/notifications`, { headers: getHeaders() });
+        const data = await res.json();
+        
+        if (data.status === "ok") {
+            // Update unread count badge
+            if (badge) {
+                if (data.unread_count > 0) {
+                    badge.style.display = 'block';
+                    badge.textContent = data.unread_count;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+            
+            if (list) {
+                if (data.notifications && data.notifications.length > 0) {
+                    list.innerHTML = data.notifications.map(n => {
+                        const icon = n.type === 'match' ? '💖' : n.type === 'like' ? '❤️' : n.type === 'message' ? '💬' : '🔔';
+                        const unreadClass = n.is_read ? '' : 'unread';
+                        const dateStr = new Date(n.created_at).toLocaleDateString([], {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+                        
+                        return `
+                            <div class="notification-card ${unreadClass}" style="display:flex;gap:12px;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:16px;align-items:flex-start;transition:all 0.2s ease;">
+                                <div class="notification-icon-box" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:18px;min-width:36px;">${icon}</div>
+                                <div class="notification-content-info" style="flex:1;">
+                                    <h4 style="font-size:14px;color:#fff;margin:0 0 4px;font-weight:600;">${n.title}</h4>
+                                    <p style="font-size:12px;color:rgba(255,255,255,0.5);margin:0 0 6px;line-height:1.4;">${n.text}</p>
+                                    <span style="font-size:10px;color:rgba(255,255,255,0.3);">${dateStr}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div><h3>Bildirishnomalar yo\'q</h3><p>Bu yerda tizim xabarlari va yangiliklar ko\'rsatiladi.</p></div>';
+                }
+            }
+        }
+    } catch (e) {
+        console.log("Error loading notifications:", e);
+    }
+}
+
+async function markAllNotificationsAsRead() {
+    try {
+        const response = await fetch(`${API_URL}/api/notifications/read`, {
+            method: "POST",
+            headers: getHeaders()
+        });
+        const data = await response.json();
+        if (data.status === "ok") {
+            loadNotifications();
+            showToast("✅", "Hammasi o'qildi deb belgilandi");
+        }
+    } catch (e) {
+        console.log("Error marking notifications read:", e);
+    }
+}
+
+function openFilterModal() {
+    const modal = document.getElementById('filterModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    
+    document.getElementById('filterMinAge').value = state.filters.minAge;
+    document.getElementById('filterMaxAge').value = state.filters.maxAge;
+    document.getElementById('filterCity').value = state.filters.city;
+    document.getElementById('filterIntent').value = state.filters.intent;
+    document.getElementById('filterOnlineOnly').checked = state.filters.onlineOnly;
+    document.getElementById('filterVerifiedOnly').checked = state.filters.verifiedOnly;
+}
+
+function closeFilterModal() {
+    const modal = document.getElementById('filterModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function applyFilters() {
+    state.filters.minAge = parseInt(document.getElementById('filterMinAge').value) || 18;
+    state.filters.maxAge = parseInt(document.getElementById('filterMaxAge').value) || 50;
+    state.filters.city = document.getElementById('filterCity').value;
+    state.filters.intent = document.getElementById('filterIntent').value;
+    state.filters.onlineOnly = document.getElementById('filterOnlineOnly').checked;
+    state.filters.verifiedOnly = document.getElementById('filterVerifiedOnly').checked;
+    
+    closeFilterModal();
+    loadProfiles();
+    showToast("⚙️", "Filterlar saqlandi");
+}
+
+function setQuickFilter(type) {
+    state.filters.quick = type;
+    
+    // Update active class on chips
+    document.querySelectorAll('.quick-chips .chip').forEach(c => c.classList.remove('active'));
+    const activeChip = document.getElementById('chip-' + type);
+    if (activeChip) activeChip.classList.add('active');
+    
+    loadProfiles();
 }
 
 function displayCurrentProfile() {
@@ -1048,6 +1176,19 @@ function displayCurrentProfile() {
     const score = profile.compatibility_score || 85;
     if (compatText) compatText.textContent = `${score}% mos`;
     if (compatFill) compatFill.style.width = `${score}%`;
+    
+    const reasonsContainer = document.getElementById('swipeCompatReasons');
+    if (reasonsContainer) {
+        reasonsContainer.innerHTML = '';
+        if (profile.compatibility && profile.compatibility.reasons) {
+            profile.compatibility.reasons.forEach(reason => {
+                const item = document.createElement('div');
+                item.className = 'compat-reason-item';
+                item.innerHTML = `✨ ${reason}`;
+                reasonsContainer.appendChild(item);
+            });
+        }
+    }
     
     const interestsContainer = document.getElementById('swipeInterests');
     if (interestsContainer) {
@@ -1205,65 +1346,273 @@ async function loadLikes() {
 async function loadMatches() {
     const list = document.getElementById('matchesList');
     if (!list) return;
-    list.innerHTML = '';
+    list.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
     
-    DEMO_PROFILES.slice(0, 2).forEach(p => {
-        const item = document.createElement('div');
-        item.className = 'match-item';
-        item.onclick = () => openChatDetail(p.id, p.name);
+    try {
+        const res = await fetch(`${API_URL}/api/matches`, { headers: getHeaders() });
+        const data = await res.json();
         
-        const avatar = p.photos && p.photos.length > 0 
-            ? `<img src="${resolvePhotoUrl(p.photos[0])}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` 
-            : `👤`;
-        
-        item.innerHTML = `
-            <div class="match-avatar">${avatar}</div>
-            <div class="match-info">
-                <h4>${p.name} ${p.premium_plan !== 'Basic' ? '\u{1F451}' : ''}</h4>
-                <p>Salom, yaxshimisiz? 😊</p>
-            </div>
-            <div class="match-time">Hozir</div>
-        `;
-        list.appendChild(item);
-    });
+        if (data.status === "ok" && data.matches && data.matches.length > 0) {
+            list.innerHTML = data.matches.map(m => {
+                const partner = m.partner;
+                const avatar = partner.photos && partner.photos.length > 0 
+                    ? `<img src="${resolvePhotoUrl(partner.photos[0])}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` 
+                    : `👤`;
+                
+                const badge = m.unread_count > 0 
+                    ? `<span class="pending-badge" style="background:#ff4757;margin-left:auto;">${m.unread_count}</span>` 
+                    : '';
+                
+                return `
+                    <div class="match-item" onclick="openChatDetail(${m.id}, '${partner.name}', ${partner.id})" style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;">
+                        <div class="match-avatar" style="width:48px;height:48px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:24px;">${avatar}</div>
+                        <div class="match-info" style="flex:1;min-width:0;">
+                            <h4 style="margin:0 0 4px;font-size:14px;color:#fff;">${partner.name} ${partner.premium_plan !== 'Basic' ? '\u{1F451}' : ''}</h4>
+                            <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.last_message}</p>
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                            <div class="match-time" style="font-size:10px;color:rgba(255,255,255,0.3);">${m.last_message_time ? new Date(m.last_message_time).toLocaleTimeString([], {hour: \'2-digit\', minute:\'2-digit\'}) : \'\'}</div>
+                            ${badge}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            list.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><h3>Hozircha suhbatlar yo\'q</h3><p>Profil qidirish orqali yangi sheriklar toping!</p></div>';
+        }
+    } catch (e) {
+        console.log("Error loading matches:", e);
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Yuklashda xatolik</h3></div>';
+    }
 }
 
 // ===== CHAT ROOM =====
-function openChatDetail(matchId, partnerName) {
+function openChatDetail(matchId, partnerName, partnerId) {
     state.activeMatchId = matchId;
-    navigateTo('chat-detail');
-    const hTitle = document.getElementById('headerTitle');
-    if (hTitle) hTitle.textContent = partnerName;
+    state.activePartnerId = partnerId;
+    
+    // Reset inputs & hide dropdown
+    const dropdown = document.getElementById('chatDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    
+    const pName = document.getElementById('chatPartnerName');
+    if (pName) pName.textContent = partnerName;
+    
+    const pStatus = document.getElementById('chatPartnerStatus');
+    if (pStatus) pStatus.textContent = 'online';
+    
+    navigateTo('page-chat-detail');
     
     if (state.chatInterval) clearInterval(state.chatInterval);
     loadChatMessages();
+    
+    // Poll chat messages every 3 seconds
+    state.chatInterval = setInterval(loadChatMessages, 3000);
+    
+    // Load AI Icebreakers
+    loadChatIcebreakers();
 }
 
 async function loadChatMessages() {
+    if (state.currentPage !== 'page-chat-detail' || !state.activeMatchId) {
+        if (state.chatInterval) {
+            clearInterval(state.chatInterval);
+            state.chatInterval = null;
+        }
+        return;
+    }
+    
     const container = document.getElementById('chatMessages');
     if (!container) return;
-    container.innerHTML = `
-        <div class="chat-bubble partner-message">Salom! Kairyx ilovasiga xush kelibsiz! 👋</div>
-        <div class="chat-bubble my-message">Salom, rahmat! Qandaysiz? 😊</div>
-    `;
-    container.scrollTop = container.scrollHeight;
+    
+    try {
+        const res = await fetch(`${API_URL}/api/chat/messages?match_id=${state.activeMatchId}`, { headers: getHeaders() });
+        const data = await res.json();
+        
+        if (data.status === "ok" && data.messages) {
+            const hasNewMessages = container.children.length !== data.messages.length;
+            
+            container.innerHTML = data.messages.map(msg => {
+                const bubbleClass = msg.is_my_message ? 'my-message' : 'partner-message';
+                return `<div class="chat-bubble ${bubbleClass}">${msg.text}</div>`;
+            }).join('');
+            
+            if (hasNewMessages) {
+                container.scrollTop = container.scrollHeight;
+            }
+            
+            // Render typing indicator
+            const typingIndicator = document.getElementById('chatPartnerTyping');
+            if (typingIndicator) {
+                typingIndicator.style.display = data.partner_typing ? 'block' : 'none';
+            }
+        }
+    } catch (e) {
+        console.log("Error loading chat messages:", e);
+    }
 }
 
 async function sendChatMessage() {
     const input = document.getElementById('chatMessageInput');
     const text = input?.value.trim();
-    if (!text) return;
+    if (!text || !state.activeMatchId) return;
     
     input.value = '';
-    const container = document.getElementById('chatMessages');
-    if (container) {
-        const bubble = document.createElement('div');
-        bubble.className = 'chat-bubble my-message';
-        bubble.textContent = text;
-        container.appendChild(bubble);
-        container.scrollTop = container.scrollHeight;
+    
+    try {
+        const response = await fetch(`${API_URL}/api/chat/send`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ match_id: state.activeMatchId, text: text })
+        });
+        const data = await response.json();
+        if (data.status === "ok") {
+            loadChatMessages();
+            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        } else {
+            showToast("⚠️", data.message || "Yuborib bo'lmadi");
+        }
+    } catch (e) {
+        showToast("⚠️", "Tarmoq xatoligi");
     }
-    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+// ===== CHAT TYPING STATS =====
+let lastTypingTime = 0;
+async function sendTypingNotification() {
+    const now = Date.now();
+    if (now - lastTypingTime < 2000 || !state.activeMatchId) return;
+    lastTypingTime = now;
+    
+    try {
+        await fetch(`${API_URL}/api/chat/typing`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ match_id: state.activeMatchId })
+        });
+    } catch (e) {}
+}
+
+// ===== AI ICEBREAKERS =====
+async function loadChatIcebreakers() {
+    const container = document.getElementById('chatIcebreakers');
+    const chipsList = document.getElementById('icebreakerChipsList');
+    if (!container || !chipsList || !state.activeMatchId) return;
+    
+    container.style.display = 'none';
+    chipsList.innerHTML = '';
+    
+    try {
+        const res = await fetch(`${API_URL}/api/chat/icebreaker?match_id=${state.activeMatchId}`, { headers: getHeaders() });
+        const data = await res.json();
+        
+        if (data.status === "ok" && data.icebreakers && data.icebreakers.length > 0) {
+            container.style.display = 'block';
+            chipsList.innerHTML = data.icebreakers.map(ib => `
+                <button class="icebreaker-chip" onclick="prefillChatInput('${ib.replace(/'/g, "\\'")}')">${ib}</button>
+            `).join('');
+        }
+    } catch (e) {
+        console.log("Error loading icebreakers:", e);
+    }
+}
+
+function prefillChatInput(text) {
+    const input = document.getElementById('chatMessageInput');
+    if (input) {
+        input.value = text;
+        input.focus();
+    }
+}
+
+// ===== CHAT ACTIONS DROPDOWN =====
+function toggleChatMenu() {
+    const dropdown = document.getElementById('chatDropdown');
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// ===== BLOCK & REPORT ACTIONS =====
+async function confirmBlockPartner() {
+    if (!state.activePartnerId) return;
+    
+    const confirmBlock = confirm("Foydalanuvchini bloklamoqchimisiz? Ushbu amal natijasida u bilan barcha yozishmalaringiz o\'chiriladi.");
+    if (!confirmBlock) return;
+    
+    showToast("\u{23f3}", "Bloklanmoqda...");
+    try {
+        const response = await fetch(`${API_URL}/api/user/block`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ blocked_id: state.activePartnerId })
+        });
+        const data = await response.json();
+        if (data.status === "ok") {
+            showToast("\u{2705}", "Foydalanuvchi bloklandi");
+            navigateTo('matches');
+            loadMatches();
+        } else {
+            showToast("⚠️", data.message || "Xatolik");
+        }
+    } catch (e) {
+        showToast("⚠️", "Tarmoq xatoligi");
+    }
+}
+
+function showReportModalFromChat() {
+    const dropdown = document.getElementById('chatDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    
+    state.reportingUserId = state.activePartnerId;
+    const modal = document.getElementById('reportModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        const input = document.getElementById('reportDescriptionInput');
+        if (input) input.value = '';
+    }
+}
+
+function closeReportModal() {
+    const modal = document.getElementById('reportModal');
+    if (modal) modal.style.display = 'none';
+    state.reportingUserId = null;
+}
+
+async function submitUserReport() {
+    const category = document.getElementById('reportCategorySelect')?.value;
+    const desc = document.getElementById('reportDescriptionInput')?.value?.trim();
+    
+    if (!desc) {
+        showToast("⚠️", "Shikoyat sababini kiriting!");
+        return;
+    }
+    
+    showToast("\u{23f3}", "Yuborilmoqda...");
+    try {
+        const response = await fetch(`${API_URL}/api/user/report`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({
+                reported_id: state.reportingUserId,
+                category: category,
+                description: desc
+            })
+        });
+        const data = await response.json();
+        if (data.status === "ok") {
+            showToast("\u{2705}", "Shikoyat yuborildi");
+            closeReportModal();
+            // Block reported user automatically for better safety
+            if (state.currentPage === 'page-chat-detail') {
+                confirmBlockPartner();
+            }
+        } else {
+            showToast("⚠️", data.message || "Xatolik");
+        }
+    } catch (e) {
+        showToast("⚠️", "Tarmoq xatoligi");
+    }
 }
 
 // ===== EDIT FIELD PROMPT =====
