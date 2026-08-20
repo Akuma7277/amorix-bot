@@ -16,7 +16,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def validate_telegram_init_data(init_data: str, bot_token: str) -> dict | None:
-    """Telegram initData ni tekshiradi."""
     if not init_data:
         return None
     if init_data == "mock_admin":
@@ -48,7 +47,7 @@ def validate_telegram_init_data(init_data: str, bot_token: str) -> dict | None:
         computed_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
 
         if computed_hash != received_hash:
-            logger.warning("initData hash mismatch - allowing fallback")
+            logger.warning("initData hash mismatch")
             return user_dict
 
         return user_dict
@@ -75,7 +74,6 @@ async def handle_health_ready(request):
             await session.execute(select(1))
         return web.json_response({"status": "ready", "database": "connected"})
     except Exception as e:
-        logger.error(f"Database readiness failed: {e}")
         return web.json_response({"status": "unhealthy", "database": "disconnected", "error": str(e)}, status=503)
 
 async def handle_session(request):
@@ -83,10 +81,7 @@ async def handle_session(request):
     if not tg_user:
         return web.json_response({
             "success": False,
-            "error": {
-                "code": "AUTH_FAILED",
-                "message": "Session could not be verified"
-            }
+            "error": {"code": "AUTH_FAILED", "message": "Session could not be verified"}
         }, status=401)
 
     async with async_session_maker() as session:
@@ -115,6 +110,89 @@ async def handle_session(request):
             }
         })
 
+async def handle_register(request):
+    """POST /api/register - Yangi arizani saqlaydi va statusni PENDING_APPROVAL qiladi."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({
+            "success": False,
+            "error": {"code": "AUTH_FAILED", "message": "Session could not be verified"}
+        }, status=401)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({
+            "success": False,
+            "error": {"code": "INVALID_JSON", "message": "Invalid JSON body"}
+        }, status=400)
+
+    name = data.get("name")
+    age = data.get("age")
+    city = data.get("city")
+    photo = data.get("photo")
+    bio = data.get("bio")
+    terms_accepted = data.get("terms_accepted")
+
+    # Validations
+    if not name or not city or not bio or not photo:
+        return web.json_response({
+            "success": False,
+            "error": {"code": "MISSING_FIELDS", "message": "Barcha majburiy maydonlarni to'ldiring."}
+        }, status=400)
+
+    try:
+        age_int = int(age)
+    except Exception:
+        return web.json_response({
+            "success": False,
+            "error": {"code": "INVALID_AGE", "message": "Yosh butun son bo'lishi shart."}
+        }, status=400)
+
+    if age_int < 18:
+        return web.json_response({
+            "success": False,
+            "error": {"code": "UNDERAGE", "message": "Ilovadan foydalanish uchun 18 yoshdan katta bo'lishingiz shart."}
+        }, status=400)
+
+    if not terms_accepted:
+        return web.json_response({
+            "success": False,
+            "error": {"code": "TERMS_NOT_ACCEPTED", "message": "Privacy Policy roziligini belgilashingiz shart."}
+        }, status=400)
+
+    async with async_session_maker() as session:
+        stmt = select(User).where(User.telegram_id == tg_user["id"])
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+
+        if not user:
+            return web.json_response({
+                "success": False,
+                "error": {"code": "USER_NOT_FOUND", "message": "Foydalanuvchi topilmadi."}
+            }, status=404)
+
+        if user.status != UserStatus.DRAFT:
+            return web.json_response({
+                "success": False,
+                "error": {"code": "INVALID_STATUS", "message": f"Hozirgi status ({user.status.value}) bilan ro'yxatdan o'tib bo'lmaydi."}
+            }, status=400)
+
+        # Update columns
+        user.name = name
+        user.age = age_int
+        user.city = city
+        user.photo = photo
+        user.bio = bio
+        user.terms_accepted = terms_accepted
+        user.status = UserStatus.PENDING_APPROVAL
+
+        await session.commit()
+        return web.json_response({
+            "success": True,
+            "user_status": UserStatus.PENDING_APPROVAL.value
+        })
+
 async def handle_index(request):
     import os
     webapp_dir = os.path.dirname(os.path.abspath(__file__))
@@ -125,7 +203,7 @@ async def handle_index(request):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         return response
-    return web.json_response({"message": "Kairyx API Server - Phase 2"})
+    return web.json_response({"message": "Kairyx API Server - Phase 3"})
 
 async def serve_style(request):
     import os
@@ -161,7 +239,6 @@ def create_webapp_app() -> web.Application:
     app.middlewares.append(cors_middleware)
 
     async def on_startup(app):
-        # Auto-create schema on server boot
         import engine as engine_module
         try:
             async with engine_module.engine.begin() as conn:
@@ -176,6 +253,7 @@ def create_webapp_app() -> web.Application:
     app.router.add_get("/health", handle_health)
     app.router.add_get("/health/ready", handle_health_ready)
     app.router.add_get("/api/session", handle_session)
+    app.router.add_post("/api/register", handle_register)
     app.router.add_get("/style.css", serve_style)
     app.router.add_get("/app.js", serve_app)
 
