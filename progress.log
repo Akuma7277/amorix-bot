@@ -1,0 +1,37 @@
+PHASE: Majburiy registration va admin approval + Stats
+DONE: 
+- UserStatus enumga draft, pending_approval, rejected, deleted holatlari qo'shildi.
+- User modeliga rejection_reason, reviewed_by va reviewed_at maydonlari qo'shildi.
+- crud.py da admin tasdiqlash va rad etish funksiyalari (approve, reject, get_pending, resubmit) joriy etildi.
+- WebApp API da /api/init va /api/register statusga moslandi, protected API endpointlari (/api/profiles, /api/swipe, /api/matches, /api/chat/*, /api/premium/buy) uchun faqat APPROVED bo'lgan statusdagilarga ruxsat beruvchi require_approved_user route guards va server-side middleware qo'shildi.
+- Admin Panel statistikasi endi hardcoded qiymatlardan real aggregate database querylariga o'tkazildi va camelCase keys (totalUsers, approvedUsers, pendingApproval, rejectedUsers, activeUsers, joinedToday, premiumUsers) formatiga o'tkazildi.
+- Frontend initApp() va submitRegistration() status transitionsga asosan pending/rejected/blocked/home navigatsiya qilinishi ta'minlandi.
+- Telegram botda pending yoki rejected holatdagi foydalanuvchilar har qanday buyruq yuborganida ularni cheklovchi ApprovalCheckMiddleware joriy etildi va faqat Mini App havolasi ko'rsatiladi.
+- Barcha 82 ta pytest testlari muvaffaqiyatli topshirildi va barchasi o'tdi.
+- Kodlar GitHub repositoryga push qilindi, Railway avtomatik ravishda deploy qilmoqda.
+
+FILES_CHANGED:
+- admin.py
+- bot.py
+- common.py
+- crud.py
+- models.py
+- registration.py
+- tests/test_crud_fallback.py
+- webapp/api.py
+- webapp/app.js
+- webapp/index.html
+- webapp/style.css
+
+MIGRATIONS:
+- run_lightweight_migrations() auto-executed on bot startup (adds columns: rejection_reason, reviewed_by, reviewed_at to users table).
+
+TESTS:
+- All 82 unit tests passed successfully.
+
+ERRORS:
+- None.
+
+NEXT:
+- Manual testing of registration flow from mobile.
+- Admin verification and approval through Admin Panel.
