@@ -6,6 +6,11 @@ const API_URL = (window.location.origin.includes("localhost") || window.location
 let base64Photo = "";
 let isAdminUser = false;
 let currentView = "";
+let currentUser = null;
+let datingProfiles = [];
+let currentProfileIndex = 0;
+let currentMatchId = null;
+let chatPollInterval = null;
 
 function getHeaders() {
     const headers = { "Content-Type": "application/json" };
@@ -37,7 +42,6 @@ function showView(viewId) {
         if (el) el.style.display = (v === viewId) ? 'block' : 'none';
     });
 
-    // Handle Admin Header view
     const adminToggle = document.getElementById('adminToggleHeader');
     if (adminToggle) {
         adminToggle.style.display = isAdminUser ? 'block' : 'none';
@@ -67,6 +71,7 @@ async function verifySession() {
 
         if (data.success) {
             isAdminUser = !!data.is_admin;
+            currentUser = data.user;
             const status = data.user_status;
             
             if (status === 'DRAFT') {
@@ -75,6 +80,12 @@ async function verifySession() {
                 showView('pendingScreen');
             } else if (status === 'APPROVED') {
                 showView('approvedScreen');
+                // Fill user profile data
+                document.getElementById('myPhoto').src = currentUser.photo;
+                document.getElementById('myNameAge').textContent = `${currentUser.name}, ${currentUser.age}`;
+                document.getElementById('myCity').textContent = currentUser.city;
+                document.getElementById('myBio').textContent = currentUser.bio;
+                loadSwipeProfiles();
             } else if (status === 'REJECTED') {
                 showView('rejectedScreen');
             } else if (status === 'BANNED') {
@@ -121,7 +132,7 @@ document.getElementById('btnSubmitReg').addEventListener('click', async () => {
     errText.style.display = 'none';
 
     if (!name || !age || !city || !bio || !base64Photo) {
-        errText.textContent = "Barcha majburiy maydonlarni to'ldiring hamda profil rasmini yuklang.";
+        errText.textContent = "Barcha maydonlarni to'ldiring hamda profil rasmini yuklang.";
         errText.style.display = 'block';
         return;
     }
@@ -181,7 +192,7 @@ document.getElementById('btnSubmitReg').addEventListener('click', async () => {
     }
 });
 
-// Admin Panel Toggle
+// Switch view admin / user
 document.getElementById('btnSwitchView').addEventListener('click', () => {
     if (currentView === 'adminScreen') {
         verifySession();
@@ -196,11 +207,7 @@ async function loadAdminData() {
     listContainer.innerHTML = "<p style='color:rgba(255,255,255,0.6); font-style:italic;'>Arizalar yuklanmoqda...</p>";
 
     try {
-        // 1. Fetch Stats
-        const statsRes = await fetch(`${API_URL}/api/admin/stats?${getQueryParams()}`, {
-            method: "GET",
-            headers: getHeaders()
-        });
+        const statsRes = await fetch(`${API_URL}/api/admin/stats?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         if (statsRes.ok) {
             const statsData = await statsRes.json();
             if (statsData.success) {
@@ -210,11 +217,7 @@ async function loadAdminData() {
             }
         }
 
-        // 2. Fetch Pending Users
-        const usersRes = await fetch(`${API_URL}/api/admin/pending?${getQueryParams()}`, {
-            method: "GET",
-            headers: getHeaders()
-        });
+        const usersRes = await fetch(`${API_URL}/api/admin/pending?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         if (!usersRes.ok) throw new Error("Arizalarni yuklab bo'lmadi.");
         const usersData = await usersRes.json();
 
@@ -235,10 +238,9 @@ async function loadAdminData() {
                         <div>
                             <h4 style="margin:0; color:#ff4785;">${user.name}, ${user.age}</h4>
                             <p style="margin:2px 0 0 0; font-size:12px; color:rgba(255,255,255,0.6);">${user.city}</p>
-                            <p style="margin:2px 0 0 0; font-size:11px; color:#ffb700;">ID: ${user.telegram_id}</p>
                         </div>
                     </div>
-                    <p style="margin:0; font-size:13px; line-height:1.4; color:rgba(255,255,255,0.8); background:rgba(0,0,0,0.2); padding:8px; border-radius:6px;">${user.bio}</p>
+                    <p style="margin:0; font-size:13px; color:rgba(255,255,255,0.8);">${user.bio}</p>
                     <div style="display:flex; gap:10px;">
                         <button onclick="approveUser(${user.id})" style="flex:1; background:#24ff8a; color:#000; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer;">Approve</button>
                         <button onclick="rejectUser(${user.id})" style="flex:1; background:#ff4785; color:#fff; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer;">Reject</button>
@@ -260,34 +262,247 @@ window.approveUser = async function(userId) {
             headers: getHeaders(),
             body: JSON.stringify({ user_id: userId })
         });
-        if (res.ok) {
-            loadAdminData();
-        } else {
-            alert("Tasdiqlashda xatolik yuz berdi.");
-        }
+        if (res.ok) loadAdminData();
     } catch (e) {
-        alert("Xatolik: " + e.message);
+        alert(e.message);
     }
 };
 
 window.rejectUser = async function(userId) {
-    const reason = prompt("Rad etish sababini kiriting (ixtiyoriy):", "Premium qoidalarga mos kelmadi.");
-    if (reason === null) return; // Cancel
+    if (!confirm("Rad etasizmi?")) return;
     try {
         const res = await fetch(`${API_URL}/api/admin/reject?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ user_id: userId, reason: reason })
+            body: JSON.stringify({ user_id: userId })
         });
-        if (res.ok) {
-            loadAdminData();
-        } else {
-            alert("Rad etishda xatolik yuz berdi.");
-        }
+        if (res.ok) loadAdminData();
     } catch (e) {
-        alert("Xatolik: " + e.message);
+        alert(e.message);
     }
 };
+
+// TAB VIEW SWITCHING FOR APPROVED USERS
+function switchTab(tabId) {
+    const tabs = ['viewSwipe', 'viewMatches', 'viewProfile'];
+    tabs.forEach(t => {
+        document.getElementById(t).style.display = (t === tabId) ? 'block' : 'none';
+    });
+
+    const buttons = ['btnTabSwipe', 'btnTabMatches', 'btnTabProfile'];
+    buttons.forEach(btn => {
+        const el = document.getElementById(btn);
+        if (el) {
+            if (btn === 'btnTab' + tabId.replace('view', '')) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        }
+    });
+
+    if (tabId === 'viewSwipe') loadSwipeProfiles();
+    if (tabId === 'viewMatches') loadMatchesList();
+}
+
+document.getElementById('btnTabSwipe').addEventListener('click', () => switchTab('viewSwipe'));
+document.getElementById('btnTabMatches').addEventListener('click', () => switchTab('viewMatches'));
+document.getElementById('btnTabProfile').addEventListener('click', () => switchTab('viewProfile'));
+
+// SWIPE LIFECYCLE
+async function loadSwipeProfiles() {
+    const container = document.getElementById('datingCardContainer');
+    container.innerHTML = "<p style='color:rgba(255,255,255,0.6); text-align:center; font-style:italic;'>Qidirilmoqda...</p>";
+
+    try {
+        const response = await fetch(`${API_URL}/api/profiles?${getQueryParams()}`, {
+            method: "GET",
+            headers: getHeaders()
+        });
+        if (!response.ok) throw new Error("Yuklab bo'lmadi.");
+        const data = await response.json();
+
+        if (data.success) {
+            datingProfiles = data.profiles;
+            currentProfileIndex = 0;
+            renderCurrentProfileCard();
+        }
+    } catch (e) {
+        container.innerHTML = `<p style='color:#ff4785; text-align:center;'>Xatolik: ${e.message}</p>`;
+    }
+}
+
+function renderCurrentProfileCard() {
+    const container = document.getElementById('datingCardContainer');
+    if (datingProfiles.length === 0 || currentProfileIndex >= datingProfiles.length) {
+        container.innerHTML = "<div style='padding:50px 20px; text-align:center;'><h3 style='color:#ff4785;'>Ayni damda hech kim yo'q! 🌌</h3><p style='color:rgba(255,255,255,0.6); font-size:13px; line-height:1.4;'>Tez kunda yaqin atrofdagi yangi profillar paydo bo'ladi. Qayta yuklash uchun tanishuv bo'limiga kiring.</p></div>";
+        return;
+    }
+
+    const p = datingProfiles[currentProfileIndex];
+    container.innerHTML = `
+        <div class="dating-card">
+            <img src="${p.photo}" style="width:100%; height:320px; object-fit:cover; display:block;">
+            <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(to top, rgba(5,5,16,1) 30%, rgba(5,5,16,0)); padding:20px; padding-top:40px;">
+                <h2 style="margin:0; font-size:22px; color:white;">${p.name}, ${p.age}</h2>
+                <p style="margin:5px 0; color:#ff4785; font-size:12px; font-weight:bold;">📍 ${p.city}</p>
+                <p style="margin:10px 0 0 0; color:rgba(255,255,255,0.8); font-size:13px; line-height:1.4;">${p.bio}</p>
+                
+                <div style="display:flex; justify-content:space-between; gap:15px; margin-top:20px;">
+                    <button onclick="handleSwipeAction(${p.id}, false)" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.8); padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:14px;">Pass 👎</button>
+                    <button onclick="handleSwipeAction(${p.id}, true)" style="flex:1; background:linear-gradient(135deg, #ff4785, #b624ff); color:white; border:none; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:14px;">Like 💖</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+window.handleSwipeAction = async function(targetId, isLike) {
+    try {
+        const response = await fetch(`${API_URL}/api/swipe?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ target_id: targetId, is_like: isLike })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.match) {
+                alert("Tabriklaymiz! Sizda moslik bor! 🎉");
+            }
+            currentProfileIndex++;
+            renderCurrentProfileCard();
+        }
+    } catch(e) {
+        console.error(e);
+    }
+};
+
+// MATCHES & CHAT SYSTEM
+async function loadMatchesList() {
+    const container = document.getElementById('matchesList');
+    container.innerHTML = "<p style='color:rgba(255,255,255,0.6); grid-column: span 2; text-align:center;'>Juftliklar yuklanmoqda...</p>";
+
+    try {
+        const response = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, {
+            method: "GET",
+            headers: getHeaders()
+        });
+        if (!response.ok) throw new Error("Yuklanmadi.");
+        const data = await response.json();
+
+        if (data.success) {
+            const matches = data.matches;
+            if (matches.length === 0) {
+                container.innerHTML = "<p style='color:rgba(255,255,255,0.5); grid-column: span 2; text-align:center; padding-top:30px; font-style:italic;'>Hali juftliklar mavjud emas. Swiping qilib like bosing!</p>";
+                return;
+            }
+
+            container.innerHTML = "";
+            matches.forEach(m => {
+                const partnerCard = document.createElement('div');
+                partnerCard.style.cssText = "background:rgba(255,255,255,0.02); border:1px solid rgba(255,71,133,0.1); border-radius:12px; padding:10px; text-align:center; cursor:pointer;";
+                partnerCard.onclick = () => openChatWindow(m.match_id, m.partner);
+                partnerCard.innerHTML = `
+                    <img src="${m.partner.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:50%; border:1px solid #ff4785; margin:0 auto 8px auto; display:block;">
+                    <h4 style="margin:0; font-size:14px; color:white;">${m.partner.name}</h4>
+                    <span style="font-size:11px; color:#ff4785;">Chatni ochish 💬</span>
+                `;
+                container.appendChild(partnerCard);
+            });
+        }
+    } catch(e) {
+        container.innerHTML = `<p style='color:#ff4785; grid-column: span 2; text-align:center;'>Xatolik: ${e.message}</p>`;
+    }
+}
+
+// Open Chat window
+function openChatWindow(matchId, partner) {
+    currentMatchId = matchId;
+    document.getElementById('chatPartnerPhoto').src = partner.photo;
+    document.getElementById('chatPartnerName').textContent = partner.name;
+    document.getElementById('chatOverlay').style.display = 'flex';
+    document.getElementById('chatMessages').innerHTML = "";
+    loadChatMessages();
+    
+    // Poll for new messages every 3 seconds
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(loadChatMessages, 3000);
+}
+
+document.getElementById('btnCloseChat').addEventListener('click', () => {
+    document.getElementById('chatOverlay').style.display = 'none';
+    currentMatchId = null;
+    if (chatPollInterval) {
+        clearInterval(chatPollInterval);
+        chatPollInterval = null;
+    }
+    loadMatchesList();
+});
+
+async function loadChatMessages() {
+    if (!currentMatchId) return;
+    try {
+        const response = await fetch(`${API_URL}/api/chat/messages?match_id=${currentMatchId}&${getQueryParams()}`, {
+            method: "GET",
+            headers: getHeaders()
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+
+        if (data.success) {
+            const msgs = data.messages;
+            const container = document.getElementById('chatMessages');
+            
+            // Check if count changed to prevent redundant redraws
+            const oldLength = container.children.length;
+            if (msgs.length === oldLength) return;
+
+            container.innerHTML = "";
+            msgs.forEach(m => {
+                const bubble = document.createElement('div');
+                if (m.sender_id === 0) { // System
+                    bubble.style.cssText = "align-self:center; background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.6); padding:6px 12px; border-radius:8px; font-size:11px; max-width:90%; text-align:center;";
+                } else if (m.sender_id === currentUser.id) { // Me
+                    bubble.style.cssText = "align-self:flex-end; background:#ff4785; color:white; padding:8px 12px; border-radius:12px 12px 0 12px; font-size:13px; max-width:70%; word-break:break-word;";
+                } else { // Partner
+                    bubble.style.cssText = "align-self:flex-start; background:rgba(255,255,255,0.07); color:white; padding:8px 12px; border-radius:12px 12px 12px 0; font-size:13px; max-width:70%; word-break:break-word;";
+                }
+                bubble.textContent = m.text;
+                container.appendChild(bubble);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+// Send Message
+document.getElementById('btnSendChat').addEventListener('click', sendMessage);
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendMessage();
+});
+
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text || !currentMatchId) return;
+
+    input.value = "";
+
+    try {
+        const response = await fetch(`${API_URL}/api/chat/send?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ match_id: currentMatchId, text: text })
+        });
+        if (response.ok) {
+            loadChatMessages();
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
 
 if (tg) {
     try {

@@ -6,12 +6,65 @@
     <title>Kairyx Premium Dating</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css?v=2.5.0">
+    <style>
+        /* Modern aesthetic styling for Phase 5 tab controls */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #090918;
+            border-top: 1px solid rgba(255,71,133,0.15);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .nav-btn.active {
+            color: #ff4785;
+            text-shadow: 0 0 10px rgba(255,71,133,0.4);
+        }
+        .dating-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,71,133,0.15);
+            border-radius: 20px;
+            overflow: hidden;
+            max-width: 340px;
+            margin: 20px auto;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(255,71,133,0.05);
+        }
+        .chat-overlay {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #050510;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
 </head>
-<body style="background:#050510; color:#ffffff; font-family:sans-serif; padding:20px; margin:0;">
+<body style="background:#050510; color:#ffffff; font-family:sans-serif; padding:15px; margin:0; padding-bottom:70px;">
 
-    <!-- Admin Panel Toggle Header (Visible only to admins) -->
-    <div id="adminToggleHeader" style="display:none; text-align:right; margin-bottom:15px;">
-        <button id="btnSwitchView" style="background:#ffb700; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">Admin Paneli</button>
+    <!-- Admin Panel Toggle Header -->
+    <div id="adminToggleHeader" style="display:none; text-align:right; margin-bottom:10px;">
+        <button id="btnSwitchView" style="background:#ffb700; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Admin Paneli</button>
     </div>
 
     <!-- 1. Verifying / Loading View -->
@@ -23,7 +76,6 @@
     <!-- 2. Registration View (Draft status) -->
     <div id="registrationScreen" style="display:none; max-width:400px; margin:20px auto; padding:20px; text-align:left; background:rgba(255,255,255,0.03); border-radius:16px; border:1px solid rgba(255,71,133,0.15);">
         <h2 style="color:#ff4785; margin-top:0; text-align:center;">Ro'yxatdan o'tish</h2>
-        <p style="color:rgba(255,255,255,0.6); font-size:13px; margin-bottom:20px; text-align:center;">Kairyx premium jamoasiga qo'shilish uchun ma'lumotlaringizni kiriting.</p>
         
         <div style="margin-bottom:15px;">
             <label style="display:block; font-size:13px; font-weight:bold; margin-bottom:5px; color:#ff4785;">Ismingiz *</label>
@@ -65,48 +117,115 @@
     <!-- 3. Pending Screen (Pending status) -->
     <div id="pendingScreen" style="display:none; max-width:400px; margin:50px auto; padding:30px; text-align:center; background:rgba(255,255,255,0.03); border-radius:16px; border:1px solid rgba(255,183,0,0.2);">
         <h2 style="color:#ffb700;">⌛ Arizangiz tekshirilmoqda</h2>
-        <p style="color:rgba(255,255,255,0.8); line-height:1.5;">Kairyx premium jamoasi a'zolari profilingizni ko'rib chiqishmoqda. Tasdiqlangach sizga bot orqali xabar beriladi.</p>
+        <p style="color:rgba(255,255,255,0.8); line-height:1.5;">Profilingiz admin tekshiruvida. Tasdiqlangach sizga bot orqali xabar beriladi.</p>
     </div>
 
-    <!-- 4. Approved / Home Screen (Approved status) -->
-    <div id="approvedScreen" style="display:none; text-align:center; padding-top:50px;">
-        <h1 style="color:#24ff8a; text-shadow:0 0 10px rgba(36,255,138,0.3);">Hush kelibsiz! 🎉</h1>
-        <p style="color:rgba(255,255,255,0.8); font-size:15px; max-width:320px; margin:10px auto;">Kairyx premium tanishuv ilovasi tasdiqlandi. Tez kunda qidiruv va chat imkoniyatlari qo'shiladi!</p>
-    </div>
-
-    <!-- 5. Rejected Screen (Rejected status) -->
+    <!-- 4. Rejected Screen -->
     <div id="rejectedScreen" style="display:none; max-width:400px; margin:50px auto; padding:30px; text-align:center; background:rgba(255,71,133,0.05); border-radius:16px; border:1px solid #ff4785;">
         <h2 style="color:#ff4785;">❌ Arizangiz rad etildi</h2>
-        <p style="color:rgba(255,255,255,0.8); line-height:1.5;">Afsuski, kiritgan ma'lumotlaringiz premium talablarimizga mos kelmadi yoki profilingiz qoidalarga zid deb topildi.</p>
+        <p style="color:rgba(255,255,255,0.8); line-height:1.5;">Afsuski premium talablarimizga javob bera olmadingiz.</p>
     </div>
 
-    <!-- 6. Banned Screen (Banned status) -->
+    <!-- 5. Banned Screen -->
     <div id="bannedScreen" style="display:none; max-width:400px; margin:50px auto; padding:30px; text-align:center; background:rgba(0,0,0,0.6); border-radius:16px; border:1px solid red;">
         <h2 style="color:red;">⛔ Bloklangansiz</h2>
-        <p style="color:rgba(255,255,255,0.8); line-height:1.5;">Kairyx platformasi qoidalarini qo'pol ravishda buzganingiz sababli profilingiz bu yerda butunlay bloklangan.</p>
+        <p style="color:rgba(255,255,255,0.8); line-height:1.5;">Qoidalarni buzganingiz sababli profilingiz bloklangan.</p>
     </div>
 
-    <!-- 7. Connection Error Screen -->
+    <!-- 6. Connection Error Screen -->
     <div id="errorScreen" style="display:none; max-width:320px; margin:50px auto; padding:20px; text-align:center; background:rgba(255,71,133,0.05); border-radius:12px; border:1px solid #ff4785;">
         <h3 style="margin-top:0; color:#ff4785;">⚠️ Aloqa yo'qoldi</h3>
         <p id="errorText" style="font-size:14px; color:rgba(255,255,255,0.8);">Serverga ulanib bo'lmadi.</p>
         <button id="btnRetry" style="background:#ff4785; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">Qayta urinish</button>
     </div>
 
-    <!-- 8. ADMIN SCREEN VIEW -->
+    <!-- 7. ADMIN SCREEN VIEW -->
     <div id="adminScreen" style="display:none; max-width:500px; margin:0 auto; padding-bottom:40px;">
         <h2 style="color:#ffb700; border-bottom:1px solid rgba(255,183,0,0.3); padding-bottom:10px; margin-top:0;">🛡️ Admin Dashboard</h2>
         
-        <!-- Stats widget -->
         <div style="display:flex; justify-content:space-between; margin-bottom:20px; background:rgba(255,255,255,0.03); padding:10px 15px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
             <div>Kutilmoqda: <span id="statPending" style="color:#ffb700; font-weight:bold;">0</span></div>
             <div>Tasdiqlangan: <span id="statApproved" style="color:#24ff8a; font-weight:bold;">0</span></div>
             <div>Jami: <span id="statTotal" style="color:#fff; font-weight:bold;">0</span></div>
         </div>
 
-        <h3 style="color:white; margin-bottom:10px;">Kutilayotgan arizalar ro'yxati:</h3>
         <div id="pendingList" style="display:flex; flex-direction:column; gap:15px;">
             <p style="color:rgba(255,255,255,0.6); font-style:italic;">Arizalar yuklanmoqda...</p>
+        </div>
+    </div>
+
+    <!-- 8. APPROVED MAIN DATING CONTAINER -->
+    <div id="approvedScreen" style="display:none; max-width:500px; margin:0 auto;">
+        
+        <!-- Tab 1: Swiping cards -->
+        <div id="viewSwipe" style="display:block;">
+            <div id="datingCardContainer">
+                <!-- Swiping cards will be inserted here dynamically -->
+                <p style="color:rgba(255,255,255,0.6); text-align:center; font-style:italic;">Qidirilmoqda...</p>
+            </div>
+        </div>
+
+        <!-- Tab 2: Matches Grid -->
+        <div id="viewMatches" style="display:none;">
+            <h3 style="border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px; color:#ff4785;">Juftliklaringiz 💖</h3>
+            <div id="matchesList" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px;">
+                <!-- Matches list rendering dynamically -->
+            </div>
+        </div>
+
+        <!-- Tab 3: Current User Profile -->
+        <div id="viewProfile" style="display:none; text-align:center;">
+            <div style="margin-top:20px;">
+                <img id="myPhoto" src="" style="width:120px; height:120px; object-fit:cover; border-radius:50%; border:2px solid #ff4785; box-shadow:0 0 15px rgba(255,71,133,0.3);">
+                <h2 id="myNameAge" style="margin:10px 0 5px 0; color:white;">—</h2>
+                <p id="myCity" style="margin:0 0 15px 0; color:rgba(255,255,255,0.6); font-size:13px;">—</p>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:15px; border-radius:12px; max-width:300px; margin:0 auto; text-align:left;">
+                    <p style="margin:0; font-size:12px; font-weight:bold; color:#ff4785; margin-bottom:5px;">O'zim haqimda:</p>
+                    <p id="myBio" style="margin:0; font-size:14px; color:rgba(255,255,255,0.8); line-height:1.4;">—</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sleek Navigation Bar -->
+        <nav class="bottom-nav">
+            <button id="btnTabSwipe" class="nav-btn active">
+                <span style="font-size:18px;">🔥</span>
+                <span>Tanishuv</span>
+            </button>
+            <button id="btnTabMatches" class="nav-btn">
+                <span style="font-size:18px;">💬</span>
+                <span>Juftliklar</span>
+            </button>
+            <button id="btnTabProfile" class="nav-btn">
+                <span style="font-size:18px;">👤</span>
+                <span>Profilim</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- 9. CHAT INTERACTIVE WINDOW (OVERLAY) -->
+    <div id="chatOverlay" style="display:none;" class="chat-overlay">
+        <!-- Header -->
+        <div style="background:#090918; border-bottom:1px solid rgba(255,71,133,0.15); padding:10px 15px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img id="chatPartnerPhoto" src="" style="width:36px; height:36px; object-fit:cover; border-radius:50%; border:1px solid #ff4785;">
+                <div>
+                    <h4 id="chatPartnerName" style="margin:0; color:white; font-size:14px;">—</h4>
+                    <span style="font-size:11px; color:#24ff8a;">online</span>
+                </div>
+            </div>
+            <button id="btnCloseChat" style="background:none; border:none; color:#ff4785; font-weight:bold; font-size:14px; cursor:pointer;">Yopish</button>
+        </div>
+
+        <!-- Message logs area -->
+        <div id="chatMessages" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px;">
+            <!-- Chats loaded dynamically -->
+        </div>
+
+        <!-- Footer inputs -->
+        <div style="background:#090918; border-top:1px solid rgba(255,71,133,0.15); padding:10px 15px; display:flex; gap:10px; align-items:center;">
+            <input type="text" id="chatInput" placeholder="Xabarni kiriting..." style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; color:white; font-size:14px;">
+            <button id="btnSendChat" style="background:#ff4785; border:none; color:white; font-weight:bold; padding:10px 15px; border-radius:10px; cursor:pointer; font-size:14px;">Yuborish</button>
         </div>
     </div>
 

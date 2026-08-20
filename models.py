@@ -39,3 +39,26 @@ class User(Base):
     
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+class Swipe(Base):
+    __tablename__ = "swipes"
+    id = Column(Integer, primary_key=True)
+    swiper_id = Column(Integer, nullable=False, index=True)
+    swiped_id = Column(Integer, nullable=False, index=True)
+    is_like = Column(Boolean, nullable=False)
+    created_at = Column(DateTime, default=func.now())
+
+class Match(Base):
+    __tablename__ = "matches"
+    id = Column(Integer, primary_key=True)
+    user1_id = Column(Integer, nullable=False, index=True)
+    user2_id = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime, default=func.now())
+
+class Message(Base):
+    __tablename__ = "messages"
+    id = Column(Integer, primary_key=True)
+    match_id = Column(Integer, nullable=False, index=True)
+    sender_id = Column(Integer, nullable=False)
+    text = Column(String, nullable=False)
+    created_at = Column(DateTime, default=func.now())

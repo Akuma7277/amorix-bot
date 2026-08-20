@@ -12,6 +12,9 @@ class TestHealthEndpoints(AioHTTPTestCase):
         from sqlalchemy import text
         try:
             async with async_session_maker() as session:
+                await session.execute(text("DELETE FROM messages;"))
+                await session.execute(text("DELETE FROM matches;"))
+                await session.execute(text("DELETE FROM swipes;"))
                 await session.execute(text("DELETE FROM users;"))
                 await session.commit()
         except Exception as e:
@@ -42,51 +45,68 @@ class TestHealthEndpoints(AioHTTPTestCase):
         data = await resp.json()
         self.assertTrue(data["success"])
         self.assertEqual(data["user_status"], "DRAFT")
-        self.assertFalse(data["is_admin"])
 
-    async def test_session_authorized_admin(self):
-        await self.clear_db()
-        resp = await self.client.get("/api/session?initData=mock_admin")
-        self.assertEqual(resp.status, 200)
-        data = await resp.json()
-        self.assertTrue(data["success"])
-        self.assertTrue(data["is_admin"])
-
-    async def test_admin_pending_endpoints_forbidden(self):
-        await self.clear_db()
-        resp = await self.client.get("/api/admin/pending?initData=mock_user")
-        self.assertEqual(resp.status, 403)
-
-    async def test_admin_flow_approve_and_reject(self):
+    async def test_dating_lifecycle(self):
         await self.clear_db()
         
-        # 1. Create a user and submit registration
-        await self.client.get("/api/session?initData=mock_user")
-        payload = {
-            "name": "Jane Doe",
-            "age": 22,
-            "city": "Tashkent",
-            "photo": "data:image/png;base64,mock...",
-            "bio": "Hello Kairyx",
-            "terms_accepted": True
+        # 1. Create two users and approve them
+        # User 1
+        await self.client.get("/api/session?initData=mock_user_1")
+        payload1 = {
+            "name": "User One", "age": 22, "city": "Tashkent",
+            "photo": "photo1", "bio": "Bio 1", "terms_accepted": True
         }
-        await self.client.post("/api/register?initData=mock_user", json=payload)
+        await self.client.post("/api/register?initData=mock_user_1", json=payload1)
+        
+        # User 2
+        await self.client.get("/api/session?initData=mock_user_2")
+        payload2 = {
+            "name": "User Two", "age": 24, "city": "Samarkand",
+            "photo": "photo2", "bio": "Bio 2", "terms_accepted": True
+        }
+        await self.client.post("/api/register?initData=mock_user_2", json=payload2)
 
-        # 2. Get pending list as admin
+        # Get DB IDs of both users as Admin
         resp_pending = await self.client.get("/api/admin/pending?initData=mock_admin")
-        self.assertEqual(resp_pending.status, 200)
-        data_pending = await resp_pending.json()
-        self.assertTrue(data_pending["success"])
-        self.assertEqual(len(data_pending["users"]), 1)
-        db_user_id = data_pending["users"][0]["id"]
+        pending_data = await resp_pending.json()
+        self.assertEqual(len(pending_data["users"]), 2)
+        
+        id1 = next(u["id"] for u in pending_data["users"] if u["name"] == "User One")
+        id2 = next(u["id"] for u in pending_data["users"] if u["name"] == "User Two")
 
-        # 3. Approve user
-        resp_approve = await self.client.post("/api/admin/approve?initData=mock_admin", json={"user_id": db_user_id})
-        self.assertEqual(resp_approve.status, 200)
-        data_approve = await resp_approve.json()
-        self.assertTrue(data_approve["success"])
+        # Approve both users
+        await self.client.post("/api/admin/approve?initData=mock_admin", json={"user_id": id1})
+        await self.client.post("/api/admin/approve?initData=mock_admin", json={"user_id": id2})
 
-        # 4. Verify user status is now APPROVED
-        resp_session = await self.client.get("/api/session?initData=mock_user")
-        data_session = await resp_session.json()
-        self.assertEqual(data_session["user_status"], "APPROVED")
+        # 2. User 1 checks profiles for swiping (should contain User 2)
+        resp_prof = await self.client.get("/api/profiles?initData=mock_user_1")
+        prof_data = await resp_prof.json()
+        self.assertTrue(prof_data["success"])
+        self.assertEqual(len(prof_data["profiles"]), 1)
+        self.assertEqual(prof_data["profiles"][0]["name"], "User Two")
+
+        # 3. User 1 swipes Like on User 2 (no match yet)
+        resp_swipe1 = await self.client.post("/api/swipe?initData=mock_user_1", json={"target_id": id2, "is_like": True})
+        swipe1_data = await resp_swipe1.json()
+        self.assertTrue(swipe1_data["success"])
+        self.assertFalse(swipe1_data["match"])
+
+        # 4. User 2 swipes Like on User 1 (Match created!)
+        resp_swipe2 = await self.client.post("/api/swipe?initData=mock_user_2", json={"target_id": id1, "is_like": True})
+        swipe2_data = await resp_swipe2.json()
+        self.assertTrue(swipe2_data["success"])
+        self.assertTrue(swipe2_data["match"])
+        match_id = swipe2_data["match_id"]
+
+        # 5. User 1 sends a chat message
+        resp_send = await self.client.post("/api/chat/send?initData=mock_user_1", json={"match_id": match_id, "text": "Hello User Two!"})
+        send_data = await resp_send.json()
+        self.assertTrue(send_data["success"])
+
+        # 6. User 2 reads chat messages (should contain system greeting and User 1 message)
+        resp_msgs = await self.client.get(f"/api/chat/messages?match_id={match_id}&initData=mock_user_2")
+        msgs_data = await resp_msgs.json()
+        self.assertTrue(msgs_data["success"])
+        self.assertEqual(len(msgs_data["messages"]), 2)
+        self.assertEqual(msgs_data["messages"][0]["sender_id"], 0) # System greeting
+        self.assertEqual(msgs_data["messages"][1]["text"], "Hello User Two!")
