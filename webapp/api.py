@@ -978,6 +978,42 @@ async def send_bot_notification(telegram_id: int, message_text: str):
         logging.warning(f"Error sending bot notification to {telegram_id}: {e}")
 
 
+
+
+async def handle_upload_photo_general(request):
+    """POST /api/upload-photo - Upload base64 image and return public URL (accessible during registration)."""
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"status": "error", "message": "Unauthorized"}, status=401)
+        
+    try:
+        data = await request.json()
+        base64_data = data.get("image")
+        if not base64_data:
+            return web.json_response({"status": "error", "message": "No image data"}, status=400)
+            
+        if "," in base64_data:
+            base64_data = base64_data.split(",")[1]
+            
+        image_bytes = base64.b64decode(base64_data)
+        
+        webapp_dir = os.path.dirname(os.path.abspath(__file__))
+        uploads_dir = os.path.join(webapp_dir, "static", "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        filename = f"{uuid.uuid4()}.jpg"
+        filepath = os.path.join(uploads_dir, filename)
+        
+        with open(filepath, "wb") as f:
+            f.write(image_bytes)
+            
+        file_url = f"/static/uploads/{filename}"
+        return web.json_response({"status": "ok", "url": file_url})
+    except Exception as e:
+        logger.error(f"Image upload error: {e}")
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
+
 async def require_approved_user(request) -> tuple:
     """Foydalanuvchini tekshiradi va faqat APPROVED (active) user uchun ruxsat beradi.
     Returns (tg_user, db_user) or raises web.HTTPForbidden."""
@@ -1474,6 +1510,7 @@ def create_webapp_app() -> web.Application:
     app.router.add_get("/api/chat/icebreaker", handle_chat_icebreaker)
     app.router.add_post("/api/user/block", handle_user_block)
     app.router.add_post("/api/user/report", handle_user_report)
+    app.router.add_post("/api/upload-photo", handle_upload_photo_general)
     app.router.add_get("/api/notifications", handle_notifications)
     app.router.add_post("/api/notifications/read", handle_notifications_read)
 

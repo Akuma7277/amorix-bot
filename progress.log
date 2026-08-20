@@ -1,5 +1,6 @@
 PHASE: Phase P1: Core Dating Experience
 DONE: 
+- webapp/index.html & app.js & api.py: replaced the text input photo URL with a native file upload picker (gallery/files support) using base64 POST /api/upload-photo uploader accessible during registration.
 - models.py update unique constraints and notifications model
 - webapp/index.html search filter headers, chips, modal, chat details actions dropdown, typing indicator, AI icebreakers chips
 - webapp/style.css styled quick chips, select inputs, filter options, AI icebreaker tags

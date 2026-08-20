@@ -1080,6 +1080,61 @@ async function markAllNotificationsAsRead() {
     }
 }
 
+function triggerRegPhotoUpload() {
+    const input = document.getElementById('regPhotoInput');
+    if (input) input.click();
+}
+
+async function handleRegPhotoSelected(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const preview = document.getElementById('regPhotoPreview');
+    const status = document.getElementById('regPhotoStatus');
+    const icon = document.getElementById('regPhotoIcon');
+    const photoUrlInput = document.getElementById('regPhotoUrl');
+
+    if (!preview || !status || !icon || !photoUrlInput) return;
+
+    // Show loading state
+    status.textContent = "Yuklanmoqda...";
+    icon.textContent = "⏳";
+    preview.style.display = 'none';
+
+    // Compress/read image as base64
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64Data = e.target.result;
+        
+        try {
+            const response = await fetch(`${API_URL}/api/upload-photo`, {
+                method: "POST",
+                headers: getHeaders(),
+                body: JSON.stringify({ image: base64Data })
+            });
+            const data = await response.json();
+            if (data.status === "ok") {
+                photoUrlInput.value = data.url;
+                status.textContent = "Rasm yuklandi! O'zgartirish uchun yana bosing.";
+                icon.textContent = "✅";
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else {
+                status.textContent = "Yuklashda xatolik yuz berdi";
+                icon.textContent = "❌";
+                showToast("⚠️", data.message || "Yuklashda xatolik");
+            }
+        } catch (err) {
+            console.log("Upload error:", err);
+            status.textContent = "Tarmoq xatoligi";
+            icon.textContent = "❌";
+            showToast("⚠️", "Tarmoq xatoligi");
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
 function openFilterModal() {
     const modal = document.getElementById('filterModal');
     if (!modal) return;

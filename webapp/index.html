@@ -193,8 +193,14 @@
                                 <textarea id="regBio" placeholder="O'zingiz haqingizda qisqacha yozing..." class="form-input" rows="3"></textarea>
                             </div>
                             <div class="form-group">
-                                <label data-i18n="reg_label_photo">Profil rasmi URL-i</label>
-                                <input type="text" id="regPhoto" placeholder="https://example.com/photo.jpg" class="form-input">
+                                <label data-i18n="reg_label_photo">Profil rasmi (Galereyadan yuklash)</label>
+                                <div class="image-uploader-box" onclick="triggerRegPhotoUpload()" style="border: 2px dashed rgba(255,255,255,0.15); border-radius: 16px; padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(255,255,255,0.02);">
+                                    <div class="upload-icon" id="regPhotoIcon" style="font-size: 32px; margin-bottom: 8px;">📷</div>
+                                    <p id="regPhotoStatus" style="font-size: 13px; color: rgba(255,255,255,0.6); margin: 0;">Rasm yuklash uchun bosing</p>
+                                    <img id="regPhotoPreview" style="display: none; width: 100%; max-height: 160px; object-fit: cover; border-radius: 12px; margin-top: 12px;">
+                                </div>
+                                <input type="file" id="regPhotoInput" accept="image/*" style="display: none;" onchange="handleRegPhotoSelected(event)">
+                                <input type="hidden" id="regPhotoUrl">
                             </div>
                         </div>
                     </div>
