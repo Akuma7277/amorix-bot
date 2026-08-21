@@ -444,6 +444,16 @@ async def handle_profile_update(request):
 
         if "name" in data and data["name"]:
             user.name = str(data["name"]).strip()
+        
+        if "age" in data and data["age"] is not None:
+            try:
+                age_val = int(data["age"])
+                if age_val < 18 or age_val > 99:
+                    return web.json_response({"success": False, "error": {"code": "INVALID_AGE", "message": "Yosh 18 va 99 oralig'ida bo'lishi kerak"}}, status=400)
+                user.age = age_val
+            except (ValueError, TypeError):
+                return web.json_response({"success": False, "error": {"code": "INVALID_AGE", "message": "Yosh to'g'ri raqamda kiritilishi kerak"}}, status=400)
+
         if "city" in data and data["city"]:
             user.city = str(data["city"]).strip()
         if "gender" in data and data["gender"]:
@@ -452,8 +462,20 @@ async def handle_profile_update(request):
             user.target_gender = str(data["target_gender"]).upper()
         if "bio" in data and data["bio"]:
             user.bio = str(data["bio"]).strip()
-        if "photo" in data and data["photo"]:
-            user.photo = data["photo"]
+        
+        if "photo" in data:
+            new_photo = data["photo"]
+            if new_photo and len(str(new_photo).strip()) > 20:
+                user.photo = str(new_photo).strip()
+            elif new_photo == "" or new_photo is None:
+                # Photo deletion requested - check VIP status
+                if not (user.is_premium or user.plan_tier == 'VIP'):
+                    return web.json_response({
+                        "success": False, 
+                        "error": {"code": "VIP_REQUIRED", "message": "Rasmni o'chirish faqat VIP foydalanuvchilar uchun mavjud"}
+                    }, status=403)
+                user.photo = None
+
         if "interests" in data and isinstance(data["interests"], list):
             user.interests = json.dumps(data["interests"])
         if "language" in data and data["language"]:
@@ -466,6 +488,36 @@ async def handle_profile_update(request):
         return web.json_response({
             "success": True,
             "user": u_data
+        })
+
+async def handle_profile_photo_delete(request):
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
+
+    async with async_session_maker() as session:
+        stmt = select(User).where(User.telegram_id == tg_user["id"])
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+
+        if not user:
+            return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
+
+        if not (user.is_premium or user.plan_tier == 'VIP'):
+            return web.json_response({
+                "success": False, 
+                "error": {"code": "VIP_REQUIRED", "message": "Rasmni o'chirish faqat VIP foydalanuvchilar uchun mavjud"}
+            }, status=403)
+
+        user.photo = None
+        user.last_active_at = datetime.now()
+        await session.commit()
+        u_data = serialize_user(user, include_private=True)
+
+        return web.json_response({
+            "success": True,
+            "user": u_data,
+            "message": "Profil rasmi muvaffaqiyatli o'chirildi"
         })
 
 async def handle_account_delete(request):
@@ -2319,6 +2371,7 @@ def create_webapp_app() -> web.Application:
     app.router.add_get("/api/session", handle_session)
     app.router.add_post("/api/register", handle_register)
     app.router.add_post("/api/profile/update", handle_profile_update)
+    app.router.add_post("/api/profile/photo/delete", handle_profile_photo_delete)
     app.router.add_post("/api/account/delete", handle_account_delete)
     
     # Gamification: Daily Rewards, Streaks, Missions, Leaderboard

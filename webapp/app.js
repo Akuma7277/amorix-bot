@@ -387,6 +387,7 @@ let selectedEditInterests = [];
 let currentBillingPeriod = "monthly";
 let selectedCheckoutPlan = "PREMIUM";
 let selectedCheckoutAmount = 49000;
+let editBase64Photo = "";
 
 let discoverProfiles = [];
 let currentDiscoverIndex = 0;
@@ -1541,7 +1542,18 @@ function populateMyProfile() {
 
 function openEditProfileModal() {
     if (!currentUser) return;
+    editBase64Photo = currentUser.photo || "";
+    const safeName = currentUser.name || "User";
+    const currentAvatar = (currentUser.photo && currentUser.photo.length > 20) 
+        ? currentUser.photo 
+        : getDefaultAvatar(safeName, currentUser.gender);
+    
+    document.getElementById('editAvatarPreview').src = currentAvatar;
+    document.getElementById('editPhotoStatus').textContent = "JPG, PNG, WEBP (Maks. 5MB)";
+    document.getElementById('editPhotoFileInput').value = "";
+
     document.getElementById('editName').value = currentUser.name || "";
+    document.getElementById('editAge').value = currentUser.age || 20;
     document.getElementById('editCity').value = currentUser.city || "";
     document.getElementById('editGender').value = currentUser.gender || "OTHER";
     document.getElementById('editTargetGender').value = currentUser.target_gender || "ANY";
@@ -1570,26 +1582,89 @@ function openEditProfileModal() {
 }
 function closeEditProfileModal() { document.getElementById('editProfileModal').style.display = 'none'; }
 
+function handleEditPhotoDeleteClick() {
+    const isVip = !!currentUser?.is_premium || currentUser?.plan_tier === 'VIP';
+    if (!isVip) {
+        alert("⚠️ Rasmni o'chirish — VIP imkoniyati!\n\nVIP obunasini faollashtiring va profilingiz rasmini xohlagancha boshqaring.");
+        openPaywallModal();
+        return;
+    }
+
+    if (!currentUser.photo && (!editBase64Photo || editBase64Photo === "DELETE")) {
+        alert("O'chirish uchun profil rasmi mavjud emas.");
+        return;
+    }
+
+    if (confirm("Rostdan ham profil rasmini o'chirmoqchimisiz?")) {
+        editBase64Photo = "DELETE";
+        document.getElementById('editAvatarPreview').src = getDefaultAvatar(currentUser.name, currentUser.gender);
+        document.getElementById('editPhotoStatus').innerHTML = "<span style='color:var(--accent-gold); font-weight:bold;'>✓ Rasm o'chirildi (Saqlashni bosing)</span>";
+    }
+}
+
 async function saveProfileEdit() {
     const name = document.getElementById('editName').value.trim();
+    const ageStr = document.getElementById('editAge').value.trim();
     const city = document.getElementById('editCity').value.trim();
     const gender = document.getElementById('editGender').value;
     const target_gender = document.getElementById('editTargetGender').value;
     const bio = document.getElementById('editBio').value.trim();
 
+    if (!name) {
+        alert("Ismingizni kiriting!");
+        return;
+    }
+
+    const age = parseInt(ageStr);
+    if (!age || isNaN(age) || age < 18 || age > 99) {
+        alert("Yosh 18 va 99 oralig'ida bo'lishi shart!");
+        return;
+    }
+
+    if (!city) {
+        alert("Shahringizni kiriting!");
+        return;
+    }
+
+    const payload = {
+        name: name,
+        age: age,
+        city: city,
+        gender: gender,
+        target_gender: target_gender,
+        bio: bio,
+        interests: selectedEditInterests
+    };
+
+    if (editBase64Photo === "DELETE") {
+        payload.photo = "";
+    } else if (editBase64Photo && editBase64Photo.startsWith("data:")) {
+        payload.photo = editBase64Photo;
+    }
+
     try {
         const res = await fetch(`${API_URL}/api/profile/update?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ name, city, gender, target_gender, bio, interests: selectedEditInterests })
+            body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.success) {
+            alert("✓ Profil ma'lumotlari muvaffaqiyatli saqlandi!");
             currentUser = data.user;
             populateMyProfile();
             closeEditProfileModal();
+        } else {
+            if (data.error?.code === "VIP_REQUIRED") {
+                alert("⚠️ " + (data.error?.message || "Rasmni o'chirish faqat VIP foydalanuvchilar uchun!"));
+                openPaywallModal();
+            } else {
+                alert("Xatolik: " + (data.error?.message || "Saqlashda xato yuz berdi"));
+            }
         }
-    } catch (e) { alert(e.message); }
+    } catch (e) { 
+        alert("Aloqa xatosi: " + e.message); 
+    }
 }
 
 async function openBlockedUsersModal() {
@@ -1647,7 +1722,39 @@ async function confirmDeleteAccount() {
         });
         if (res.ok) {
             alert("Hisobingiz o'chirildi.");
-            verifySession();
+            // Event listener for editProfile photo uploader
+const editPhotoInput = document.getElementById('editPhotoFileInput');
+if (editPhotoInput) {
+    editPhotoInput.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Size check (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Rasm hajmi 5MB dan katta bo'lmasligi kerak!");
+            return;
+        }
+
+        // Format check
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        if (!allowedTypes.includes(file.type.toLowerCase())) {
+            alert("Faqat JPG, PNG yoki WEBP formatidagi rasmlar qabul qilinadi!");
+            return;
+        }
+
+        try {
+            document.getElementById('editPhotoStatus').innerHTML = "<span style='color:var(--primary); font-weight:bold;'>Rasm siqilmoqda...</span>";
+            editBase64Photo = await compressImage(file, 800, 0.75);
+            document.getElementById('editAvatarPreview').src = editBase64Photo;
+            document.getElementById('editPhotoStatus').innerHTML = "<span style='color:var(--accent-green); font-weight:bold;'>✓ Yangi rasm tanlandi</span>";
+        } catch(err) {
+            alert("Rasm yuklashda xatolik: " + err.message);
+            document.getElementById('editPhotoStatus').textContent = "Xatolik: " + err.message;
+        }
+    });
+}
+
+verifySession();
         }
     } catch (e) { alert(e.message); }
 }
@@ -2326,6 +2433,38 @@ if (tg) {
         tg.ready();
         tg.expand();
     } catch (err) {}
+}
+
+// Event listener for editProfile photo uploader
+const editPhotoInput = document.getElementById('editPhotoFileInput');
+if (editPhotoInput) {
+    editPhotoInput.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Size check (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Rasm hajmi 5MB dan katta bo'lmasligi kerak!");
+            return;
+        }
+
+        // Format check
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        if (!allowedTypes.includes(file.type.toLowerCase())) {
+            alert("Faqat JPG, PNG yoki WEBP formatidagi rasmlar qabul qilinadi!");
+            return;
+        }
+
+        try {
+            document.getElementById('editPhotoStatus').innerHTML = "<span style='color:var(--primary); font-weight:bold;'>Rasm siqilmoqda...</span>";
+            editBase64Photo = await compressImage(file, 800, 0.75);
+            document.getElementById('editAvatarPreview').src = editBase64Photo;
+            document.getElementById('editPhotoStatus').innerHTML = "<span style='color:var(--accent-green); font-weight:bold;'>✓ Yangi rasm tanlandi</span>";
+        } catch(err) {
+            alert("Rasm yuklashda xatolik: " + err.message);
+            document.getElementById('editPhotoStatus').textContent = "Xatolik: " + err.message;
+        }
+    });
 }
 
 verifySession();
