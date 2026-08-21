@@ -73,6 +73,11 @@ const I18N = {
         menuRules: "ℹ️ Qoidalar va Xavfsizlik",
         menuDelete: "🗑️ Hisobni o'chirish",
         settingsTitle: "Sozlamalar ⚙️",
+        noProfiles: "Hozircha anketalar tugadi",
+        noProfilesSub: "Yangi a'zolar qo'shilgach bu yerda ko'rinadi.",
+        noLikes: "Hozircha sizga Like bosganlar yo'q.",
+        noMatches: "Hozircha juftliklar yo'q. Discover bo'limida Like bosing!",
+        noChats: "Suhbatlar mavjud emas.",
         rulesList: [
             "Faqat 18 yoshdan oshganlar foydalanishi mumkin.",
             "Haqiqiy fotosurat va ism kiritilishi talab etiladi.",
@@ -146,6 +151,11 @@ const I18N = {
         menuRules: "ℹ️ Правила и безопасность",
         menuDelete: "🗑️ Удалить аккаунт",
         settingsTitle: "Настройки ⚙️",
+        noProfiles: "Анкеты закончились",
+        noProfilesSub: "Новые пользователи появятся здесь позже.",
+        noLikes: "Пока никто не поставил вам лайк.",
+        noMatches: "Симпатий пока нет. Ставьте Like в разделе Discover!",
+        noChats: "Диалогов пока нет.",
         rulesList: [
             "Сервис доступен только для лиц старше 18 лет.",
             "Требуется настоящее фото и реальное имя.",
@@ -219,6 +229,11 @@ const I18N = {
         menuRules: "ℹ️ Rules & Safety",
         menuDelete: "🗑️ Deactivate Account",
         settingsTitle: "Settings ⚙️",
+        noProfiles: "No more profiles right now",
+        noProfilesSub: "New members will appear here soon.",
+        noLikes: "No likes yet.",
+        noMatches: "No matches yet. Swipe and like profiles in Discover!",
+        noChats: "No conversations yet.",
         rulesList: [
             "You must be 18 years or older to use Kairyx.",
             "Real photo and genuine identity are strictly required.",
@@ -337,6 +352,15 @@ function setAppLanguage(lang) {
     closeLanguageModal();
 }
 
+// ----------------- DEFAULT AVATAR SVG GENERATOR -----------------
+function getDefaultAvatar(name = "Kairyx", gender = "OTHER") {
+    const initial = (name && name.length > 0) ? name.charAt(0).toUpperCase() : "K";
+    const bg1 = gender === 'MALE' ? '%2305d9e8' : (gender === 'FEMALE' ? '%23ff2a6d' : '%239b00e8');
+    const bg2 = gender === 'MALE' ? '%237928ca' : (gender === 'FEMALE' ? '%239b00e8' : '%23ff007a');
+    
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${bg1}"/><stop offset="100%" stop-color="${bg2}"/></linearGradient></defs><rect width="400" height="400" fill="url(%23g)"/><circle cx="200" cy="155" r="65" fill="rgba(255,255,255,0.22)"/><path d="M85 360 C85 260, 315 260, 315 360 Z" fill="rgba(255,255,255,0.22)"/><text x="50%" y="45%" text-anchor="middle" fill="%23ffffff" font-size="64" font-family="sans-serif" font-weight="bold" dy=".3em">${initial}</text></svg>`;
+}
+
 // ----------------- GLOBAL STATE & AUTH -----------------
 const AVAILABLE_INTERESTS = [
     "🎮 Gaming", "🎵 Music", "🏋️ Fitness", "✈️ Travel", 
@@ -435,7 +459,7 @@ async function verifySession() {
                 }
             }
 
-            document.getElementById('headerStreakCount').textContent = currentUser.streak_days || 0;
+            document.getElementById('headerStreakCount').textContent = currentUser?.streak_days || 0;
             const adminBtn = document.getElementById('btnHeaderAdmin');
             if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 
@@ -581,7 +605,7 @@ function nextRegStep(currStep) {
             alert(currentLang === 'ru' ? "Напишите о себе!" : "O'zingiz haqingizda yozing!");
             return;
         }
-        document.getElementById('summaryPhoto').src = base64Photo;
+        document.getElementById('summaryPhoto').src = base64Photo || getDefaultAvatar(document.getElementById('regName').value.trim(), selectedRegGender);
         document.getElementById('summaryNameAge').textContent = `${document.getElementById('regName').value.trim()}, ${document.getElementById('regAge').value}`;
         const gName = selectedRegGender === 'MALE' ? '👨 Erkak' : (selectedRegGender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
         document.getElementById('summaryDetails').textContent = `${document.getElementById('regCity').value.trim()} • ${gName}`;
@@ -774,11 +798,12 @@ async function openLeaderboardModal() {
                 item.className = "glass-panel";
                 item.style.cssText = "padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;";
                 const medal = u.rank === 1 ? '🥇' : (u.rank === 2 ? '🥈' : (u.rank === 3 ? '🥉' : `#${u.rank}`));
+                const userPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name);
 
                 item.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-weight:bold; font-size:14px; width:22px; color:var(--accent-gold);">${medal}</span>
-                        <img src="${u.photo || ''}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid var(--primary);">
+                        <img src="${userPhoto}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid var(--primary);" onerror="this.src='${getDefaultAvatar(u.name)}'">
                         <div>
                             <h4 style="margin:0; font-size:13px; color:#fff;">${u.name || 'User'}</h4>
                             <span style="font-size:10px; color:var(--text-muted);">Level ${u.level} • 🔥 ${u.streak_days}d streak</span>
@@ -895,7 +920,6 @@ function updatePaywallPrices() {
     }
 }
 
-// Dedicated Payment Modal
 function openPaymentCheckoutModal(planTier) {
     closePaywallModal();
     selectedCheckoutPlan = planTier;
@@ -913,7 +937,6 @@ function openPaymentCheckoutModal(planTier) {
     document.getElementById('chkAmountBadge').textContent = `${selectedCheckoutAmount.toLocaleString()} UZS`;
     document.getElementById('checkoutCardNumber').textContent = "9860 6004 3347 6527";
     
-    // Reset receipt preview
     base64ReceiptPhoto = "";
     document.getElementById('receiptPhotoPreview').style.display = 'none';
     document.getElementById('receiptPlaceholderText').style.display = 'block';
@@ -1008,15 +1031,20 @@ async function redeemCouponCode() {
     } catch(e) { alert(e.message); }
 }
 
-// ----------------- DISCOVERY & SWIPING -----------------
+// ----------------- DISCOVERY & SWIPING (WITH SAFE AVATAR FALLBACK) -----------------
 async function loadDiscoverProfiles() {
     const container = document.getElementById('cardStackContainer');
-    container.innerHTML = "<p style='color: var(--text-muted); text-align: center; padding-top: 150px; font-style: italic;'>Qidirilmoqda...</p>";
+    container.innerHTML = `
+        <div class="glass-panel" style="padding: 60px 20px; text-align: center; margin-top: 40px;">
+            <div class="pulsing-heart" style="font-size: 36px; margin-bottom: 8px;">💖</div>
+            <p style="color: var(--text-muted); font-size: 13px;">Yangi anketalar qidirilmoqda...</p>
+        </div>
+    `;
 
-    const minAge = document.getElementById('filterMinAge').value;
-    const maxAge = document.getElementById('filterMaxAge').value;
-    const city = document.getElementById('filterCity').value;
-    const gender = document.getElementById('filterGender').value;
+    const minAge = document.getElementById('filterMinAge')?.value;
+    const maxAge = document.getElementById('filterMaxAge')?.value;
+    const city = document.getElementById('filterCity')?.value;
+    const gender = document.getElementById('filterGender')?.value;
 
     const q = new URLSearchParams(getQueryParams());
     if (minAge) q.append("min_age", minAge);
@@ -1028,12 +1056,19 @@ async function loadDiscoverProfiles() {
         const res = await fetch(`${API_URL}/api/profiles?${q.toString()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            discoverProfiles = data.profiles;
+            discoverProfiles = data.profiles || [];
             currentDiscoverIndex = 0;
             renderDiscoverCard();
+        } else {
+            container.innerHTML = `<div class="glass-panel p-4 text-center mt-4"><p class="text-danger">${data.error?.message || "Xatolik"}</p></div>`;
         }
     } catch (e) {
-        container.innerHTML = `<p style='color: var(--primary); text-align: center; padding-top: 150px;'>Xatolik: ${e.message}</p>`;
+        container.innerHTML = `
+            <div class="glass-panel p-4 text-center mt-4">
+                <p class="text-danger">Aloqa uzildi: ${e.message}</p>
+                <button onclick="loadDiscoverProfiles()" class="btn-primary-gradient mt-2">🔄 Qayta urinish</button>
+            </div>
+        `;
     }
 }
 
@@ -1042,30 +1077,36 @@ function renderDiscoverCard() {
     const container = document.getElementById('cardStackContainer');
     if (!discoverProfiles || discoverProfiles.length === 0 || currentDiscoverIndex >= discoverProfiles.length) {
         container.innerHTML = `
-            <div class="glass-panel" style="padding: 40px 20px; text-align: center; margin-top: 50px;">
-                <div style="font-size: 40px; margin-bottom: 10px;">💫</div>
+            <div class="glass-panel" style="padding: 50px 20px; text-align: center; margin-top: 40px;">
+                <div style="font-size: 44px; margin-bottom: 10px;">💫</div>
                 <h3 style="color: var(--primary); margin-top: 0;">${t.noProfiles}</h3>
-                <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">${t.noProfilesSub}</p>
-                <button onclick="loadDiscoverProfiles()" style="background: var(--primary-gradient); color: #fff; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; margin-top: 10px;">🔄 ${t.btnRetry}</button>
+                <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 8px 0 16px 0;">${t.noProfilesSub}</p>
+                <button onclick="loadDiscoverProfiles()" class="btn-primary-gradient">🔄 ${t.btnRetry}</button>
             </div>
         `;
         return;
     }
 
     const p = discoverProfiles[currentDiscoverIndex];
+    if (!p) return;
+
     activeTargetUser = p;
     const gIcon = p.gender === 'MALE' ? '👨' : (p.gender === 'FEMALE' ? '👩' : '🌈');
     const isVip = (p.plan_tier === 'VIP');
+    const safeName = p.name ? String(p.name).replace(/'/g, "\\'") : "User";
+    const safeCity = p.city ? String(p.city) : "Toshkent";
+    const safeBio = p.bio ? String(p.bio) : "Kairyx foydalanuvchisi";
+    const photoSrc = (p.photo && String(p.photo).length > 20) ? p.photo : getDefaultAvatar(safeName, p.gender);
 
     container.innerHTML = `
         <div class="dating-card">
             <div class="card-image-wrap" onclick="openProfileDetailModal(${p.id})">
-                <img src="${p.photo}">
-                ${isVip ? `<div style="position: absolute; top: 12px; left: 12px; background: var(--vip-gradient); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-full); box-shadow: 0 0 10px var(--vip-glow);">👑 VIP SPOTLIGHT</div>` : ''}
+                <img src="${photoSrc}" onerror="this.onerror=null; this.src='${getDefaultAvatar(safeName, p.gender)}';">
+                ${isVip ? `<div style="position: absolute; top: 12px; left: 12px; background: var(--vip-gradient); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-full); box-shadow: 0 0 12px var(--vip-glow);">👑 VIP SPOTLIGHT</div>` : ''}
                 <div class="card-overlay-info">
-                    <h2 style="margin: 0; font-size: 24px; color: #fff;">${p.name}, ${p.age}</h2>
-                    <p style="margin: 4px 0 8px 0; color: var(--primary); font-size: 13px; font-weight: bold;">📍 ${p.city} • ${gIcon}</p>
-                    <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.bio}</p>
+                    <h2 style="margin: 0; font-size: 24px; color: #fff;">${p.name || 'User'}, ${p.age || 20}</h2>
+                    <p style="margin: 4px 0 6px 0; color: var(--primary); font-size: 13px; font-weight: bold;">📍 ${safeCity} • ${gIcon}</p>
+                    <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${safeBio}</p>
                 </div>
             </div>
             <div class="card-actions-row">
@@ -1092,7 +1133,7 @@ async function handleSwipe(targetId, isLike) {
             showMatchModal(data.partner, data.match_id);
         }
     } catch (e) {
-        console.error(e);
+        console.error("Swipe error:", e);
     }
 
     currentDiscoverIndex++;
@@ -1100,9 +1141,9 @@ async function handleSwipe(targetId, isLike) {
 }
 
 function showMatchModal(partner, matchId) {
-    document.getElementById('matchPartnerName').textContent = partner.name;
-    document.getElementById('matchPartnerAvatar').src = partner.photo;
-    document.getElementById('matchMyAvatar').src = currentUser?.photo || "";
+    document.getElementById('matchPartnerName').textContent = partner?.name || "Juftlik";
+    document.getElementById('matchPartnerAvatar').src = partner?.photo || getDefaultAvatar(partner?.name);
+    document.getElementById('matchMyAvatar').src = currentUser?.photo || getDefaultAvatar(currentUser?.name);
     document.getElementById('btnMatchChat').onclick = () => {
         closeMatchModal();
         openChatWindow(matchId, partner);
@@ -1124,11 +1165,11 @@ async function loadReceivedLikes() {
         const data = await res.json();
 
         if (data.success) {
-            badge.textContent = data.count;
+            badge.textContent = data.count || 0;
             const isPrem = !!data.is_premium;
             promo.style.display = isPrem ? 'none' : 'flex';
 
-            if (data.profiles.length === 0) {
+            if (!data.profiles || data.profiles.length === 0) {
                 container.innerHTML = `<p style='color:var(--text-muted); grid-column:span 2; text-align:center; padding:30px 0;'>${t.noLikes}</p>`;
                 return;
             }
@@ -1138,23 +1179,24 @@ async function loadReceivedLikes() {
                 const card = document.createElement('div');
                 card.className = "glass-panel";
                 card.style.cssText = "padding: 10px; text-align: center; position: relative; overflow: hidden;";
+                const photoSrc = (p.photo && p.photo.length > 20) ? p.photo : getDefaultAvatar(p.name, p.gender);
 
                 if (!isPrem) {
                     card.innerHTML = `
                         <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; position: relative;">
-                            <img src="${p.photo}" class="blurred-photo" style="width: 100%; height: 100%; object-fit: cover;">
+                            <img src="${photoSrc}" class="blurred-photo" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${getDefaultAvatar(p.name)}'">
                             <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3);">
                                 <span style="font-size: 26px;">⭐</span>
                             </div>
                         </div>
-                        <h4 style="margin: 0; font-size: 13px; color: #fff;">${p.name}, ${p.age}</h4>
-                        <p style="margin: 2px 0 6px 0; font-size: 11px; color: var(--text-muted);">${p.city}</p>
+                        <h4 style="margin: 0; font-size: 13px; color: #fff;">${p.name}, ${p.age || '?'}</h4>
+                        <p style="margin: 2px 0 6px 0; font-size: 11px; color: var(--text-muted);">${p.city || 'Toshkent'}</p>
                         <button onclick="openPaywallModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 5px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
                     `;
                 } else {
                     card.innerHTML = `
                         <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; cursor: pointer;" onclick="openProfileDetailModal(${p.id})">
-                            <img src="${p.photo}" style="width: 100%; height: 100%; object-fit: cover;">
+                            <img src="${photoSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${getDefaultAvatar(p.name)}'">
                         </div>
                         <h4 style="margin: 0; font-size: 13px; color: #fff;">${p.name}, ${p.age}</h4>
                         <p style="margin: 2px 0 8px 0; font-size: 11px; color: var(--primary); font-weight: bold;">📍 ${p.city}</p>
@@ -1186,11 +1228,13 @@ function openProfileDetailModal(userId) {
     const user = discoverProfiles.find(u => u.id === userId) || activeTargetUser;
     if (!user) return;
 
-    document.getElementById('detailPhoto').src = user.photo;
-    document.getElementById('detailNameAge').textContent = `${user.name}, ${user.age}`;
+    const safeName = user.name || "User";
+    document.getElementById('detailPhoto').src = (user.photo && user.photo.length > 20) ? user.photo : getDefaultAvatar(safeName, user.gender);
+    document.getElementById('detailPhoto').onerror = () => { document.getElementById('detailPhoto').src = getDefaultAvatar(safeName, user.gender); };
+    document.getElementById('detailNameAge').textContent = `${safeName}, ${user.age || 20}`;
     const gName = user.gender === 'MALE' ? '👨 Erkak' : (user.gender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
-    document.getElementById('detailCity').textContent = `📍 ${user.city} • ${gName}`;
-    document.getElementById('detailBio').textContent = user.bio;
+    document.getElementById('detailCity').textContent = `📍 ${user.city || 'Toshkent'} • ${gName}`;
+    document.getElementById('detailBio').textContent = user.bio || "O'zi haqida ma'lumot qoldirmagan.";
 
     const intContainer = document.getElementById('detailInterests');
     intContainer.innerHTML = "";
@@ -1260,7 +1304,7 @@ async function loadMatchesList() {
         const res = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const matches = data.matches;
+            const matches = data.matches || [];
             if (matches.length === 0) {
                 container.innerHTML = `<p style='color: var(--text-muted); grid-column: span 2; text-align: center; padding: 40px 0;'>${t.noMatches}</p>`;
                 return;
@@ -1271,8 +1315,10 @@ async function loadMatchesList() {
                 card.className = "glass-panel";
                 card.style.cssText = "padding: 12px; text-align: center; cursor: pointer;";
                 card.onclick = () => openChatWindow(m.match_id, m.partner);
+                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(m.partner.name, m.partner.gender);
+
                 card.innerHTML = `
-                    <img src="${m.partner.photo}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary); margin: 0 auto 8px auto; display: block;">
+                    <img src="${pPhoto}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary); margin: 0 auto 8px auto; display: block;" onerror="this.src='${getDefaultAvatar(m.partner.name)}'">
                     <h4 style="margin: 0; font-size: 14px; color: #fff;">${m.partner.name}</h4>
                     <span style="font-size: 11px; color: var(--primary); margin-top: 4px; display: inline-block;">💬 Suhbat</span>
                 `;
@@ -1293,7 +1339,7 @@ async function loadChatsList() {
         const res = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const matches = data.matches;
+            const matches = data.matches || [];
             if (matches.length === 0) {
                 container.innerHTML = `<p style='color: var(--text-muted); text-align: center; padding: 40px 0;'>${t.noChats}</p>`;
                 return;
@@ -1305,8 +1351,10 @@ async function loadChatsList() {
                 item.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;";
                 item.onclick = () => openChatWindow(m.match_id, m.partner);
                 const lastTxt = m.last_message ? m.last_message.text : "Yangi juftlik! Suhbatni boshlang.";
+                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(m.partner.name, m.partner.gender);
+
                 item.innerHTML = `
-                    <img src="${m.partner.photo}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary);">
+                    <img src="${pPhoto}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary);" onerror="this.src='${getDefaultAvatar(m.partner.name)}'">
                     <div style="flex: 1; min-width: 0;">
                         <div style="display: flex; justify-content: space-between;">
                             <h4 style="margin: 0; font-size: 15px; color: #fff;">${m.partner.name}</h4>
@@ -1325,8 +1373,10 @@ async function loadChatsList() {
 function openChatWindow(matchId, partner) {
     activeMatchId = matchId;
     activeTargetUser = partner;
-    document.getElementById('chatPartnerPhoto').src = partner.photo;
-    document.getElementById('chatPartnerName').textContent = partner.name;
+    const pPhoto = (partner?.photo && partner.photo.length > 20) ? partner.photo : getDefaultAvatar(partner?.name);
+    document.getElementById('chatPartnerPhoto').src = pPhoto;
+    document.getElementById('chatPartnerPhoto').onerror = () => { document.getElementById('chatPartnerPhoto').src = getDefaultAvatar(partner?.name); };
+    document.getElementById('chatPartnerName').textContent = partner?.name || "Suhbatdosh";
     document.getElementById('chatOverlay').style.display = 'flex';
     document.getElementById('chatMessages').innerHTML = "";
     loadChatMessages();
@@ -1356,7 +1406,7 @@ async function loadChatMessages() {
         const data = await res.json();
 
         if (data.success) {
-            const msgs = data.messages;
+            const msgs = data.messages || [];
             const container = document.getElementById('chatMessages');
             if (msgs.length === container.children.length) return;
 
@@ -1411,10 +1461,12 @@ function openChatOptionsMenu() {
 // ----------------- USER PROFILE & DASHBOARD -----------------
 function populateMyProfile() {
     if (!currentUser) return;
-    document.getElementById('myPhoto').src = currentUser.photo || "";
-    document.getElementById('myNameAge').textContent = `${currentUser.name}, ${currentUser.age}`;
+    const safeName = currentUser.name || "Mening Profilim";
+    document.getElementById('myPhoto').src = (currentUser.photo && currentUser.photo.length > 20) ? currentUser.photo : getDefaultAvatar(safeName, currentUser.gender);
+    document.getElementById('myPhoto').onerror = () => { document.getElementById('myPhoto').src = getDefaultAvatar(safeName, currentUser.gender); };
+    document.getElementById('myNameAge').textContent = `${safeName}, ${currentUser.age || 20}`;
     const gName = currentUser.gender === 'MALE' ? '👨 Erkak' : (currentUser.gender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
-    document.getElementById('myCityGender').textContent = `📍 ${currentUser.city} • ${gName}`;
+    document.getElementById('myCityGender').textContent = `📍 ${currentUser.city || 'Toshkent'} • ${gName}`;
     document.getElementById('myBio').textContent = currentUser.bio || "Mavjud emas";
     document.getElementById('myBalance').textContent = `${currentUser.balance || 0} UZS`;
     document.getElementById('myBonusPoints').textContent = `${currentUser.bonus_points || 0} pts`;
@@ -1451,11 +1503,11 @@ function populateMyProfile() {
 
 function openEditProfileModal() {
     if (!currentUser) return;
-    document.getElementById('editName').value = currentUser.name;
-    document.getElementById('editCity').value = currentUser.city;
+    document.getElementById('editName').value = currentUser.name || "";
+    document.getElementById('editCity').value = currentUser.city || "";
     document.getElementById('editGender').value = currentUser.gender || "OTHER";
     document.getElementById('editTargetGender').value = currentUser.target_gender || "ANY";
-    document.getElementById('editBio').value = currentUser.bio;
+    document.getElementById('editBio').value = currentUser.bio || "";
 
     selectedEditInterests = [...(currentUser.interests || [])];
     const container = document.getElementById('editInterestsContainer');
@@ -1512,7 +1564,7 @@ async function openBlockedUsersModal() {
         const res = await fetch(`${API_URL}/api/user/blocked?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const users = data.blocked_users;
+            const users = data.blocked_users || [];
             if (users.length === 0) {
                 container.innerHTML = "<p style='color: var(--text-muted); font-size: 13px;'>Bloklangan foydalanuvchilar yo'q.</p>";
                 return;
@@ -1521,9 +1573,10 @@ async function openBlockedUsersModal() {
             users.forEach(u => {
                 const item = document.createElement('div');
                 item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);";
+                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name);
                 item.innerHTML = `
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <img src="${u.photo}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 50%;">
+                        <img src="${uPhoto}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 50%;" onerror="this.src='${getDefaultAvatar(u.name)}'">
                         <span style="font-size: 14px; font-weight: bold;">${u.name}</span>
                     </div>
                     <button onclick="unblockUser(${u.id})" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 10px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer;">Blokdan ochish</button>
@@ -1566,7 +1619,7 @@ function openRulesModal() {
 }
 function closeRulesModal() { document.getElementById('rulesModal').style.display = 'none'; }
 
-// ----------------- ADMIN DASHBOARD & EXIT BUTTON -----------------
+// ----------------- ADMIN DASHBOARD & NAVIGATION -----------------
 function openAdminScreen() {
     previousViewBeforeAdmin = currentView || "approvedScreen";
     showView('adminScreen');
@@ -1606,7 +1659,7 @@ async function openNotificationsModal() {
         const res = await fetch(`${API_URL}/api/notifications?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const notifs = data.notifications;
+            const notifs = data.notifications || [];
             if (notifs.length === 0) {
                 container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>Yangi bildirishnomalar yo'q.</p>";
                 return;
@@ -1621,7 +1674,7 @@ async function openNotificationsModal() {
                         <h4 style="margin:0; font-size:13px; color:${n.is_read ? '#fff' : 'var(--primary)'};">${n.title}</h4>
                         <span style="font-size:10px; color:var(--text-muted);">${new Date(n.created_at).toLocaleDateString()}</span>
                     </div>
-                    <p style="margin:0; font-size:12px; color:var(--text-sub); line-height:1.4;">${n.body}</p>
+                    <p style="margin:0; font-size:12px; color:var(--text-sub); line-height:1.4;">${n.body || n.text || ''}</p>
                 `;
                 if (n.deep_link === 'viewLikes') {
                     item.style.cursor = 'pointer';
@@ -1658,7 +1711,7 @@ async function loadUserTickets() {
         const res = await fetch(`${API_URL}/api/tickets?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const tickets = data.tickets;
+            const tickets = data.tickets || [];
             if (tickets.length === 0) {
                 container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>Hozircha murojaatlar yo'q.</p>";
                 return;
@@ -1674,7 +1727,7 @@ async function loadUserTickets() {
                         <span style="font-size:11px; color:${t.status === 'ANSWERED' ? 'var(--accent-green)' : 'var(--accent-gold)'};">${t.status}</span>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-                        ${t.messages.map(m => `
+                        ${(t.messages || []).map(m => `
                             <div style="background:${m.is_admin ? 'rgba(255,183,0,0.1)' : 'rgba(255,255,255,0.04)'}; padding:6px 10px; border-radius:6px; font-size:12px;">
                                 <b>${m.is_admin ? '🛡️ Support' : 'Siz'}:</b> ${m.text}
                             </div>
@@ -1748,10 +1801,10 @@ async function loadAdminData() {
         const res = await fetch(`${API_URL}/api/admin/stats?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            document.getElementById('admStatPendingPayments').textContent = data.stats.pending_payments || 0;
-            document.getElementById('admStatPending').textContent = data.stats.pending || 0;
-            document.getElementById('admStatApproved').textContent = data.stats.approved || 0;
-            document.getElementById('admStatPremium').textContent = data.stats.premium_users || 0;
+            document.getElementById('admStatPendingPayments').textContent = data.stats?.pending_payments || 0;
+            document.getElementById('admStatPending').textContent = data.stats?.pending || 0;
+            document.getElementById('admStatApproved').textContent = data.stats?.approved || 0;
+            document.getElementById('admStatPremium').textContent = data.stats?.premium_users || 0;
         }
     } catch (e) {}
     switchAdminTab(currentAdminTab);
@@ -1766,7 +1819,7 @@ async function loadAdminPayments() {
         const res = await fetch(`${API_URL}/api/admin/payments?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const orders = data.orders;
+            const orders = data.orders || [];
             if (orders.length === 0) {
                 container.innerHTML = "<p style='color: var(--accent-green); text-align:center;'>To'lov cheklari mavjud emas.</p>";
                 return;
@@ -1778,6 +1831,7 @@ async function loadAdminPayments() {
                 card.style.padding = "14px";
                 const isPending = o.status === 'PENDING';
                 const statusColor = isPending ? 'var(--accent-gold)' : (o.status === 'APPROVED' ? 'var(--accent-green)' : '#ff4747');
+                const userPhoto = (o.user?.photo && o.user.photo.length > 20) ? o.user.photo : getDefaultAvatar(o.user?.name);
 
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -1792,7 +1846,7 @@ async function loadAdminPayments() {
                         <div style="flex:1; font-size:12px;">
                             <p style="margin:0 0 4px 0;"><b>Mijoz:</b> ${o.user ? o.user.name : 'Noma`lum'} (ID: ${o.user ? o.user.id : '?'})</p>
                             <p style="margin:0 0 4px 0;"><b>TG ID:</b> ${o.user ? o.user.telegram_id : '—'}</p>
-                            <p style="margin:0 0 4px 0;"><b>Summa:</b> <span style="font-weight:bold; color:var(--accent-green); font-size:14px;">${o.amount.toLocaleString()} UZS</span></p>
+                            <p style="margin:0 0 4px 0;"><b>Summa:</b> <span style="font-weight:bold; color:var(--accent-green); font-size:14px;">${Number(o.amount).toLocaleString()} UZS</span></p>
                             <p style="margin:0 0 4px 0; color:var(--text-muted); font-size:11px;">Karta: ${o.card_number}</p>
                             <p style="margin:0; color:var(--text-muted); font-size:10px;">${new Date(o.created_at).toLocaleString()}</p>
                         </div>
@@ -1859,10 +1913,10 @@ async function loadAdminRetention() {
         const res = await fetch(`${API_URL}/api/admin/retention?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            document.getElementById('retDau').textContent = data.metrics.dau;
-            document.getElementById('retWau').textContent = data.metrics.wau;
-            document.getElementById('retMau').textContent = data.metrics.mau;
-            document.getElementById('retStreakUsers').textContent = data.metrics.streak_3_plus;
+            document.getElementById('retDau').textContent = data.metrics?.dau || 0;
+            document.getElementById('retWau').textContent = data.metrics?.wau || 0;
+            document.getElementById('retMau').textContent = data.metrics?.mau || 0;
+            document.getElementById('retStreakUsers').textContent = data.metrics?.streak_3_plus || 0;
         }
     } catch(e) {}
 }
@@ -1875,7 +1929,7 @@ async function loadAdminPending() {
         const res = await fetch(`${API_URL}/api/admin/pending?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const users = data.users;
+            const users = data.users || [];
             if (users.length === 0) {
                 container.innerHTML = "<p style='color: var(--accent-green); font-weight: bold; text-align: center;'>Kutilayotgan arizalar yo'q!</p>";
                 return;
@@ -1885,15 +1939,17 @@ async function loadAdminPending() {
                 const card = document.createElement('div');
                 card.className = "glass-panel";
                 card.style.padding = "14px";
+                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name, u.gender);
+
                 card.innerHTML = `
                     <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
-                        <img src="${u.photo}" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);">
+                        <img src="${uPhoto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);" onerror="this.src='${getDefaultAvatar(u.name)}'">
                         <div>
                             <h4 style="margin: 0; color: var(--primary);">${u.name}, ${u.age}</h4>
                             <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">${u.city} • ${u.gender}</p>
                         </div>
                     </div>
-                    <p style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-sub);">${u.bio}</p>
+                    <p style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-sub);">${u.bio || 'Bio mavjud emas'}</p>
                     <div style="display: flex; gap: 8px;">
                         <button onclick="adminApproveUser(${u.id})" style="flex: 1; background: var(--accent-green); color: #000; border: none; padding: 8px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Tasdiqlash ✅</button>
                         <button onclick="adminRejectUser(${u.id})" style="flex: 1; background: var(--primary); color: #fff; border: none; padding: 8px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Rad etish ❌</button>
@@ -1937,7 +1993,7 @@ async function loadAdminReports() {
         const res = await fetch(`${API_URL}/api/admin/reports?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const reports = data.reports;
+            const reports = data.reports || [];
             if (reports.length === 0) {
                 container.innerHTML = "<p style='color: var(--accent-green); text-align: center;'>Ochiq shikoyatlar yo'q!</p>";
                 return;
@@ -1986,7 +2042,7 @@ async function loadAdminTickets() {
         const res = await fetch(`${API_URL}/api/admin/tickets?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const tickets = data.tickets;
+            const tickets = data.tickets || [];
             if (tickets.length === 0) {
                 container.innerHTML = "<p style='color: var(--accent-green); text-align: center;'>Murojaatlar yo'q!</p>";
                 return;
@@ -2003,7 +2059,7 @@ async function loadAdminTickets() {
                     </div>
                     <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 8px 0;">Mijoz: ${t.user ? t.user.name : 'User'}</p>
                     <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px;">
-                        ${t.messages.map(m => `
+                        ${(t.messages || []).map(m => `
                             <div style="background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px; font-size: 11px;">
                                 <b>${m.is_admin ? '🛡️ Siz' : 'Mijoz'}:</b> ${m.text}
                             </div>
@@ -2059,7 +2115,7 @@ async function loadAdminUsers() {
         const res = await fetch(`${API_URL}/api/admin/users?q=${encodeURIComponent(q)}&${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const users = data.users;
+            const users = data.users || [];
             if (users.length === 0) {
                 container.innerHTML = "<p style='color: var(--text-muted); text-align: center;'>Foydalanuvchi topilmadi.</p>";
                 return;
@@ -2070,10 +2126,11 @@ async function loadAdminUsers() {
                 item.className = "glass-panel";
                 item.style.cssText = "padding: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;";
                 const isBanned = u.status === 'BANNED';
+                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name, u.gender);
                 item.onclick = () => openAdminUserDetail(u.id);
                 item.innerHTML = `
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <img src="${u.photo || ''}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;">
+                        <img src="${uPhoto}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;" onerror="this.src='${getDefaultAvatar(u.name)}'">
                         <div>
                             <h4 style="margin: 0; font-size: 14px;">${u.name || 'Draft'}, ${u.age || '?'}</h4>
                             <span style="font-size: 11px; color: ${isBanned ? '#ff4747' : 'var(--accent-green)'};">${u.status} • ${u.city || ''}</span>
@@ -2097,9 +2154,10 @@ async function openAdminUserDetail(userId) {
         const data = await res.json();
         if (data.success) {
             const u = data.user;
+            const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name, u.gender);
             container.innerHTML = `
                 <div style="display: flex; gap: 12px; align-items: center;">
-                    <img src="${u.photo || ''}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary);">
+                    <img src="${uPhoto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary);" onerror="this.src='${getDefaultAvatar(u.name)}'">
                     <div>
                         <h3 style="margin: 0;">${u.name || 'Noma`lum'}, ${u.age || '?'}</h3>
                         <p style="margin: 2px 0; color: var(--text-muted); font-size: 12px;">ID: ${u.id} • TG: ${u.telegram_id || '—'}</p>
@@ -2127,7 +2185,7 @@ async function openAdminUserDetail(userId) {
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
-                    ${data.notes.map(n => `<div style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 4px 8px; border-radius: 4px;">• ${n.note} (${new Date(n.created_at).toLocaleDateString()})</div>`).join('')}
+                    ${(data.notes || []).map(n => `<div style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 4px 8px; border-radius: 4px;">• ${n.note} (${new Date(n.created_at).toLocaleDateString()})</div>`).join('')}
                 </div>
             `;
         }
@@ -2195,7 +2253,7 @@ async function loadAdminAuditLogs() {
         const res = await fetch(`${API_URL}/api/admin/audit-logs?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            const logs = data.logs;
+            const logs = data.logs || [];
             if (logs.length === 0) {
                 container.innerHTML = "<p style='color: var(--text-muted); text-align: center;'>Loglar mavjud emas.</p>";
                 return;
