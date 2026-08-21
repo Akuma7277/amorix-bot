@@ -2277,6 +2277,12 @@ def create_webapp_app() -> web.Application:
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'body') THEN
                                 ALTER TABLE notifications ADD COLUMN body TEXT;
                             END IF;
+                            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'text') THEN
+                                ALTER TABLE notifications ALTER COLUMN text DROP NOT NULL;
+                            END IF;
+                            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'message') THEN
+                                ALTER TABLE notifications ALTER COLUMN message DROP NOT NULL;
+                            END IF;
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'title') THEN
                                 ALTER TABLE notifications ADD COLUMN title VARCHAR(128) DEFAULT 'Bildirishnoma';
                             END IF;

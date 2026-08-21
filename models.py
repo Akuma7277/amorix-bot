@@ -125,6 +125,7 @@ class Notification(Base):
     type = Column(String(32), default="system", nullable=False) # system, account, security, match, message, like, reward, streak, admin, payment
     title = Column(String(128), nullable=False)
     body = Column(Text, nullable=False)
+    text = Column(Text, nullable=True) # Backwards-compatibility
     is_read = Column(Boolean, default=False)
     deep_link = Column(String(128), nullable=True)
     created_at = Column(DateTime, default=func.now())
