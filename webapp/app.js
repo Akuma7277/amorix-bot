@@ -73,31 +73,6 @@ const I18N = {
         menuRules: "ℹ️ Qoidalar va Xavfsizlik",
         menuDelete: "🗑️ Hisobni o'chirish",
         settingsTitle: "Sozlamalar ⚙️",
-        settingLang: "🌐 Tilni tanlash",
-        settingRules: "ℹ️ Qoidalar va Yordam",
-        settingBlocked: "🚫 Bloklanganlar",
-        filterTitle: "Qidiruv filtrlari ⚡",
-        lblFilterAge: "Yosh chegarasi:",
-        lblFilterCity: "Shahar:",
-        btnFilterReset: "Tozalash",
-        btnFilterApply: "Qo'llash",
-        matchYou: "Siz va",
-        matchLiked: "bir-biringizga yoqdingiz!",
-        btnMatchChat: "💬 Suhbatni boshlash",
-        btnMatchContinue: "Davom etish ➔",
-        detailBlock: "🚫 Bloklash",
-        detailReport: "⚠️ Shikoyat",
-        reportTitle: "Foydalanuvchi ustidan shikoyat ⚠️",
-        reportSub: "Qanday qoidabuzarlikni aniqladingiz?",
-        btnCancel: "Bekor qilish",
-        btnSend: "Yuborish",
-        btnSave: "Saqlash",
-        btnUnderstood: "Tushundim",
-        noProfiles: "Hozircha anketalar tugadi",
-        noProfilesSub: "Yangi a'zolar qo'shilgach bu yerda ko'rinadi.",
-        noLikes: "Hozircha sizga Like bosganlar yo'q.",
-        noMatches: "Hozircha juftliklar yo'q. Discover bo'limida Like bosing!",
-        noChats: "Suhbatlar mavjud emas.",
         rulesList: [
             "Faqat 18 yoshdan oshganlar foydalanishi mumkin.",
             "Haqiqiy fotosurat va ism kiritilishi talab etiladi.",
@@ -171,31 +146,6 @@ const I18N = {
         menuRules: "ℹ️ Правила и безопасность",
         menuDelete: "🗑️ Удалить аккаунт",
         settingsTitle: "Настройки ⚙️",
-        settingLang: "🌐 Выбор языка",
-        settingRules: "ℹ️ Правила и Помощь",
-        settingBlocked: "🚫 Черный список",
-        filterTitle: "Фильтры поиска ⚡",
-        lblFilterAge: "Возраст:",
-        lblFilterCity: "Город:",
-        btnFilterReset: "Сбросить",
-        btnFilterApply: "Применить",
-        matchYou: "Вы и",
-        matchLiked: "понравились друг другу!",
-        btnMatchChat: "💬 Начать общение",
-        btnMatchContinue: "Продолжить ➔",
-        detailBlock: "🚫 Заблокировать",
-        detailReport: "⚠️ Пожаловаться",
-        reportTitle: "Жалоба на пользователя ⚠️",
-        reportSub: "Какое нарушение вы обнаружили?",
-        btnCancel: "Отмена",
-        btnSend: "Отправить",
-        btnSave: "Сохранить",
-        btnUnderstood: "Понятно",
-        noProfiles: "Анкеты закончились",
-        noProfilesSub: "Новые пользователи появятся здесь позже.",
-        noLikes: "Пока никто не поставил вам лайк.",
-        noMatches: "Симпатий пока нет. Ставьте Like в разделе Discover!",
-        noChats: "Диалогов пока нет.",
         rulesList: [
             "Сервис доступен только для лиц старше 18 лет.",
             "Требуется настоящее фото и реальное имя.",
@@ -269,31 +219,6 @@ const I18N = {
         menuRules: "ℹ️ Rules & Safety",
         menuDelete: "🗑️ Deactivate Account",
         settingsTitle: "Settings ⚙️",
-        settingLang: "🌐 Language",
-        settingRules: "ℹ️ Rules & Support",
-        settingBlocked: "🚫 Blocked List",
-        filterTitle: "Search Filters ⚡",
-        lblFilterAge: "Age range:",
-        lblFilterCity: "City:",
-        btnFilterReset: "Reset",
-        btnFilterApply: "Apply",
-        matchYou: "You and",
-        matchLiked: "liked each other!",
-        btnMatchChat: "💬 Start Chat",
-        btnMatchContinue: "Continue ➔",
-        detailBlock: "🚫 Block",
-        detailReport: "⚠️ Report",
-        reportTitle: "Report User ⚠️",
-        reportSub: "What violation did you observe?",
-        btnCancel: "Cancel",
-        btnSend: "Send",
-        btnSave: "Save",
-        btnUnderstood: "Understood",
-        noProfiles: "No more profiles right now",
-        noProfilesSub: "New members will appear here soon.",
-        noLikes: "No likes yet.",
-        noMatches: "No matches yet. Swipe and like profiles in Discover!",
-        noChats: "No conversations yet.",
         rulesList: [
             "You must be 18 years or older to use Kairyx.",
             "Real photo and genuine identity are strictly required.",
@@ -305,12 +230,8 @@ const I18N = {
 
 function applyTranslations() {
     const t = I18N[currentLang] || I18N.uz;
-    
-    // Header & Loading
     if (document.getElementById('txtLoadingTitle')) document.getElementById('txtLoadingTitle').textContent = t.loadingTitle;
     if (document.getElementById('txtLoadingSub')) document.getElementById('txtLoadingSub').textContent = t.loadingSub;
-
-    // Wizard Steps
     if (document.getElementById('txtRegStep1Title')) document.getElementById('txtRegStep1Title').textContent = t.reg1Title;
     if (document.getElementById('txtRegStep1Sub')) document.getElementById('txtRegStep1Sub').textContent = t.reg1Sub;
     if (document.getElementById('btnRegNext1')) document.getElementById('btnRegNext1').textContent = t.btnNext;
@@ -361,7 +282,6 @@ function applyTranslations() {
     if (document.getElementById('btnRegBack7')) document.getElementById('btnRegBack7').textContent = t.btnBack;
     if (document.getElementById('btnSubmitReg')) document.getElementById('btnSubmitReg').textContent = t.btnSubmit;
 
-    // Statuses
     if (document.getElementById('txtPendingTitle')) document.getElementById('txtPendingTitle').textContent = t.pendingTitle;
     if (document.getElementById('txtPendingSub')) document.getElementById('txtPendingSub').textContent = t.pendingSub;
     if (document.getElementById('btnPendingRefresh')) document.getElementById('btnPendingRefresh').textContent = t.btnPendingRefresh;
@@ -375,7 +295,6 @@ function applyTranslations() {
     if (document.getElementById('txtErrorTitle')) document.getElementById('txtErrorTitle').textContent = t.errorTitle;
     if (document.getElementById('btnRetry')) document.getElementById('btnRetry').textContent = t.btnRetry;
 
-    // Main App
     if (document.getElementById('txtDiscoverTitle')) document.getElementById('txtDiscoverTitle').textContent = t.discoverTitle;
     if (document.getElementById('txtBtnFilter')) document.getElementById('txtBtnFilter').textContent = t.btnFilter;
     if (document.getElementById('txtLikesHeader')) document.getElementById('txtLikesHeader').textContent = t.likesHeader;
@@ -384,14 +303,9 @@ function applyTranslations() {
     if (document.getElementById('lblMyBio')) document.getElementById('lblMyBio').textContent = t.myBioLabel;
     if (document.getElementById('lblMyInterests')) document.getElementById('lblMyInterests').textContent = t.myInterestsLabel;
     if (document.getElementById('btnEditProfile')) document.getElementById('btnEditProfile').textContent = t.btnEditProfile;
-    if (document.getElementById('txtMenuLang')) document.getElementById('txtMenuLang').textContent = t.menuLang;
-    if (document.getElementById('txtMenuBlocked')) document.getElementById('txtMenuBlocked').textContent = t.menuBlocked;
-    if (document.getElementById('txtMenuRules')) document.getElementById('txtMenuRules').textContent = t.menuRules;
-    if (document.getElementById('txtMenuDelete')) document.getElementById('txtMenuDelete').textContent = t.menuDelete;
 
     const langNames = { uz: "O'zbekcha", ru: "Русский", en: "English" };
-    if (document.getElementById('currentLangLabel')) document.getElementById('currentLangLabel').textContent = langNames[currentLang];
-    if (document.getElementById('modalSettingLangVal')) document.getElementById('modalSettingLangVal').textContent = langNames[currentLang];
+    if (document.getElementById('modalSettingLangVal')) document.getElementById('modalSettingLangVal').textContent = (langNames[currentLang] || "O'zbekcha") + " ➔";
 
     const rulesUl = document.getElementById('rulesListContent');
     if (rulesUl) {
@@ -402,8 +316,6 @@ function applyTranslations() {
             rulesUl.appendChild(li);
         });
     }
-
-    if (document.getElementById('btnRulesUnderstood')) document.getElementById('btnRulesUnderstood').textContent = t.btnUnderstood;
 }
 
 function selectRegLanguage(lang) {
@@ -435,13 +347,16 @@ const AVAILABLE_INTERESTS = [
 let currentUser = null;
 let isAdminUser = false;
 let currentView = "";
-let previousViewBeforeAdmin = "";
+let previousViewBeforeAdmin = "approvedScreen";
 let base64Photo = "";
+let base64ReceiptPhoto = "";
 let selectedRegGender = "MALE";
 let selectedRegTargetGender = "FEMALE";
 let selectedRegInterests = [];
 let selectedEditInterests = [];
 let currentBillingPeriod = "monthly";
+let selectedCheckoutPlan = "PREMIUM";
+let selectedCheckoutAmount = 49000;
 
 let discoverProfiles = [];
 let currentDiscoverIndex = 0;
@@ -584,7 +499,7 @@ function compressImage(file, maxDimension = 800, quality = 0.75) {
     });
 }
 
-// ----------------- REGISTRATION WIZARD (7 STEPS) -----------------
+// ----------------- REGISTRATION WIZARD -----------------
 function selectRegGender(g) {
     selectedRegGender = g;
     document.getElementById('regGenderMale').classList.toggle('selected', g === 'MALE');
@@ -642,9 +557,7 @@ document.getElementById('regPhotoInput').addEventListener('change', async functi
 });
 
 function nextRegStep(currStep) {
-    if (currStep === 1) {
-        // Lang
-    } else if (currStep === 2) {
+    if (currStep === 2) {
         const age = parseInt(document.getElementById('regAge').value);
         if (!age || age < 18) {
             alert(currentLang === 'ru' ? "Сервис доступен только для 18+!" : "18 yoshdan katta bo'lish shart!");
@@ -657,8 +570,6 @@ function nextRegStep(currStep) {
             alert(currentLang === 'ru' ? "Заполните имя и город!" : "Ism va shahringizni to'ldiring!");
             return;
         }
-    } else if (currStep === 4) {
-        // Gender selected
     } else if (currStep === 5) {
         if (!base64Photo) {
             alert(currentLang === 'ru' ? "Загрузите фото!" : "Profil rasmini yuklang!");
@@ -774,11 +685,11 @@ function switchTab(tabId) {
     if (tabId === 'viewProfile') populateMyProfile();
 }
 
-// ----------------- GAMIFICATION: DAILY REWARD MODAL & STREAK -----------------
+// ----------------- GAMIFICATION: DAILY REWARDS & STREAKS -----------------
 async function openDailyRewardModal() {
     document.getElementById('dailyRewardModal').style.display = 'flex';
     const container = document.getElementById('streakGridContainer');
-    container.innerHTML = "<p style='grid-column:span 7; color:var(--text-muted);'>Yuklanmoqda...</p>";
+    container.innerHTML = "<p style='grid-column:span 7; color:var(--text-muted); font-size:11px;'>Yuklanmoqda...</p>";
 
     try {
         const res = await fetch(`${API_URL}/api/rewards/daily/status?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
@@ -789,7 +700,7 @@ async function openDailyRewardModal() {
             const canClaim = data.can_claim;
 
             container.innerHTML = "";
-            table.forEach((r, idx) => {
+            table.forEach(r => {
                 const dayNum = r.day;
                 const isClaimed = dayNum < cycleDay || (dayNum === cycleDay && !canClaim);
                 const isCurrent = dayNum === cycleDay && canClaim;
@@ -821,6 +732,10 @@ async function openDailyRewardModal() {
 function closeDailyRewardModal() { document.getElementById('dailyRewardModal').style.display = 'none'; }
 
 async function claimDailyRewardNow() {
+    const btn = document.getElementById('btnClaimDailyAction');
+    btn.disabled = true;
+    btn.textContent = "Qabul qilinmoqda...";
+
     try {
         const res = await fetch(`${API_URL}/api/rewards/daily/claim?${getQueryParams()}`, {
             method: "POST",
@@ -834,11 +749,15 @@ async function claimDailyRewardNow() {
             openDailyRewardModal();
         } else {
             alert(data.error?.message || "Xatolik yuz berdi");
+            btn.disabled = false;
         }
-    } catch(e) { alert(e.message); }
+    } catch(e) {
+        alert(e.message);
+        btn.disabled = false;
+    }
 }
 
-// ----------------- GAMIFICATION: LEADERBOARD & MISSIONS -----------------
+// ----------------- LEADERBOARD & MISSIONS -----------------
 async function openLeaderboardModal() {
     document.getElementById('leaderboardModal').style.display = 'flex';
     const container = document.getElementById('leaderboardList');
@@ -950,7 +869,7 @@ function copyReferralLink() {
     }
 }
 
-// ----------------- PAYWALL & MULTI-TIER PLANS -----------------
+// ----------------- PAYWALL & RECEIPT PAYMENT CHECKOUT -----------------
 function openPaywallModal() {
     document.getElementById('paywallModal').style.display = 'flex';
     updatePaywallPrices();
@@ -976,23 +895,91 @@ function updatePaywallPrices() {
     }
 }
 
-async function subscribePlan(tier) {
+// Dedicated Payment Modal
+function openPaymentCheckoutModal(planTier) {
+    closePaywallModal();
+    selectedCheckoutPlan = planTier;
+    
+    if (planTier === "VIP") {
+        selectedCheckoutAmount = (currentBillingPeriod === "yearly") ? 710000 : 89000;
+        document.getElementById('chkPlanBadge').innerHTML = `👑 VIP STATUS (${currentBillingPeriod === 'yearly' ? '1 Yillik' : '1 Oylik'})`;
+        document.getElementById('chkPlanBadge').style.color = "#ff4fbf";
+    } else {
+        selectedCheckoutAmount = (currentBillingPeriod === "yearly") ? 410000 : 49000;
+        document.getElementById('chkPlanBadge').innerHTML = `⭐ PREMIUM (${currentBillingPeriod === 'yearly' ? '1 Yillik' : '1 Oylik'})`;
+        document.getElementById('chkPlanBadge').style.color = "var(--accent-gold)";
+    }
+
+    document.getElementById('chkAmountBadge').textContent = `${selectedCheckoutAmount.toLocaleString()} UZS`;
+    document.getElementById('checkoutCardNumber').textContent = "9860 6004 3347 6527";
+    
+    // Reset receipt preview
+    base64ReceiptPhoto = "";
+    document.getElementById('receiptPhotoPreview').style.display = 'none';
+    document.getElementById('receiptPlaceholderText').style.display = 'block';
+    document.getElementById('receiptFileInput').value = "";
+
+    document.getElementById('paymentCheckoutModal').style.display = 'flex';
+}
+
+function closePaymentCheckoutModal() {
+    document.getElementById('paymentCheckoutModal').style.display = 'none';
+}
+
+function copyCheckoutCardNumber() {
+    navigator.clipboard.writeText("9860600433476527");
+    alert("Karta raqami nusxalandi: 9860 6004 3347 6527 💳");
+}
+
+document.getElementById('receiptFileInput').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        try {
+            document.getElementById('receiptPlaceholderText').innerHTML = "<span style='font-size:12px; color:var(--primary);'>Chek siqilmoqda...</span>";
+            base64ReceiptPhoto = await compressImage(file, 900, 0.8);
+            document.getElementById('receiptPhotoPreview').src = base64ReceiptPhoto;
+            document.getElementById('receiptPhotoPreview').style.display = 'block';
+            document.getElementById('receiptPlaceholderText').style.display = 'none';
+        } catch(err) {
+            alert("Rasm yuklashda xatolik: " + err.message);
+        }
+    }
+});
+
+async function submitPaymentOrder() {
+    if (!base64ReceiptPhoto) {
+        alert("To'lov chekini (skrinshot) yuklash majburiy!");
+        return;
+    }
+
+    const btn = document.getElementById('btnSubmitPaymentReceipt');
+    btn.disabled = true;
+    btn.textContent = "Yuborilmoqda...";
+
     try {
-        const res = await fetch(`${API_URL}/api/premium/subscribe?${getQueryParams()}`, {
+        const res = await fetch(`${API_URL}/api/payment/submit?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ tier: tier, period: currentBillingPeriod })
+            body: JSON.stringify({
+                plan_tier: selectedCheckoutPlan,
+                period: currentBillingPeriod,
+                amount: selectedCheckoutAmount,
+                receipt_photo: base64ReceiptPhoto
+            })
         });
         const data = await res.json();
         if (data.success) {
-            alert(`🎉 Tabriklaymiz! ${tier} tarifi muvaffaqiyatli faollashtirildi.`);
-            currentUser = data.user;
-            closePaywallModal();
-            populateMyProfile();
+            alert("🎉 To'lov chekingiz muvaffaqiyatli qabul qilindi! Administrator tasdiqlashi bilan obunangiz avtomatik ishga tushadi.");
+            closePaymentCheckoutModal();
         } else {
             alert(data.error?.message || "Xatolik yuz berdi");
         }
-    } catch(e) { alert(e.message); }
+    } catch(e) {
+        alert(e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "To'lov qildim (Yuborish) 🚀";
+    }
 }
 
 async function redeemCouponCode() {
@@ -1081,7 +1068,6 @@ function renderDiscoverCard() {
                     <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.bio}</p>
                 </div>
             </div>
-            <!-- Action Row under Card -->
             <div class="card-actions-row">
                 <button class="btn-action-circle btn-pass" title="Dislike" onclick="handleSwipe(${p.id}, false)">👎</button>
                 <button class="btn-action-circle btn-report" title="Shikoyat" onclick="openReportModal(${p.id})">⚠️</button>
@@ -1125,7 +1111,7 @@ function showMatchModal(partner, matchId) {
 }
 function closeMatchModal() { document.getElementById('matchModal').style.display = 'none'; }
 
-// ----------------- LIKES RECEIVED (WHO LIKED ME) -----------------
+// ----------------- LIKES RECEIVED -----------------
 async function loadReceivedLikes() {
     const t = I18N[currentLang] || I18N.uz;
     const container = document.getElementById('likesList');
@@ -1140,7 +1126,7 @@ async function loadReceivedLikes() {
         if (data.success) {
             badge.textContent = data.count;
             const isPrem = !!data.is_premium;
-            promo.style.display = isPrem ? 'none' : 'block';
+            promo.style.display = isPrem ? 'none' : 'flex';
 
             if (data.profiles.length === 0) {
                 container.innerHTML = `<p style='color:var(--text-muted); grid-column:span 2; text-align:center; padding:30px 0;'>${t.noLikes}</p>`;
@@ -1154,7 +1140,6 @@ async function loadReceivedLikes() {
                 card.style.cssText = "padding: 10px; text-align: center; position: relative; overflow: hidden;";
 
                 if (!isPrem) {
-                    // Blurred teaser for non-premium
                     card.innerHTML = `
                         <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; position: relative;">
                             <img src="${p.photo}" class="blurred-photo" style="width: 100%; height: 100%; object-fit: cover;">
@@ -1167,7 +1152,6 @@ async function loadReceivedLikes() {
                         <button onclick="openPaywallModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 5px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
                     `;
                 } else {
-                    // Clear profile for Premium members
                     card.innerHTML = `
                         <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; cursor: pointer;" onclick="openProfileDetailModal(${p.id})">
                             <img src="${p.photo}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -1437,13 +1421,11 @@ function populateMyProfile() {
     document.getElementById('myReferralCount').textContent = `${currentUser.referral_count || 0}`;
     document.getElementById('myProfileStreak').textContent = `${currentUser.streak_days || 0}`;
 
-    // Level & XP Gauge
     document.getElementById('myLevelLabel').textContent = `⭐ Level ${currentUser.level || 1}`;
     const prog = currentUser.xp_progress || { current: 0, needed: 200, pct: 0 };
     document.getElementById('myXPLabel').textContent = `${prog.current} / ${prog.needed} XP`;
     document.getElementById('myXPProgressBar').style.width = `${prog.pct}%`;
 
-    // Badges Showcase
     const badgesContainer = document.getElementById('myBadgesContainer');
     badgesContainer.innerHTML = "";
     const badges = currentUser.badges || [];
@@ -1584,16 +1566,20 @@ function openRulesModal() {
 }
 function closeRulesModal() { document.getElementById('rulesModal').style.display = 'none'; }
 
-// ----------------- ADMIN DASHBOARD & RETENTION -----------------
+// ----------------- ADMIN DASHBOARD & EXIT BUTTON -----------------
 function openAdminScreen() {
-    previousViewBeforeAdmin = currentView;
+    previousViewBeforeAdmin = currentView || "approvedScreen";
     showView('adminScreen');
     loadAdminData();
 }
 
 function closeAdminScreen() {
-    if (previousViewBeforeAdmin) showView(previousViewBeforeAdmin);
-    else verifySession();
+    if (previousViewBeforeAdmin && previousViewBeforeAdmin !== 'adminScreen') {
+        showView(previousViewBeforeAdmin);
+    } else {
+        showView('approvedScreen');
+        switchTab('viewDiscover');
+    }
 }
 
 function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
@@ -1729,17 +1715,17 @@ async function submitNewSupportTicket() {
     } catch(e) { alert(e.message); }
 }
 
-let currentAdminTab = "retention";
+let currentAdminTab = "payments";
 
 function switchAdminTab(tab) {
     currentAdminTab = tab;
-    const sections = ['admSecRetention', 'admSecPending', 'admSecReports', 'admSecTickets', 'admSecUsers', 'admSecBroadcast', 'admSecAudit'];
+    const sections = ['admSecPayments', 'admSecPending', 'admSecRetention', 'admSecReports', 'admSecTickets', 'admSecUsers', 'admSecBroadcast', 'admSecAudit'];
     sections.forEach(s => {
         const el = document.getElementById(s);
         if (el) el.style.display = (s === `admSec${tab.charAt(0).toUpperCase() + tab.slice(1)}`) ? 'block' : 'none';
     });
 
-    const btns = ['btnAdmTabRetention', 'btnAdmTabPending', 'btnAdmTabReports', 'btnAdmTabTickets', 'btnAdmTabUsers', 'btnAdmTabBroadcast', 'btnAdmTabAudit'];
+    const btns = ['btnAdmTabPayments', 'btnAdmTabPending', 'btnAdmTabRetention', 'btnAdmTabReports', 'btnAdmTabTickets', 'btnAdmTabUsers', 'btnAdmTabBroadcast', 'btnAdmTabAudit'];
     btns.forEach(b => {
         const el = document.getElementById(b);
         if (el) {
@@ -1748,8 +1734,9 @@ function switchAdminTab(tab) {
         }
     });
 
-    if (tab === 'retention') loadAdminRetention();
+    if (tab === 'payments') loadAdminPayments();
     if (tab === 'pending') loadAdminPending();
+    if (tab === 'retention') loadAdminRetention();
     if (tab === 'reports') loadAdminReports();
     if (tab === 'tickets') loadAdminTickets();
     if (tab === 'users') loadAdminUsers();
@@ -1761,13 +1748,110 @@ async function loadAdminData() {
         const res = await fetch(`${API_URL}/api/admin/stats?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
         const data = await res.json();
         if (data.success) {
-            document.getElementById('admStatPending').textContent = data.stats.pending;
-            document.getElementById('admStatApproved').textContent = data.stats.approved;
-            document.getElementById('admStatPremium').textContent = data.stats.premium_users;
-            document.getElementById('admStatTotal').textContent = data.stats.total;
+            document.getElementById('admStatPendingPayments').textContent = data.stats.pending_payments || 0;
+            document.getElementById('admStatPending').textContent = data.stats.pending || 0;
+            document.getElementById('admStatApproved').textContent = data.stats.approved || 0;
+            document.getElementById('admStatPremium').textContent = data.stats.premium_users || 0;
         }
     } catch (e) {}
     switchAdminTab(currentAdminTab);
+}
+
+// ----------------- ADMIN PAYMENTS APPROVAL -----------------
+async function loadAdminPayments() {
+    const container = document.getElementById('admPaymentsList');
+    container.innerHTML = "<p style='color: var(--text-muted);'>To'lovlar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/payments?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const orders = data.orders;
+            if (orders.length === 0) {
+                container.innerHTML = "<p style='color: var(--accent-green); text-align:center;'>To'lov cheklari mavjud emas.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            orders.forEach(o => {
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.padding = "14px";
+                const isPending = o.status === 'PENDING';
+                const statusColor = isPending ? 'var(--accent-gold)' : (o.status === 'APPROVED' ? 'var(--accent-green)' : '#ff4747');
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-weight:bold; font-size:14px; color:${o.plan_tier === 'VIP' ? '#ff4fbf' : 'var(--accent-gold)'};">
+                            ${o.plan_tier === 'VIP' ? '👑 VIP STATUS' : '⭐ PREMIUM'} (${o.period === 'yearly' ? 'Yillik' : 'Oylik'})
+                        </span>
+                        <span style="font-weight:bold; font-size:12px; color:${statusColor};">${o.status}</span>
+                    </div>
+
+                    <div style="display:flex; gap:12px; margin-bottom:10px;">
+                        <img src="${o.receipt_photo}" style="width:90px; height:120px; object-fit:cover; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onclick="window.open('${o.receipt_photo}')" title="Kattalashtirish">
+                        <div style="flex:1; font-size:12px;">
+                            <p style="margin:0 0 4px 0;"><b>Mijoz:</b> ${o.user ? o.user.name : 'Noma`lum'} (ID: ${o.user ? o.user.id : '?'})</p>
+                            <p style="margin:0 0 4px 0;"><b>TG ID:</b> ${o.user ? o.user.telegram_id : '—'}</p>
+                            <p style="margin:0 0 4px 0;"><b>Summa:</b> <span style="font-weight:bold; color:var(--accent-green); font-size:14px;">${o.amount.toLocaleString()} UZS</span></p>
+                            <p style="margin:0 0 4px 0; color:var(--text-muted); font-size:11px;">Karta: ${o.card_number}</p>
+                            <p style="margin:0; color:var(--text-muted); font-size:10px;">${new Date(o.created_at).toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    ${isPending ? `
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="adminApprovePayment(${o.id})" style="flex:2; background:var(--accent-green); color:#000; border:none; padding:8px; border-radius:var(--radius-sm); font-weight:bold; cursor:pointer;">
+                                ✅ Tasdiqlash (Obunani yoqish)
+                            </button>
+                            <button onclick="adminRejectPayment(${o.id})" style="flex:1; background:rgba(255,255,255,0.06); border:1px solid #ff4747; color:#ff4747; padding:8px; border-radius:var(--radius-sm); font-weight:bold; cursor:pointer;">
+                                ❌ Rad etish
+                            </button>
+                        </div>
+                    ` : `
+                        <div style="font-size:11px; color:var(--text-muted); background:rgba(255,255,255,0.02); padding:6px; border-radius:4px;">
+                            Holat: <b>${o.status}</b> ${o.admin_note ? `(Sabab: ${o.admin_note})` : ''}
+                        </div>
+                    `}
+                `;
+                container.appendChild(card);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+async function adminApprovePayment(orderId) {
+    if (!confirm("To'lovni tasdiqlab, obunani faollashtirmoqchimisiz?")) return;
+    try {
+        const res = await fetch(`${API_URL}/api/admin/payment/approve?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ order_id: orderId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("To'lov tasdiqlandi va foydalanuvchiga obuna berildi!");
+            loadAdminData();
+        } else {
+            alert(data.error?.message || "Xatolik");
+        }
+    } catch(e) { alert(e.message); }
+}
+
+async function adminRejectPayment(orderId) {
+    const reason = prompt("Rad etish sababini kiriting:", "To'lov cheki mos kelmadi yoki pul tushmadi");
+    if (!reason) return;
+    try {
+        const res = await fetch(`${API_URL}/api/admin/payment/reject?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ order_id: orderId, reason: reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("To'lov rad etildi.");
+            loadAdminData();
+        }
+    } catch(e) { alert(e.message); }
 }
 
 async function loadAdminRetention() {
@@ -1779,9 +1863,6 @@ async function loadAdminRetention() {
             document.getElementById('retWau').textContent = data.metrics.wau;
             document.getElementById('retMau').textContent = data.metrics.mau;
             document.getElementById('retStreakUsers').textContent = data.metrics.streak_3_plus;
-            document.getElementById('retD1').textContent = data.metrics.retention_d1_pct;
-            document.getElementById('retD7').textContent = data.metrics.retention_d7_pct;
-            document.getElementById('retConv').textContent = data.metrics.conversion_rate;
         }
     } catch(e) {}
 }

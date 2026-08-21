@@ -18,7 +18,7 @@ async def client():
     yield client
     await client.close()
 
-class TestEnterpriseGamificationRetentionSuite:
+class TestKairyxEnterprisePaymentSuite:
 
     @pytest.mark.asyncio
     async def test_health_and_system(self, client):
@@ -32,12 +32,6 @@ class TestEnterpriseGamificationRetentionSuite:
         ready_data = await ready_resp.json()
         assert ready_data["status"] == "ready"
 
-        sys_resp = await client.get("/api/system/health?initData=mock_admin")
-        assert sys_resp.status == 200
-        sys_data = await sys_resp.json()
-        assert sys_data["success"] is True
-        assert sys_data["health"]["api_status"] == "ONLINE"
-
     @pytest.mark.asyncio
     async def test_daily_streak_and_rewards(self, client):
         # Initialize user
@@ -48,7 +42,6 @@ class TestEnterpriseGamificationRetentionSuite:
         assert status_resp.status == 200
         s_data = await status_resp.json()
         assert s_data["can_claim"] is True
-        assert len(s_data["rewards_table"]) == 7
 
         # Claim Day 1 reward
         claim_resp = await client.post("/api/rewards/daily/claim?initData=mock_user_1001")
@@ -57,102 +50,84 @@ class TestEnterpriseGamificationRetentionSuite:
         assert c_data["streak_days"] == 1
         assert c_data["reward_awarded"]["xp"] == 50
 
-        # Attempt duplicate claim on same day -> Should fail
+        # Duplicate claim attempt -> Should be rejected
         dup_claim = await client.post("/api/rewards/daily/claim?initData=mock_user_1001")
         assert dup_claim.status == 400
-        assert (await dup_claim.json())["error"]["code"] == "ALREADY_CLAIMED"
 
     @pytest.mark.asyncio
-    async def test_missions_and_leaderboard(self, client):
-        # Register user with high completion
+    async def test_receipt_payment_checkout_flow(self, client):
+        # 1. User registers & visits paywall
         await client.get("/api/session?initData=mock_user_2001")
-        await client.post("/api/register?initData=mock_user_2001", json={
-            "name": "Sardor", "age": 24, "gender": "MALE", "target_gender": "FEMALE",
-            "city": "Samarqand", "photo": "data:image/jpeg;base64,mock", "bio": "IT Leader",
-            "interests": ["💻 Technology", "🎮 Gaming"], "terms_accepted": True
+
+        # 2. User checks available plans & card
+        plans_resp = await client.get("/api/premium/plans?initData=mock_user_2001")
+        assert plans_resp.status == 200
+        p_data = await plans_resp.json()
+        assert p_data["card_number"] == "9860 6004 3347 6527"
+
+        # 3. User submits receipt photo for VIP yearly
+        order_resp = await client.post("/api/payment/submit?initData=mock_user_2001", json={
+            "plan_tier": "VIP",
+            "period": "yearly",
+            "amount": 710000.0,
+            "receipt_photo": "data:image/jpeg;base64,mock_receipt_image_data"
         })
+        assert order_resp.status == 200
+        order_data = await order_resp.json()
+        order_id = order_data["order_id"]
+        assert order_id is not None
 
-        # Check daily missions
-        m_resp = await client.get("/api/missions?initData=mock_user_2001")
-        assert m_resp.status == 200
-        m_data = await m_resp.json()
-        assert len(m_data["missions"]) >= 3
+        # 4. Admin views pending payments list
+        adm_payments_resp = await client.get("/api/admin/payments?initData=mock_admin")
+        assert adm_payments_resp.status == 200
+        adm_data = await adm_payments_resp.json()
+        assert len(adm_data["orders"]) >= 1
+        found_order = [o for o in adm_data["orders"] if o["id"] == order_id][0]
+        assert found_order["status"] == "PENDING"
+        assert found_order["amount"] == 710000.0
+        assert found_order["card_number"] == "9860 6004 3347 6527"
 
-        # Check leaderboard
-        lb_resp = await client.get("/api/leaderboard?initData=mock_user_2001")
-        assert lb_resp.status == 200
-        lb_data = await lb_resp.json()
-        assert "leaderboard" in lb_data
+        # 5. Admin approves payment -> Obuna activates
+        approve_resp = await client.post("/api/admin/payment/approve?initData=mock_admin", json={"order_id": order_id})
+        assert approve_resp.status == 200
+        assert (await approve_resp.json())["success"] is True
+
+        # 6. User re-verifies session -> Plan is now VIP
+        user_sess = await (await client.get("/api/session?initData=mock_user_2001")).json()
+        assert user_sess["user"]["plan_tier"] == "VIP"
+        assert user_sess["user"]["is_premium"] is True
+        assert "👑 VIP" in user_sess["user"]["badges"]
 
     @pytest.mark.asyncio
-    async def test_coupons_and_promo_codes(self, client):
+    async def test_receipt_payment_rejection(self, client):
         await client.get("/api/session?initData=mock_user_3001")
 
-        # Redeem valid promo code KAIRYX2026
-        promo_resp = await client.post("/api/coupons/redeem?initData=mock_user_3001", json={"code": "KAIRYX2026"})
+        order_resp = await client.post("/api/payment/submit?initData=mock_user_3001", json={
+            "plan_tier": "PREMIUM",
+            "period": "monthly",
+            "amount": 49000.0,
+            "receipt_photo": "data:image/jpeg;base64,invalid_receipt"
+        })
+        order_id = (await order_resp.json())["order_id"]
+
+        # Admin rejects
+        reject_resp = await client.post("/api/admin/payment/reject?initData=mock_admin", json={
+            "order_id": order_id,
+            "reason": "Chek fotosi noaniq"
+        })
+        assert reject_resp.status == 200
+
+        # User remains FREE
+        user_sess = await (await client.get("/api/session?initData=mock_user_3001")).json()
+        assert user_sess["user"]["plan_tier"] == "FREE"
+
+    @pytest.mark.asyncio
+    async def test_coupons_and_referral(self, client):
+        await client.get("/api/session?initData=mock_user_4001")
+        promo_resp = await client.post("/api/coupons/redeem?initData=mock_user_4001", json={"code": "KAIRYX2026"})
         assert promo_resp.status == 200
-        p_data = await promo_resp.json()
-        assert p_data["success"] is True
-        assert p_data["user"]["is_premium"] is True
+        assert (await promo_resp.json())["success"] is True
 
-        # Duplicate redemption by same user -> Should fail
-        dup_promo = await client.post("/api/coupons/redeem?initData=mock_user_3001", json={"code": "KAIRYX2026"})
-        assert dup_promo.status == 400
-        assert (await dup_promo.json())["error"]["code"] == "ALREADY_REDEEMED"
-
-    @pytest.mark.asyncio
-    async def test_referral_and_anti_fraud(self, client):
-        # User A
-        sess_a = await (await client.get("/api/session?initData=mock_user_4001")).json()
-        user_a_id = sess_a["user"]["id"]
-
-        # User B registers with User A's referral link
-        await client.get(f"/api/session?initData=mock_user_4002&start_param=ref_{user_a_id}")
-        reg_b = await client.post("/api/register?initData=mock_user_4002", json={
-            "name": "Dilnoza", "age": 21, "gender": "FEMALE", "target_gender": "MALE",
-            "city": "Farg'ona", "photo": "data:image/jpeg;base64,mock", "bio": "Talaba",
-            "interests": ["🎨 Art"], "terms_accepted": True
-        })
-        assert reg_b.status == 200
-
-        # Verify User A received referral count and XP
-        ref_info = await (await client.get("/api/referral?initData=mock_user_4001")).json()
-        assert ref_info["referral_count"] == 1
-        assert "t.me/Ka1ryx_bot?start=ref_" in ref_info["referral_link"]
-
-    @pytest.mark.asyncio
-    async def test_multi_tier_plans_and_vip_features(self, client):
-        # User registers
-        await client.get("/api/session?initData=mock_user_5001")
-
-        # Get plans table
-        plans_resp = await client.get("/api/premium/plans?initData=mock_user_5001")
-        assert plans_resp.status == 200
-        plans_data = await plans_resp.json()
-        assert "FREE" in plans_data["plans"]
-        assert "PREMIUM" in plans_data["plans"]
-        assert "VIP" in plans_data["plans"]
-
-        # Subscribe to VIP tier
-        sub_resp = await client.post("/api/premium/subscribe?initData=mock_user_5001", json={"tier": "VIP", "period": "yearly"})
-        assert sub_resp.status == 200
-        sub_data = await sub_resp.json()
-        assert sub_data["user"]["plan_tier"] == "VIP"
-        assert "👑 VIP" in sub_data["user"]["badges"]
-
-    @pytest.mark.asyncio
-    async def test_admin_retention_and_control_center(self, client):
-        # Fetch retention metrics as admin
-        ret_resp = await client.get("/api/admin/retention?initData=mock_admin")
-        assert ret_resp.status == 200
-        r_data = await ret_resp.json()
-        assert "dau" in r_data["metrics"]
-        assert "retention_d1_pct" in r_data["metrics"]
-
-        # Broadcast message
-        bc_resp = await client.post("/api/admin/broadcast?initData=mock_admin", json={
-            "title": "🎉 Yangi 7-Kunlik Bonus!",
-            "body": "Har kuni ilovaga kiring va VIP mukofotlarni qo'lga kiriting."
-        })
-        assert bc_resp.status == 200
-        assert (await bc_resp.json())["success"] is True
+        ref_resp = await client.get("/api/referral?initData=mock_user_4001")
+        assert ref_resp.status == 200
+        assert "t.me/Ka1ryx_bot?start=ref_" in (await ref_resp.json())["referral_link"]

@@ -12,7 +12,7 @@ from sqlalchemy import select, func, and_, or_, text, delete, update
 
 from engine import async_session_maker
 from models import (
-    Base, User, UserStatus, UserRole, UserStatusHistory, PlanTier,
+    Base, User, UserStatus, UserRole, UserStatusHistory, PlanTier, PaymentOrder,
     Notification, SupportTicket, TicketMessage, Coupon, CouponRedemption,
     ReferralReward, AdminAuditLog, AdminNote, Swipe, Match, Message, Block, Report
 )
@@ -117,7 +117,6 @@ def calculate_completion(user) -> int:
     return min(100, score)
 
 def calculate_level_from_xp(xp: int) -> tuple[int, int, int]:
-    # returns: (level, current_level_xp, next_level_xp)
     level = 1 + int(xp // 200)
     current_level_base = (level - 1) * 200
     current_in_level = xp - current_level_base
@@ -236,7 +235,7 @@ async def handle_system_health(request):
             "database": "CONNECTED",
             "uptime_seconds": uptime_seconds,
             "uptime_formatted": str(timedelta(seconds=uptime_seconds)),
-            "version": "2.11.0-Retention"
+            "version": "2.12.0-ReceiptBilling"
         }
     })
 
@@ -279,11 +278,10 @@ async def handle_session(request):
                 target_gender="ANY",
                 referred_by=ref_id,
                 plan_tier="FREE",
-                xp=50 # Starter bonus XP
+                xp=50
             )
             session.add(user)
-            await session.commit()
-            await session.refresh(user)
+            await session.flush()
 
             welcome_notif = Notification(
                 user_id=user.id,
@@ -292,6 +290,7 @@ async def handle_session(request):
                 body="Profil anketangizni to'ldiring, kunlik bonuslarni oling va tanishuvni boshlang."
             )
             session.add(welcome_notif)
+            u_data = serialize_user(user, include_private=True)
             await session.commit()
         else:
             if admin_flag and user.role == "USER":
@@ -304,6 +303,7 @@ async def handle_session(request):
                 user.plan_tier = "FREE"
                 user.premium_until = None
 
+            u_data = serialize_user(user, include_private=True)
             await session.commit()
 
         # Count unread notifications
@@ -328,7 +328,7 @@ async def handle_session(request):
             "role": user.role,
             "unread_notifications": unread_notifs,
             "likes_received_count": likes_received_count,
-            "user": serialize_user(user, include_private=True)
+            "user": u_data
         })
 
 async def handle_register(request):
@@ -527,7 +527,7 @@ async def handle_daily_reward_status(request):
             if last_date == today_date:
                 can_claim = False
             elif last_date < today_date - timedelta(days=1):
-                streak = 0 # Streak lost
+                streak = 0
 
         cycle_day = (streak % 7) + 1 if can_claim else ((streak - 1) % 7) + 1
 
@@ -598,7 +598,7 @@ async def handle_daily_reward_claim(request):
             "user": u_data
         })
 
-# ----------------- MISSIONS & CHALLENGES -----------------
+# ----------------- MISSIONS & LEADERBOARD -----------------
 async def handle_missions_list(request):
     tg_user = get_telegram_user(request)
     if not tg_user:
@@ -609,17 +609,10 @@ async def handle_missions_list(request):
         if not user:
             return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
-        # Count today's swipes
         today_start = datetime.combine(date.today(), datetime.min.time())
         swipes_count = (await session.execute(select(func.count()).select_from(Swipe).where(and_(
             Swipe.swiper_id == user.id,
             Swipe.created_at >= today_start
-        )))).scalar() or 0
-
-        # Count today's chats
-        chats_count = (await session.execute(select(func.count()).select_from(Message).where(and_(
-            Message.sender_id == user.id,
-            Message.created_at >= today_start
         )))).scalar() or 0
 
         completion = calculate_completion(user)
@@ -669,10 +662,7 @@ async def handle_missions_list(request):
 
         return web.json_response({"success": True, "missions": missions})
 
-# ----------------- LEADERBOARD -----------------
 async def handle_leaderboard(request):
-    period = request.query.get("period", "all")
-
     async with async_session_maker() as session:
         stmt = select(User).where(and_(
             User.status == UserStatus.APPROVED,
@@ -804,7 +794,9 @@ async def handle_coupon_redeem(request):
             "user": u_data
         })
 
-# ----------------- MULTI-TIER PREMIUM & PLANS -----------------
+# ----------------- MULTI-TIER PLANS & PAYMENT ORDER CHECKOUT -----------------
+CARD_NUMBER_DEFAULT = "9860 6004 3347 6527"
+
 PLANS_DATA = {
     "FREE": {
         "name": "Free",
@@ -819,8 +811,8 @@ PLANS_DATA = {
     },
     "PREMIUM": {
         "name": "Premium ⭐",
-        "price_monthly": 49000, # UZS
-        "price_yearly": 410000, # Save 30%
+        "price_monthly": 49000,
+        "price_yearly": 410000,
         "features": [
             "Sizga kim Like bosganini to'liq ko'rish 👀",
             "Cheksiz Like va filtrlash 💖",
@@ -831,8 +823,8 @@ PLANS_DATA = {
     },
     "VIP": {
         "name": "VIP Status 👑",
-        "price_monthly": 89000, # UZS
-        "price_yearly": 710000, # Save 33%
+        "price_monthly": 89000,
+        "price_yearly": 710000,
         "features": [
             "Barcha Premium imkoniyatlari",
             "Moslikni kutmasdan birinchi bo'lib yozish 💬",
@@ -846,10 +838,11 @@ PLANS_DATA = {
 async def handle_premium_plans(request):
     return web.json_response({
         "success": True,
+        "card_number": CARD_NUMBER_DEFAULT,
         "plans": PLANS_DATA
     })
 
-async def handle_premium_subscribe(request):
+async def handle_payment_submit(request):
     tg_user = get_telegram_user(request)
     if not tg_user:
         return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
@@ -859,47 +852,48 @@ async def handle_premium_subscribe(request):
     except Exception:
         return web.json_response({"success": False, "error": {"code": "INVALID_JSON"}}, status=400)
 
-    tier = data.get("tier", "PREMIUM").upper() # PREMIUM or VIP
-    period = data.get("period", "monthly") # monthly or yearly
-    days = 365 if period == "yearly" else 30
+    plan_tier = str(data.get("plan_tier", "PREMIUM")).upper()
+    period = str(data.get("period", "monthly")).lower()
+    amount = float(data.get("amount", 49000))
+    receipt_photo = data.get("receipt_photo")
 
-    if tier not in ["PREMIUM", "VIP"]:
-        tier = "PREMIUM"
+    if not receipt_photo:
+        return web.json_response({"success": False, "error": {"code": "MISSING_RECEIPT", "message": "To'lov chekini yuklash majburiy!"}}, status=400)
+
+    if plan_tier not in ["PREMIUM", "VIP"]:
+        plan_tier = "PREMIUM"
 
     async with async_session_maker() as session:
         user = (await session.execute(select(User).where(User.telegram_id == tg_user["id"]))).scalar_one_or_none()
         if not user:
             return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
-        now = datetime.now()
-        curr_expiry = user.premium_until if (user.premium_until and user.premium_until > now) else now
-        user.premium_until = curr_expiry + timedelta(days=days)
-        user.is_premium = True
-        user.plan_tier = tier
-
-        badges = set(parse_json_safely(user.badges, []))
-        if tier == "VIP":
-            badges.add("👑 VIP")
-        else:
-            badges.add("⭐ Premium")
-        user.badges = json.dumps(list(badges))
+        order = PaymentOrder(
+            user_id=user.id,
+            plan_tier=plan_tier,
+            period=period,
+            amount=amount,
+            card_number=CARD_NUMBER_DEFAULT,
+            receipt_photo=receipt_photo,
+            status="PENDING"
+        )
+        session.add(order)
+        await session.flush()
 
         session.add(Notification(
             user_id=user.id,
-            type="reward",
-            title=f"Kairyx {tier} faollashtirildi! 💎",
-            body=f"Tabriklaymiz! Sizning {tier} tarifingiz {days} kunga muvaffaqiyatli ishga tushirildi."
+            type="payment",
+            title="To'lov chekingiz qabul qilindi ⏳",
+            body=f"{plan_tier} tarifi uchun ({amount:,.0f} UZS) to'lov cheki administrator tekshiruviga yuborildi."
         ))
 
-        u_data = serialize_user(user, include_private=True)
         await session.commit()
         return web.json_response({
             "success": True,
-            "message": f"Tarif {tier} muvaffaqiyatli faollashtirildi",
-            "user": u_data
+            "order_id": order.id,
+            "message": "To'lov chekingiz qabul qilindi. Administrator tasdiqlashi bilan obunangiz faollashadi."
         })
 
-# ----------------- PREMIUM & LIKES RECEIVED -----------------
 async def handle_likes_received(request):
     tg_user = get_telegram_user(request)
     if not tg_user:
@@ -957,36 +951,6 @@ async def handle_likes_received(request):
                 "is_premium": False,
                 "profiles": profiles
             })
-
-async def handle_premium_activate(request):
-    tg_user = get_telegram_user(request)
-    if not tg_user:
-        return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
-
-    async with async_session_maker() as session:
-        curr_user = (await session.execute(select(User).where(User.telegram_id == tg_user["id"]))).scalar_one_or_none()
-        if not curr_user:
-            return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
-
-        curr_user.is_premium = True
-        curr_user.plan_tier = "PREMIUM"
-        curr_user.premium_until = datetime.now() + timedelta(days=30)
-
-        notif = Notification(
-            user_id=curr_user.id,
-            type="system",
-            title="Kairyx Premium faollashtirildi! ⭐",
-            body="Tabriklaymiz! Endi sizga kim Like bosganini to'liq ko'rishingiz va to'g'ridan-to'g'ri suhbat boshlashingiz mumkin."
-        )
-        session.add(notif)
-        await session.commit()
-
-        return web.json_response({
-            "success": True,
-            "message": "Premium activated successfully",
-            "is_premium": True,
-            "premium_until": curr_user.premium_until.isoformat()
-        })
 
 # ----------------- NOTIFICATIONS & TICKETS -----------------
 async def handle_notifications_list(request):
@@ -1217,7 +1181,6 @@ async def handle_profiles(request):
         if city_filter and city_filter.strip():
             stmt = stmt.where(User.city.ilike(f"%{city_filter.strip()}%"))
 
-        # VIP users placed at TOP of discovery stack
         stmt = stmt.order_by(
             (User.plan_tier == "VIP").desc(),
             User.last_active_at.desc().nullslast()
@@ -1280,7 +1243,6 @@ async def handle_swipe(request):
                 Swipe.is_like == True
             )))
             if partner_swipe_res.scalar_one_or_none() or curr_user.plan_tier == "VIP":
-                # MUTUAL MATCH or VIP Instant Match!
                 u1 = min(curr_user.id, target_user.id)
                 u2 = max(curr_user.id, target_user.id)
                 m_res = await session.execute(select(Match).where(and_(Match.user1_id == u1, Match.user2_id == u2)))
@@ -1292,7 +1254,6 @@ async def handle_swipe(request):
                     await session.flush()
                     session.add(Message(match_id=match.id, sender_id=0, text="🎉 Sizlarda moslik bor! Suhbatni boshlang."))
 
-                    # Award big Match XP bonus
                     await add_xp_to_user(session, curr_user, 50)
                     await add_xp_to_user(session, target_user, 50)
 
@@ -1459,7 +1420,7 @@ async def handle_chat_send(request):
 
         msg = Message(match_id=int(match_id), sender_id=user.id, text=text)
         session.add(msg)
-        await add_xp_to_user(session, user, 5) # +5 XP for chatting
+        await add_xp_to_user(session, user, 5)
         user.last_active_at = datetime.now()
         await session.commit()
 
@@ -1568,7 +1529,7 @@ async def handle_user_report(request):
 
         return web.json_response({"success": True, "message": "Shikoyat qabul qilindi"})
 
-# ----------------- ADMIN DASHBOARD & RETENTION -----------------
+# ----------------- ADMIN DASHBOARD & PAYMENT APPROVAL -----------------
 async def handle_admin_stats(request):
     tg_user = get_telegram_user(request)
     if not tg_user or not is_admin(tg_user["id"]):
@@ -1583,6 +1544,7 @@ async def handle_admin_stats(request):
             User.is_premium == True,
             User.plan_tier.in_(["PREMIUM", "VIP"])
         )))).scalar() or 0
+        pending_payments = (await session.execute(select(func.count()).select_from(PaymentOrder).where(PaymentOrder.status == "PENDING"))).scalar() or 0
         reports = (await session.execute(select(func.count()).select_from(Report).where(Report.status == "OPEN"))).scalar() or 0
         tickets = (await session.execute(select(func.count()).select_from(SupportTicket).where(SupportTicket.status == "OPEN"))).scalar() or 0
         matches = (await session.execute(select(func.count()).select_from(Match))).scalar() or 0
@@ -1595,6 +1557,7 @@ async def handle_admin_stats(request):
                 "banned": banned,
                 "total": total,
                 "premium_users": premium_users,
+                "pending_payments": pending_payments,
                 "open_reports": reports,
                 "open_tickets": tickets,
                 "total_matches": matches
@@ -1629,6 +1592,119 @@ async def handle_admin_retention(request):
                 "conversion_rate": "18.5%"
             }
         })
+
+async def handle_admin_payments_list(request):
+    tg_user = get_telegram_user(request)
+    if not tg_user or not is_admin(tg_user["id"]):
+        return web.json_response({"success": False, "error": {"code": "FORBIDDEN"}}, status=403)
+
+    async with async_session_maker() as session:
+        stmt = select(PaymentOrder).order_by(PaymentOrder.created_at.desc()).limit(50)
+        orders = (await session.execute(stmt)).scalars().all()
+
+        results = []
+        for o in orders:
+            user = (await session.execute(select(User).where(User.id == o.user_id))).scalar_one_or_none()
+            results.append({
+                "id": o.id,
+                "user": serialize_user(user, include_private=True) if user else None,
+                "plan_tier": o.plan_tier,
+                "period": o.period,
+                "amount": o.amount,
+                "card_number": o.card_number,
+                "receipt_photo": o.receipt_photo,
+                "status": o.status,
+                "admin_note": o.admin_note,
+                "created_at": o.created_at.isoformat()
+            })
+
+        return web.json_response({"success": True, "orders": results})
+
+async def handle_admin_payment_approve(request):
+    tg_user = get_telegram_user(request)
+    if not tg_user or not is_admin(tg_user["id"]):
+        return web.json_response({"success": False, "error": {"code": "FORBIDDEN"}}, status=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"success": False, "error": {"code": "INVALID_JSON"}}, status=400)
+
+    order_id = data.get("order_id")
+    if not order_id:
+        return web.json_response({"success": False, "error": {"code": "MISSING_ORDER_ID"}}, status=400)
+
+    async with async_session_maker() as session:
+        order = (await session.execute(select(PaymentOrder).where(PaymentOrder.id == int(order_id)))).scalar_one_or_none()
+        if not order:
+            return web.json_response({"success": False, "error": {"code": "ORDER_NOT_FOUND"}}, status=404)
+
+        user = (await session.execute(select(User).where(User.id == order.user_id))).scalar_one_or_none()
+        if not user:
+            return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
+
+        order.status = "APPROVED"
+        order.admin_id = tg_user["id"]
+        order.updated_at = datetime.now()
+
+        days = 365 if order.period == "yearly" else 30
+        now = datetime.now()
+        curr_expiry = user.premium_until if (user.premium_until and user.premium_until > now) else now
+        user.premium_until = curr_expiry + timedelta(days=days)
+        user.is_premium = True
+        user.plan_tier = order.plan_tier
+
+        badges = set(parse_json_safely(user.badges, []))
+        if order.plan_tier == "VIP":
+            badges.add("👑 VIP")
+        else:
+            badges.add("⭐ Premium")
+        user.badges = json.dumps(list(badges))
+
+        session.add(Notification(
+            user_id=user.id,
+            type="payment",
+            title=f"To'lovingiz tasdiqlandi! 🎉",
+            body=f"Sizning Kairyx {order.plan_tier} ({order.period}) obunangiz {days} kunga muvaffaqiyatli faollashtirildi!"
+        ))
+        await log_admin_audit(session, tg_user["id"], "APPROVE_PAYMENT", "PAYMENT", order.id, "PENDING", "APPROVED", {"amount": order.amount, "plan": order.plan_tier})
+        await session.commit()
+
+        return web.json_response({"success": True, "message": "To'lov tasdiqlandi va obuna faollashtirildi"})
+
+async def handle_admin_payment_reject(request):
+    tg_user = get_telegram_user(request)
+    if not tg_user or not is_admin(tg_user["id"]):
+        return web.json_response({"success": False, "error": {"code": "FORBIDDEN"}}, status=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"success": False, "error": {"code": "INVALID_JSON"}}, status=400)
+
+    order_id = data.get("order_id")
+    reason = data.get("reason", "To'lov cheki tasdiqlanmadi yoki pul tushmadi")
+
+    async with async_session_maker() as session:
+        order = (await session.execute(select(PaymentOrder).where(PaymentOrder.id == int(order_id)))).scalar_one_or_none()
+        if not order:
+            return web.json_response({"success": False, "error": {"code": "ORDER_NOT_FOUND"}}, status=404)
+
+        order.status = "REJECTED"
+        order.admin_id = tg_user["id"]
+        order.admin_note = reason
+        order.updated_at = datetime.now()
+
+        session.add(Notification(
+            user_id=order.user_id,
+            type="payment",
+            title="To'lovingiz rad etildi ❌",
+            body=f"Sabab: {reason}. Savollar bo'lsa qo'llab-quvvatlash xizmatiga murojaat qiling."
+        ))
+        await log_admin_audit(session, tg_user["id"], "REJECT_PAYMENT", "PAYMENT", order.id, "PENDING", "REJECTED", {"reason": reason})
+        await session.commit()
+
+        return web.json_response({"success": True})
 
 async def handle_admin_pending(request):
     tg_user = get_telegram_user(request)
@@ -2090,7 +2166,7 @@ async def handle_index(request):
         resp = web.FileResponse(index_path)
         resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         return resp
-    return web.json_response({"message": "Kairyx API Server - Enterprise v2.11.0"})
+    return web.json_response({"message": "Kairyx API Server - Enterprise v2.12.0"})
 
 async def serve_style(request):
     webapp_dir = os.path.dirname(os.path.abspath(__file__))
@@ -2142,7 +2218,7 @@ def create_webapp_app() -> web.Application:
         try:
             async with engine_module.engine.begin() as conn:
                 try:
-                    # PostgreSQL column auto-migrations for gamification and retention
+                    # PostgreSQL column auto-migrations for ALL tables
                     await conn.execute(text("""
                         DO $$
                         DECLARE
@@ -2156,7 +2232,7 @@ def create_webapp_app() -> web.Application:
                                 EXECUTE format('ALTER TABLE %I ALTER COLUMN %I TYPE VARCHAR(64) USING %I::text;', r.table_name, r.column_name, r.column_name);
                             END LOOP;
 
-                            -- Users gamification columns
+                            -- Users gamification & info columns
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'xp') THEN
                                 ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0;
                             END IF;
@@ -2196,6 +2272,26 @@ def create_webapp_app() -> web.Application:
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'premium_until') THEN
                                 ALTER TABLE users ADD COLUMN premium_until TIMESTAMP;
                             END IF;
+
+                            -- Notifications table columns (CRITICAL FIX)
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'body') THEN
+                                ALTER TABLE notifications ADD COLUMN body TEXT;
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'title') THEN
+                                ALTER TABLE notifications ADD COLUMN title VARCHAR(128) DEFAULT 'Bildirishnoma';
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'type') THEN
+                                ALTER TABLE notifications ADD COLUMN type VARCHAR(32) DEFAULT 'system';
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'deep_link') THEN
+                                ALTER TABLE notifications ADD COLUMN deep_link VARCHAR(128);
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'is_read') THEN
+                                ALTER TABLE notifications ADD COLUMN is_read BOOLEAN DEFAULT FALSE;
+                            END IF;
+                            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'message') THEN
+                                UPDATE notifications SET body = message WHERE body IS NULL;
+                            END IF;
                         END $$;
                     """))
                 except Exception as alter_e:
@@ -2227,11 +2323,10 @@ def create_webapp_app() -> web.Application:
     app.router.add_get("/api/referral", handle_referral_info)
     app.router.add_post("/api/coupons/redeem", handle_coupon_redeem)
 
-    # Monetization & Premium Multi-Tier
+    # Monetization & Receipt Payment Checkout
     app.router.add_get("/api/premium/plans", handle_premium_plans)
-    app.router.add_post("/api/premium/subscribe", handle_premium_subscribe)
+    app.router.add_post("/api/payment/submit", handle_payment_submit)
     app.router.add_get("/api/likes/received", handle_likes_received)
-    app.router.add_post("/api/premium/activate", handle_premium_activate)
 
     # Notifications & Support Tickets
     app.router.add_get("/api/notifications", handle_notifications_list)
@@ -2256,6 +2351,9 @@ def create_webapp_app() -> web.Application:
     # Admin Control & Retention Routes (RBAC Protected)
     app.router.add_get("/api/admin/stats", handle_admin_stats)
     app.router.add_get("/api/admin/retention", handle_admin_retention)
+    app.router.add_get("/api/admin/payments", handle_admin_payments_list)
+    app.router.add_post("/api/admin/payment/approve", handle_admin_payment_approve)
+    app.router.add_post("/api/admin/payment/reject", handle_admin_payment_reject)
     app.router.add_get("/api/admin/pending", handle_admin_pending)
     app.router.add_post("/api/admin/approve", handle_admin_approve)
     app.router.add_post("/api/admin/reject", handle_admin_reject)

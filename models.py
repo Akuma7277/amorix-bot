@@ -38,6 +38,11 @@ class PlanTier(str, enum.Enum):
     PREMIUM = "PREMIUM"
     VIP = "VIP"
 
+class PaymentStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
 class User(Base):
     __tablename__ = "users"
     
@@ -88,6 +93,21 @@ class User(Base):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+class PaymentOrder(Base):
+    __tablename__ = "payment_orders"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    plan_tier = Column(String(20), nullable=False) # PREMIUM, VIP
+    period = Column(String(20), default="monthly", nullable=False) # monthly, yearly
+    amount = Column(Float, nullable=False)
+    card_number = Column(String(32), default="9860 6004 3347 6527", nullable=False)
+    receipt_photo = Column(Text, nullable=False)
+    status = Column(String(32), default="PENDING", nullable=False) # PENDING, APPROVED, REJECTED
+    admin_id = Column(BigInteger, nullable=True)
+    admin_note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
 class UserStatusHistory(Base):
     __tablename__ = "user_status_history"
     id = Column(Integer, primary_key=True)
@@ -102,7 +122,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False, index=True)
-    type = Column(String(32), default="system", nullable=False) # system, account, security, match, message, like, reward, streak, admin
+    type = Column(String(32), default="system", nullable=False) # system, account, security, match, message, like, reward, streak, admin, payment
     title = Column(String(128), nullable=False)
     body = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
@@ -134,7 +154,7 @@ class Coupon(Base):
     id = Column(Integer, primary_key=True)
     code = Column(String(64), unique=True, nullable=False, index=True)
     reward_type = Column(String(32), default="PREMIUM_DAYS", nullable=False) # PREMIUM_DAYS, BONUS_POINTS, DISCOUNT_PCT
-    reward_value = Column(Float, default=7.0, nullable=False) # e.g. 7 days or 5000 points
+    reward_value = Column(Float, default=7.0, nullable=False)
     max_uses = Column(Integer, default=100, nullable=False)
     used_count = Column(Integer, default=0, nullable=False)
     expires_at = Column(DateTime, nullable=True)
