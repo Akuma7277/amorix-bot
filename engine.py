@@ -132,6 +132,11 @@ class _FallbackSession:
             return await self._real_session.get(entity_type, ident, options=options)
         return None
 
+    async def delete(self, instance):
+        if self._available and self._real_session is not None:
+            return await self._real_session.delete(instance)
+        return None
+
 
 class _SafeSessionMaker:
     def __init__(self, maker):

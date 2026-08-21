@@ -36,7 +36,13 @@ class User(Base):
     city = Column(String, nullable=True)
     photo = Column(Text, nullable=True)
     bio = Column(Text, nullable=True)
+    interests = Column(Text, nullable=True) # JSON list string e.g. ["🎮 Gaming", "🎵 Music"]
     terms_accepted = Column(Boolean, default=False)
+    
+    # Additional status flags
+    is_verified = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False)
+    last_active_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
@@ -62,4 +68,21 @@ class Message(Base):
     match_id = Column(Integer, nullable=False, index=True)
     sender_id = Column(Integer, nullable=False)
     text = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=func.now())
+
+class Block(Base):
+    __tablename__ = "blocks"
+    id = Column(Integer, primary_key=True)
+    blocker_id = Column(Integer, nullable=False, index=True)
+    blocked_id = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime, default=func.now())
+
+class Report(Base):
+    __tablename__ = "reports"
+    id = Column(Integer, primary_key=True)
+    reporter_id = Column(Integer, nullable=False, index=True)
+    reported_id = Column(Integer, nullable=False, index=True)
+    reason = Column(String(64), nullable=False)
+    description = Column(Text, nullable=True)
+    status = Column(String(32), default="OPEN", nullable=False) # OPEN, REVIEWING, RESOLVED, REJECTED
     created_at = Column(DateTime, default=func.now())

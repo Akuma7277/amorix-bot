@@ -3,13 +3,24 @@ const API_URL = (window.location.origin.includes("localhost") || window.location
     ? window.location.origin
     : "https://amorix-bot-production.up.railway.app";
 
-let base64Photo = "";
+const AVAILABLE_INTERESTS = [
+    "🎮 Gaming", "🎵 Music", "🏋️ Fitness", "✈️ Travel", 
+    "📚 Books", "🎬 Movies", "⚽ Sport", "💻 Technology", 
+    "🍳 Cooking", "🎨 Art", "📸 Photography", "☕ Coffee"
+];
+
+let currentUser = null;
 let isAdminUser = false;
 let currentView = "";
-let currentUser = null;
-let datingProfiles = [];
-let currentProfileIndex = 0;
-let currentMatchId = null;
+let base64Photo = "";
+let selectedRegInterests = [];
+let selectedEditInterests = [];
+
+let discoverProfiles = [];
+let currentDiscoverIndex = 0;
+let activeTargetUser = null;
+
+let activeMatchId = null;
 let chatPollInterval = null;
 
 function getHeaders() {
@@ -36,25 +47,18 @@ function getQueryParams() {
 
 function showView(viewId) {
     currentView = viewId;
-    const views = ['verifyingScreen', 'registrationScreen', 'pendingScreen', 'approvedScreen', 'rejectedScreen', 'bannedScreen', 'errorScreen', 'adminScreen'];
+    const views = ['verifyingScreen', 'registrationScreen', 'pendingScreen', 'approvedScreen', 'rejectedScreen', 'bannedScreen', 'errorScreen'];
     views.forEach(v => {
         const el = document.getElementById(v);
         if (el) el.style.display = (v === viewId) ? 'block' : 'none';
     });
 
-    const adminToggle = document.getElementById('adminToggleHeader');
-    if (adminToggle) {
-        adminToggle.style.display = isAdminUser ? 'block' : 'none';
-        const switchBtn = document.getElementById('btnSwitchView');
-        if (switchBtn) {
-            switchBtn.textContent = (viewId === 'adminScreen') ? "User Rejimiga o'tish" : "Admin Paneli";
-        }
-    }
+    const adminBtn = document.getElementById('btnHeaderAdmin');
+    if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 }
 
 async function verifySession() {
     showView('verifyingScreen');
-
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
 
@@ -73,19 +77,16 @@ async function verifySession() {
             isAdminUser = !!data.is_admin;
             currentUser = data.user;
             const status = data.user_status;
-            
+
             if (status === 'DRAFT') {
                 showView('registrationScreen');
+                initRegInterests();
             } else if (status === 'PENDING_APPROVAL') {
                 showView('pendingScreen');
             } else if (status === 'APPROVED') {
                 showView('approvedScreen');
-                // Fill user profile data
-                document.getElementById('myPhoto').src = currentUser.photo;
-                document.getElementById('myNameAge').textContent = `${currentUser.name}, ${currentUser.age}`;
-                document.getElementById('myCity').textContent = currentUser.city;
-                document.getElementById('myBio').textContent = currentUser.bio;
-                loadSwipeProfiles();
+                populateMyProfile();
+                switchTab('viewDiscover');
             } else if (status === 'REJECTED') {
                 showView('rejectedScreen');
             } else if (status === 'BANNED') {
@@ -96,55 +97,120 @@ async function verifySession() {
         }
     } catch (e) {
         clearTimeout(timeout);
-        console.error(e);
         showView('errorScreen');
-        if (e.name === 'AbortError') {
-            document.getElementById('errorText').textContent = "Ulanish vaqti tugadi (Timeout). Internetni tekshirib qayta urining.";
-        } else {
-            document.getElementById('errorText').textContent = `Xatolik: ${e.message}`;
-        }
+        document.getElementById('errorText').textContent = `Xatolik: ${e.message}`;
     }
 }
 
-// Convert chosen photo to base64
-document.getElementById('regPhoto').addEventListener('change', function (e) {
+// ----------------- REGISTRATION WIZARD -----------------
+function initRegInterests() {
+    const container = document.getElementById('regInterestsContainer');
+    container.innerHTML = "";
+    AVAILABLE_INTERESTS.forEach(intTag => {
+        const span = document.createElement('span');
+        span.className = "tag-badge tag-selectable";
+        span.textContent = intTag;
+        span.onclick = () => {
+            if (selectedRegInterests.includes(intTag)) {
+                selectedRegInterests = selectedRegInterests.filter(i => i !== intTag);
+                span.classList.remove('selected');
+            } else {
+                selectedRegInterests.push(intTag);
+                span.classList.add('selected');
+            }
+        };
+        container.appendChild(span);
+    });
+}
+
+document.getElementById('regName').addEventListener('input', (e) => {
+    document.getElementById('nameCounter').textContent = `${e.target.value.length}/30`;
+});
+document.getElementById('regBio').addEventListener('input', (e) => {
+    document.getElementById('bioCounter').textContent = `${e.target.value.length}/200`;
+});
+
+document.getElementById('regPhotoInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Rasm hajmi 5MB dan oshmasligi kerak!");
+            return;
+        }
         const reader = new FileReader();
-        reader.onload = function (evt) {
+        reader.onload = function(evt) {
             base64Photo = evt.target.result;
-            document.getElementById('previewImg').src = base64Photo;
-            document.getElementById('photoPreview').style.display = 'block';
+            document.getElementById('regPhotoPreview').src = base64Photo;
+            document.getElementById('regPhotoPreview').style.display = 'block';
+            document.getElementById('photoPlaceholderText').style.display = 'none';
         };
         reader.readAsDataURL(file);
     }
 });
 
-// Form Submit Handler
-document.getElementById('btnSubmitReg').addEventListener('click', async () => {
-    const name = document.getElementById('regName').value.trim();
-    const age = document.getElementById('regAge').value.trim();
-    const city = document.getElementById('regCity').value.trim();
-    const bio = document.getElementById('regBio').value.trim();
+function nextRegStep(currStep) {
+    if (currStep === 1) {
+        const age = parseInt(document.getElementById('regAge').value);
+        if (!age || age < 18) {
+            alert("Kairyx-dan foydalanish uchun yoshingiz 18 yoki undan katta bo'lishi shart!");
+            return;
+        }
+    } else if (currStep === 2) {
+        const name = document.getElementById('regName').value.trim();
+        const city = document.getElementById('regCity').value.trim();
+        if (!name || !city) {
+            alert("Ism va shaharingizni to'ldiring!");
+            return;
+        }
+    } else if (currStep === 3) {
+        if (!base64Photo) {
+            alert("Iltimos, profilingiz uchun rasm yuklang!");
+            return;
+        }
+    } else if (currStep === 4) {
+        const bio = document.getElementById('regBio').value.trim();
+        if (!bio) {
+            alert("O'zingiz haqingizda qisqacha ma'lumot yozing!");
+            return;
+        }
+        // Prepare summary
+        document.getElementById('summaryPhoto').src = base64Photo;
+        document.getElementById('summaryNameAge').textContent = `${document.getElementById('regName').value.trim()}, ${document.getElementById('regAge').value}`;
+        document.getElementById('summaryCity').textContent = document.getElementById('regCity').value.trim();
+        document.getElementById('summaryBio').textContent = bio;
+    }
+
+    document.getElementById(`regStep${currStep}`).style.display = 'none';
+    document.getElementById(`regStep${currStep + 1}`).style.display = 'block';
+    updateWizardHeader(currStep + 1);
+}
+
+function prevRegStep(currStep) {
+    document.getElementById(`regStep${currStep}`).style.display = 'none';
+    document.getElementById(`regStep${currStep - 1}`).style.display = 'block';
+    updateWizardHeader(currStep - 1);
+}
+
+function updateWizardHeader(step) {
+    const titles = [
+        "Qadam 1: Yoshni tasdiqlash",
+        "Qadam 2: Shaxsiy ma'lumotlar",
+        "Qadam 3: Profil surati",
+        "Qadam 4: Bio va Qiziqishlar",
+        "Qadam 5: Anketani tasdiqlash"
+    ];
+    document.getElementById('wizardStepTitle').textContent = titles[step - 1];
+    document.getElementById('wizardStepCount').textContent = `${step} / 5`;
+    document.getElementById('wizardProgressBar').style.width = `${step * 20}%`;
+}
+
+async function submitRegistration() {
     const terms = document.getElementById('regTerms').checked;
     const errText = document.getElementById('regError');
-
     errText.style.display = 'none';
 
-    if (!name || !age || !city || !bio || !base64Photo) {
-        errText.textContent = "Barcha maydonlarni to'ldiring hamda profil rasmini yuklang.";
-        errText.style.display = 'block';
-        return;
-    }
-
-    if (parseInt(age) < 18) {
-        errText.textContent = "Ilovadan foydalanish uchun yoshingiz 18 yoshdan katta bo'lishi shart.";
-        errText.style.display = 'block';
-        return;
-    }
-
     if (!terms) {
-        errText.textContent = "Iltimos, Privacy Policy roziligini belgilang.";
+        errText.textContent = "Foydalanish qoidalariga rozilik belgilanishi shart.";
         errText.style.display = 'block';
         return;
     }
@@ -153,363 +219,743 @@ document.getElementById('btnSubmitReg').addEventListener('click', async () => {
     btn.disabled = true;
     btn.textContent = "Yuborilmoqda...";
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
     try {
-        const response = await fetch(`${API_URL}/api/register?${getQueryParams()}`, {
+        const res = await fetch(`${API_URL}/api/register?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify({
-                name: name,
-                age: parseInt(age),
-                city: city,
+                name: document.getElementById('regName').value.trim(),
+                age: parseInt(document.getElementById('regAge').value),
+                city: document.getElementById('regCity').value.trim(),
                 photo: base64Photo,
-                bio: bio,
-                terms_accepted: terms
-            }),
-            signal: controller.signal
+                bio: document.getElementById('regBio').value.trim(),
+                interests: selectedRegInterests,
+                terms_accepted: true
+            })
         });
-        clearTimeout(timeout);
-
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || `HTTP ${response.status}`);
-        }
-        
-        const resData = await response.json();
-        if (resData.success) {
+        const data = await res.json();
+        if (data.success) {
             showView('pendingScreen');
         } else {
-            throw new Error("Tizimda xatolik yuz berdi.");
+            throw new Error(data.error?.message || "Xatolik yuz berdi");
         }
     } catch (e) {
-        clearTimeout(timeout);
         btn.disabled = false;
-        btn.textContent = "Arizani yuborish";
-        errText.textContent = `Xatolik: ${e.message}`;
+        btn.textContent = "Arizani yuborish 🚀";
+        errText.textContent = e.message;
         errText.style.display = 'block';
     }
-});
-
-// Switch view admin / user
-document.getElementById('btnSwitchView').addEventListener('click', () => {
-    if (currentView === 'adminScreen') {
-        verifySession();
-    } else {
-        showView('adminScreen');
-        loadAdminData();
-    }
-});
-
-async function loadAdminData() {
-    const listContainer = document.getElementById('pendingList');
-    listContainer.innerHTML = "<p style='color:rgba(255,255,255,0.6); font-style:italic;'>Arizalar yuklanmoqda...</p>";
-
-    try {
-        const statsRes = await fetch(`${API_URL}/api/admin/stats?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
-        if (statsRes.ok) {
-            const statsData = await statsRes.json();
-            if (statsData.success) {
-                document.getElementById('statPending').textContent = statsData.stats.pending;
-                document.getElementById('statApproved').textContent = statsData.stats.approved;
-                document.getElementById('statTotal').textContent = statsData.stats.total;
-            }
-        }
-
-        const usersRes = await fetch(`${API_URL}/api/admin/pending?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
-        if (!usersRes.ok) throw new Error("Arizalarni yuklab bo'lmadi.");
-        const usersData = await usersRes.json();
-
-        if (usersData.success) {
-            const users = usersData.users;
-            if (users.length === 0) {
-                listContainer.innerHTML = "<p style='color:#24ff8a; font-weight:bold; text-align:center;'>Ayni damda kutilayotgan arizalar yo'q!</p>";
-                return;
-            }
-
-            listContainer.innerHTML = "";
-            users.forEach(user => {
-                const userCard = document.createElement('div');
-                userCard.style.cssText = "background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:15px; display:flex; flex-direction:column; gap:10px;";
-                userCard.innerHTML = `
-                    <div style="display:flex; gap:15px; align-items:center;">
-                        <img src="${user.photo}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,71,133,0.2);">
-                        <div>
-                            <h4 style="margin:0; color:#ff4785;">${user.name}, ${user.age}</h4>
-                            <p style="margin:2px 0 0 0; font-size:12px; color:rgba(255,255,255,0.6);">${user.city}</p>
-                        </div>
-                    </div>
-                    <p style="margin:0; font-size:13px; color:rgba(255,255,255,0.8);">${user.bio}</p>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="approveUser(${user.id})" style="flex:1; background:#24ff8a; color:#000; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer;">Approve</button>
-                        <button onclick="rejectUser(${user.id})" style="flex:1; background:#ff4785; color:#fff; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer;">Reject</button>
-                    </div>
-                `;
-                listContainer.appendChild(userCard);
-            });
-        }
-    } catch(e) {
-        listContainer.innerHTML = `<p style='color:#ff4785; font-weight:bold;'>Xatolik: ${e.message}</p>`;
-    }
 }
 
-window.approveUser = async function(userId) {
-    if (!confirm("Ushbu foydalanuvchini tasdiqlaysizmi?")) return;
-    try {
-        const res = await fetch(`${API_URL}/api/admin/approve?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({ user_id: userId })
-        });
-        if (res.ok) loadAdminData();
-    } catch (e) {
-        alert(e.message);
-    }
-};
-
-window.rejectUser = async function(userId) {
-    if (!confirm("Rad etasizmi?")) return;
-    try {
-        const res = await fetch(`${API_URL}/api/admin/reject?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({ user_id: userId })
-        });
-        if (res.ok) loadAdminData();
-    } catch (e) {
-        alert(e.message);
-    }
-};
-
-// TAB VIEW SWITCHING FOR APPROVED USERS
+// ----------------- TAB NAVIGATION -----------------
 function switchTab(tabId) {
-    const tabs = ['viewSwipe', 'viewMatches', 'viewProfile'];
+    const tabs = ['viewDiscover', 'viewMatches', 'viewChats', 'viewProfile', 'viewAdmin'];
     tabs.forEach(t => {
-        document.getElementById(t).style.display = (t === tabId) ? 'block' : 'none';
+        const el = document.getElementById(t);
+        if (el) el.style.display = (t === tabId) ? 'block' : 'none';
     });
 
-    const buttons = ['btnTabSwipe', 'btnTabMatches', 'btnTabProfile'];
-    buttons.forEach(btn => {
-        const el = document.getElementById(btn);
-        if (el) {
-            if (btn === 'btnTab' + tabId.replace('view', '')) {
-                el.classList.add('active');
-            } else {
-                el.classList.remove('active');
-            }
+    const navBtns = {
+        'viewDiscover': 'btnNavDiscover',
+        'viewMatches': 'btnNavMatches',
+        'viewChats': 'btnNavChats',
+        'viewProfile': 'btnNavProfile'
+    };
+
+    Object.keys(navBtns).forEach(k => {
+        const btn = document.getElementById(navBtns[k]);
+        if (btn) {
+            if (k === tabId) btn.classList.add('active');
+            else btn.classList.remove('active');
         }
     });
 
-    if (tabId === 'viewSwipe') loadSwipeProfiles();
+    if (tabId === 'viewDiscover') loadDiscoverProfiles();
     if (tabId === 'viewMatches') loadMatchesList();
+    if (tabId === 'viewChats') loadChatsList();
+    if (tabId === 'viewProfile') populateMyProfile();
+    if (tabId === 'viewAdmin') loadAdminData();
 }
 
-document.getElementById('btnTabSwipe').addEventListener('click', () => switchTab('viewSwipe'));
-document.getElementById('btnTabMatches').addEventListener('click', () => switchTab('viewMatches'));
-document.getElementById('btnTabProfile').addEventListener('click', () => switchTab('viewProfile'));
+document.getElementById('btnHeaderAdmin').addEventListener('click', () => switchTab('viewAdmin'));
+document.getElementById('btnHeaderSettings').addEventListener('click', () => switchTab('viewProfile'));
 
-// SWIPE LIFECYCLE
-async function loadSwipeProfiles() {
-    const container = document.getElementById('datingCardContainer');
-    container.innerHTML = "<p style='color:rgba(255,255,255,0.6); text-align:center; font-style:italic;'>Qidirilmoqda...</p>";
+// ----------------- DISCOVERY & SWIPE -----------------
+async function loadDiscoverProfiles() {
+    const container = document.getElementById('cardStackContainer');
+    container.innerHTML = "<p style='color: var(--text-muted); text-align: center; padding-top: 150px; font-style: italic;'>Qidirilmoqda...</p>";
+
+    const minAge = document.getElementById('filterMinAge').value;
+    const maxAge = document.getElementById('filterMaxAge').value;
+    const city = document.getElementById('filterCity').value;
+
+    const q = new URLSearchParams(getQueryParams());
+    if (minAge) q.append("min_age", minAge);
+    if (maxAge) q.append("max_age", maxAge);
+    if (city) q.append("city", city);
 
     try {
-        const response = await fetch(`${API_URL}/api/profiles?${getQueryParams()}`, {
-            method: "GET",
-            headers: getHeaders()
-        });
-        if (!response.ok) throw new Error("Yuklab bo'lmadi.");
-        const data = await response.json();
-
+        const res = await fetch(`${API_URL}/api/profiles?${q.toString()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
         if (data.success) {
-            datingProfiles = data.profiles;
-            currentProfileIndex = 0;
-            renderCurrentProfileCard();
+            discoverProfiles = data.profiles;
+            currentDiscoverIndex = 0;
+            renderDiscoverCard();
         }
     } catch (e) {
-        container.innerHTML = `<p style='color:#ff4785; text-align:center;'>Xatolik: ${e.message}</p>`;
+        container.innerHTML = `<p style='color: var(--primary); text-align: center; padding-top: 150px;'>Xatolik: ${e.message}</p>`;
     }
 }
 
-function renderCurrentProfileCard() {
-    const container = document.getElementById('datingCardContainer');
-    if (datingProfiles.length === 0 || currentProfileIndex >= datingProfiles.length) {
-        container.innerHTML = "<div style='padding:50px 20px; text-align:center;'><h3 style='color:#ff4785;'>Ayni damda hech kim yo'q! 🌌</h3><p style='color:rgba(255,255,255,0.6); font-size:13px; line-height:1.4;'>Tez kunda yaqin atrofdagi yangi profillar paydo bo'ladi. Qayta yuklash uchun tanishuv bo'limiga kiring.</p></div>";
+function renderDiscoverCard() {
+    const container = document.getElementById('cardStackContainer');
+    if (!discoverProfiles || discoverProfiles.length === 0 || currentDiscoverIndex >= discoverProfiles.length) {
+        container.innerHTML = `
+            <div class="glass-panel" style="padding: 40px 20px; text-align: center; margin-top: 50px;">
+                <div style="font-size: 40px; margin-bottom: 10px;">💫</div>
+                <h3 style="color: var(--primary); margin-top: 0;">Hozircha anketalar tugadi</h3>
+                <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">Yangi a'zolar qo'shilgach bu yerda ko'rinadi. Filtrlarni o'zgartirib qayta qidirishingiz mumkin.</p>
+                <button onclick="loadDiscoverProfiles()" style="background: var(--primary-gradient); color: #fff; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; margin-top: 10px;">🔄 Qayta yuklash</button>
+            </div>
+        `;
         return;
     }
 
-    const p = datingProfiles[currentProfileIndex];
+    const p = discoverProfiles[currentDiscoverIndex];
+    activeTargetUser = p;
+
     container.innerHTML = `
         <div class="dating-card">
-            <img src="${p.photo}" style="width:100%; height:320px; object-fit:cover; display:block;">
-            <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(to top, rgba(5,5,16,1) 30%, rgba(5,5,16,0)); padding:20px; padding-top:40px;">
-                <h2 style="margin:0; font-size:22px; color:white;">${p.name}, ${p.age}</h2>
-                <p style="margin:5px 0; color:#ff4785; font-size:12px; font-weight:bold;">📍 ${p.city}</p>
-                <p style="margin:10px 0 0 0; color:rgba(255,255,255,0.8); font-size:13px; line-height:1.4;">${p.bio}</p>
-                
-                <div style="display:flex; justify-content:space-between; gap:15px; margin-top:20px;">
-                    <button onclick="handleSwipeAction(${p.id}, false)" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.8); padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:14px;">Pass 👎</button>
-                    <button onclick="handleSwipeAction(${p.id}, true)" style="flex:1; background:linear-gradient(135deg, #ff4785, #b624ff); color:white; border:none; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:14px;">Like 💖</button>
+            <div class="card-image-wrap" onclick="openProfileDetailModal(${p.id})">
+                <img src="${p.photo}">
+                <div class="card-overlay-info">
+                    <h2 style="margin: 0; font-size: 24px; color: #fff;">${p.name}, ${p.age}</h2>
+                    <p style="margin: 4px 0 8px 0; color: var(--primary); font-size: 13px; font-weight: bold;">📍 ${p.city}</p>
+                    <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.bio}</p>
                 </div>
+            </div>
+            <div style="padding: 12px 20px 16px 20px; background: #121226; display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn-action-circle btn-pass" onclick="handleSwipe(${p.id}, false)">👎</button>
+                <button class="btn-action-circle btn-info" onclick="openProfileDetailModal(${p.id})">ℹ️</button>
+                <button class="btn-action-circle btn-like" onclick="handleSwipe(${p.id}, true)">💖</button>
             </div>
         </div>
     `;
 }
 
-window.handleSwipeAction = async function(targetId, isLike) {
+async function handleSwipe(targetId, isLike) {
+    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
     try {
-        const response = await fetch(`${API_URL}/api/swipe?${getQueryParams()}`, {
+        const res = await fetch(`${API_URL}/api/swipe?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify({ target_id: targetId, is_like: isLike })
         });
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.match) {
-                alert("Tabriklaymiz! Sizda moslik bor! 🎉");
-            }
-            currentProfileIndex++;
-            renderCurrentProfileCard();
+        const data = await res.json();
+        if (data.success && data.match) {
+            showMatchModal(data.partner, data.match_id);
         }
-    } catch(e) {
+    } catch (e) {
         console.error(e);
     }
-};
 
-// MATCHES & CHAT SYSTEM
-async function loadMatchesList() {
-    const container = document.getElementById('matchesList');
-    container.innerHTML = "<p style='color:rgba(255,255,255,0.6); grid-column: span 2; text-align:center;'>Juftliklar yuklanmoqda...</p>";
+    currentDiscoverIndex++;
+    renderDiscoverCard();
+}
+
+function showMatchModal(partner, matchId) {
+    document.getElementById('matchPartnerName').textContent = partner.name;
+    document.getElementById('matchPartnerAvatar').src = partner.photo;
+    document.getElementById('matchMyAvatar').src = currentUser?.photo || "";
+    document.getElementById('btnMatchChat').onclick = () => {
+        closeMatchModal();
+        openChatWindow(matchId, partner);
+    };
+    document.getElementById('matchModal').style.display = 'flex';
+}
+
+function closeMatchModal() {
+    document.getElementById('matchModal').style.display = 'none';
+}
+
+// ----------------- FILTERS MODAL -----------------
+function openFilterModal() { document.getElementById('filterModal').style.display = 'flex'; }
+function closeFilterModal() { document.getElementById('filterModal').style.display = 'none'; }
+function applyFilters() {
+    closeFilterModal();
+    loadDiscoverProfiles();
+}
+function resetFilters() {
+    document.getElementById('filterMinAge').value = "";
+    document.getElementById('filterMaxAge').value = "";
+    document.getElementById('filterCity').value = "";
+    closeFilterModal();
+    loadDiscoverProfiles();
+}
+
+// ----------------- PROFILE DETAIL MODAL -----------------
+function openProfileDetailModal(userId) {
+    const user = discoverProfiles.find(u => u.id === userId) || activeTargetUser;
+    if (!user) return;
+
+    document.getElementById('detailPhoto').src = user.photo;
+    document.getElementById('detailNameAge').textContent = `${user.name}, ${user.age}`;
+    document.getElementById('detailCity').textContent = `📍 ${user.city}`;
+    document.getElementById('detailBio').textContent = user.bio;
+
+    const intContainer = document.getElementById('detailInterests');
+    intContainer.innerHTML = "";
+    (user.interests || []).forEach(tag => {
+        const badge = document.createElement('span');
+        badge.className = "tag-badge";
+        badge.textContent = tag;
+        intContainer.appendChild(badge);
+    });
+
+    document.getElementById('btnDetailBlock').onclick = () => blockUser(user.id);
+    document.getElementById('btnDetailReport').onclick = () => openReportModal(user.id);
+
+    document.getElementById('profileDetailModal').style.display = 'flex';
+}
+function closeProfileDetailModal() { document.getElementById('profileDetailModal').style.display = 'none'; }
+
+// ----------------- BLOCK & REPORT -----------------
+async function blockUser(targetId) {
+    if (!confirm("Ushbu foydalanuvchini bloklamoqchimisiz? U boshqa profilingizni ko'ra olmaydi.")) return;
+    try {
+        const res = await fetch(`${API_URL}/api/user/block?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ target_id: targetId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Foydalanuvchi bloklandi.");
+            closeProfileDetailModal();
+            loadDiscoverProfiles();
+            loadMatchesList();
+        }
+    } catch (e) { alert(e.message); }
+}
+
+let reportTargetId = null;
+function openReportModal(targetId) {
+    reportTargetId = targetId;
+    document.getElementById('reportModal').style.display = 'flex';
+}
+function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; }
+
+async function submitUserReport() {
+    if (!reportTargetId) return;
+    const reason = document.getElementById('reportReason').value;
+    const desc = document.getElementById('reportDesc').value;
 
     try {
-        const response = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, {
-            method: "GET",
-            headers: getHeaders()
+        const res = await fetch(`${API_URL}/api/user/report?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ target_id: reportTargetId, reason: reason, description: desc })
         });
-        if (!response.ok) throw new Error("Yuklanmadi.");
-        const data = await response.json();
+        const data = await res.json();
+        if (data.success) {
+            alert("Shikoyatingiz moderatorlarga yuborildi. Rahmat!");
+            closeReportModal();
+            closeProfileDetailModal();
+        }
+    } catch (e) { alert(e.message); }
+}
 
+// ----------------- MATCHES & CHAT -----------------
+async function loadMatchesList() {
+    const container = document.getElementById('matchesList');
+    container.innerHTML = "<p style='color: var(--text-muted); grid-column: span 2; text-align: center;'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
         if (data.success) {
             const matches = data.matches;
             if (matches.length === 0) {
-                container.innerHTML = "<p style='color:rgba(255,255,255,0.5); grid-column: span 2; text-align:center; padding-top:30px; font-style:italic;'>Hali juftliklar mavjud emas. Swiping qilib like bosing!</p>";
+                container.innerHTML = "<p style='color: var(--text-muted); grid-column: span 2; text-align: center; padding: 40px 0;'>Hozircha juftliklar yo'q. Discover bo'limida Like bosing!</p>";
                 return;
             }
-
             container.innerHTML = "";
             matches.forEach(m => {
-                const partnerCard = document.createElement('div');
-                partnerCard.style.cssText = "background:rgba(255,255,255,0.02); border:1px solid rgba(255,71,133,0.1); border-radius:12px; padding:10px; text-align:center; cursor:pointer;";
-                partnerCard.onclick = () => openChatWindow(m.match_id, m.partner);
-                partnerCard.innerHTML = `
-                    <img src="${m.partner.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:50%; border:1px solid #ff4785; margin:0 auto 8px auto; display:block;">
-                    <h4 style="margin:0; font-size:14px; color:white;">${m.partner.name}</h4>
-                    <span style="font-size:11px; color:#ff4785;">Chatni ochish 💬</span>
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.cssText = "padding: 12px; text-align: center; cursor: pointer;";
+                card.onclick = () => openChatWindow(m.match_id, m.partner);
+                card.innerHTML = `
+                    <img src="${m.partner.photo}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary); margin: 0 auto 8px auto; display: block;">
+                    <h4 style="margin: 0; font-size: 14px; color: #fff;">${m.partner.name}</h4>
+                    <span style="font-size: 11px; color: var(--primary); margin-top: 4px; display: inline-block;">💬 Suhbat</span>
                 `;
-                container.appendChild(partnerCard);
+                container.appendChild(card);
             });
         }
-    } catch(e) {
-        container.innerHTML = `<p style='color:#ff4785; grid-column: span 2; text-align:center;'>Xatolik: ${e.message}</p>`;
+    } catch (e) {
+        container.innerHTML = `<p style='color: var(--primary); grid-column: span 2; text-align: center;'>Xatolik: ${e.message}</p>`;
     }
 }
 
-// Open Chat window
+async function loadChatsList() {
+    const container = document.getElementById('chatsList');
+    container.innerHTML = "<p style='color: var(--text-muted); text-align: center;'>Suhbatlar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const matches = data.matches;
+            if (matches.length === 0) {
+                container.innerHTML = "<p style='color: var(--text-muted); text-align: center; padding: 40px 0;'>Suhbatlar mavjud emas.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            matches.forEach(m => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;";
+                item.onclick = () => openChatWindow(m.match_id, m.partner);
+                const lastTxt = m.last_message ? m.last_message.text : "Yangi juftlik! Suhbatni boshlang.";
+                item.innerHTML = `
+                    <img src="${m.partner.photo}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary);">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h4 style="margin: 0; font-size: 15px; color: #fff;">${m.partner.name}</h4>
+                        </div>
+                        <p style="margin: 3px 0 0 0; font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lastTxt}</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch (e) {
+        container.innerHTML = `<p style='color: var(--primary); text-align: center;'>Xatolik: ${e.message}</p>`;
+    }
+}
+
 function openChatWindow(matchId, partner) {
-    currentMatchId = matchId;
+    activeMatchId = matchId;
+    activeTargetUser = partner;
     document.getElementById('chatPartnerPhoto').src = partner.photo;
     document.getElementById('chatPartnerName').textContent = partner.name;
     document.getElementById('chatOverlay').style.display = 'flex';
     document.getElementById('chatMessages').innerHTML = "";
     loadChatMessages();
-    
-    // Poll for new messages every 3 seconds
+
     if (chatPollInterval) clearInterval(chatPollInterval);
-    chatPollInterval = setInterval(loadChatMessages, 3000);
+    chatPollInterval = setInterval(loadChatMessages, 2500);
 }
 
-document.getElementById('btnCloseChat').addEventListener('click', () => {
+function closeChatWindow() {
     document.getElementById('chatOverlay').style.display = 'none';
-    currentMatchId = null;
+    activeMatchId = null;
     if (chatPollInterval) {
         clearInterval(chatPollInterval);
         chatPollInterval = null;
     }
-    loadMatchesList();
-});
+    loadChatsList();
+}
 
 async function loadChatMessages() {
-    if (!currentMatchId) return;
+    if (!activeMatchId) return;
     try {
-        const response = await fetch(`${API_URL}/api/chat/messages?match_id=${currentMatchId}&${getQueryParams()}`, {
+        const res = await fetch(`${API_URL}/api/chat/messages?match_id=${activeMatchId}&${getQueryParams()}`, {
             method: "GET",
             headers: getHeaders()
         });
-        if (!response.ok) return;
-        const data = await response.json();
+        if (!res.ok) return;
+        const data = await res.json();
 
         if (data.success) {
             const msgs = data.messages;
             const container = document.getElementById('chatMessages');
-            
-            // Check if count changed to prevent redundant redraws
-            const oldLength = container.children.length;
-            if (msgs.length === oldLength) return;
+            if (msgs.length === container.children.length) return;
 
             container.innerHTML = "";
             msgs.forEach(m => {
                 const bubble = document.createElement('div');
-                if (m.sender_id === 0) { // System
-                    bubble.style.cssText = "align-self:center; background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.6); padding:6px 12px; border-radius:8px; font-size:11px; max-width:90%; text-align:center;";
-                } else if (m.sender_id === currentUser.id) { // Me
-                    bubble.style.cssText = "align-self:flex-end; background:#ff4785; color:white; padding:8px 12px; border-radius:12px 12px 0 12px; font-size:13px; max-width:70%; word-break:break-word;";
-                } else { // Partner
-                    bubble.style.cssText = "align-self:flex-start; background:rgba(255,255,255,0.07); color:white; padding:8px 12px; border-radius:12px 12px 12px 0; font-size:13px; max-width:70%; word-break:break-word;";
+                const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                if (m.sender_id === 0) {
+                    bubble.style.cssText = "align-self: center; background: rgba(255,255,255,0.05); color: var(--text-muted); padding: 6px 14px; border-radius: var(--radius-full); font-size: 11px;";
+                    bubble.textContent = m.text;
+                } else if (m.sender_id === currentUser.id) {
+                    bubble.className = "chat-bubble mine";
+                    bubble.innerHTML = `${m.text}<div class="chat-time">${timeStr}</div>`;
+                } else {
+                    bubble.className = "chat-bubble theirs";
+                    bubble.innerHTML = `${m.text}<div class="chat-time">${timeStr}</div>`;
                 }
-                bubble.textContent = m.text;
                 container.appendChild(bubble);
             });
             container.scrollTop = container.scrollHeight;
         }
-    } catch(e) {
-        console.error(e);
-    }
+    } catch (e) { console.error(e); }
 }
 
-// Send Message
-document.getElementById('btnSendChat').addEventListener('click', sendMessage);
-document.getElementById('chatInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') sendMessage();
-});
-
-async function sendMessage() {
+async function sendChatMessage() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
-    if (!text || !currentMatchId) return;
+    if (!text || !activeMatchId) return;
 
     input.value = "";
-
     try {
-        const response = await fetch(`${API_URL}/api/chat/send?${getQueryParams()}`, {
+        const res = await fetch(`${API_URL}/api/chat/send?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ match_id: currentMatchId, text: text })
+            body: JSON.stringify({ match_id: activeMatchId, text: text })
         });
-        if (response.ok) {
-            loadChatMessages();
-        }
-    } catch(e) {
-        console.error(e);
+        if (res.ok) loadChatMessages();
+    } catch (e) { console.error(e); }
+}
+
+document.getElementById('chatInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendChatMessage();
+});
+
+function openChatOptionsMenu() {
+    if (!activeTargetUser) return;
+    const action = confirm("Foydalanuvchi ustidan shikoyat qilish yoki bloklashni xohlaysizmi?");
+    if (action) {
+        openReportModal(activeTargetUser.id);
     }
 }
 
+// ----------------- PROFILE & SETTINGS -----------------
+function populateMyProfile() {
+    if (!currentUser) return;
+    document.getElementById('myPhoto').src = currentUser.photo || "";
+    document.getElementById('myNameAge').textContent = `${currentUser.name}, ${currentUser.age}`;
+    document.getElementById('myCity').textContent = `📍 ${currentUser.city}`;
+    document.getElementById('myBio').textContent = currentUser.bio || "Mavjud emas";
+
+    const pct = currentUser.completion_percentage || 100;
+    document.getElementById('myCompletionPct').textContent = `${pct}%`;
+    document.getElementById('myCompletionBar').style.width = `${pct}%`;
+
+    const intContainer = document.getElementById('myInterestsList');
+    intContainer.innerHTML = "";
+    (currentUser.interests || []).forEach(tag => {
+        const b = document.createElement('span');
+        b.className = "tag-badge";
+        b.textContent = tag;
+        intContainer.appendChild(b);
+    });
+}
+
+function openEditProfileModal() {
+    if (!currentUser) return;
+    document.getElementById('editName').value = currentUser.name;
+    document.getElementById('editCity').value = currentUser.city;
+    document.getElementById('editBio').value = currentUser.bio;
+
+    selectedEditInterests = [...(currentUser.interests || [])];
+    const container = document.getElementById('editInterestsContainer');
+    container.innerHTML = "";
+    AVAILABLE_INTERESTS.forEach(intTag => {
+        const span = document.createElement('span');
+        span.className = "tag-badge tag-selectable" + (selectedEditInterests.includes(intTag) ? " selected" : "");
+        span.textContent = intTag;
+        span.onclick = () => {
+            if (selectedEditInterests.includes(intTag)) {
+                selectedEditInterests = selectedEditInterests.filter(i => i !== intTag);
+                span.classList.remove('selected');
+            } else {
+                selectedEditInterests.push(intTag);
+                span.classList.add('selected');
+            }
+        };
+        container.appendChild(span);
+    });
+
+    document.getElementById('editProfileModal').style.display = 'flex';
+}
+function closeEditProfileModal() { document.getElementById('editProfileModal').style.display = 'none'; }
+
+async function saveProfileEdit() {
+    const name = document.getElementById('editName').value.trim();
+    const city = document.getElementById('editCity').value.trim();
+    const bio = document.getElementById('editBio').value.trim();
+
+    try {
+        const res = await fetch(`${API_URL}/api/profile/update?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ name, city, bio, interests: selectedEditInterests })
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentUser = data.user;
+            populateMyProfile();
+            closeEditProfileModal();
+        }
+    } catch (e) { alert(e.message); }
+}
+
+async function openBlockedUsersModal() {
+    const container = document.getElementById('blockedUsersList');
+    container.innerHTML = "<p style='color: var(--text-muted);'>Yuklanmoqda...</p>";
+    document.getElementById('blockedUsersModal').style.display = 'flex';
+
+    try {
+        const res = await fetch(`${API_URL}/api/user/blocked?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const users = data.blocked_users;
+            if (users.length === 0) {
+                container.innerHTML = "<p style='color: var(--text-muted); font-size: 13px;'>Bloklangan foydalanuvchilar yo'q.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            users.forEach(u => {
+                const item = document.createElement('div');
+                item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);";
+                item.innerHTML = `
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <img src="${u.photo}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 50%;">
+                        <span style="font-size: 14px; font-weight: bold;">${u.name}</span>
+                    </div>
+                    <button onclick="unblockUser(${u.id})" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 10px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer;">Blokdan ochish</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch (e) { container.innerHTML = e.message; }
+}
+function closeBlockedUsersModal() { document.getElementById('blockedUsersModal').style.display = 'none'; }
+
+async function unblockUser(targetId) {
+    try {
+        const res = await fetch(`${API_URL}/api/user/unblock?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ target_id: targetId })
+        });
+        if (res.ok) openBlockedUsersModal();
+    } catch (e) { alert(e.message); }
+}
+
+async function confirmDeleteAccount() {
+    if (!confirm("DIQQAT: Hisobingizni o'chirmoqchimisiz? Bu amal profilingizni to'xtatadi.")) return;
+    try {
+        const res = await fetch(`${API_URL}/api/account/delete?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Hisobingiz o'chirildi.");
+            verifySession();
+        }
+    } catch (e) { alert(e.message); }
+}
+
+function openRulesModal() { document.getElementById('rulesModal').style.display = 'flex'; }
+function closeRulesModal() { document.getElementById('rulesModal').style.display = 'none'; }
+
+// ----------------- ADMIN DASHBOARD -----------------
+let currentAdminTab = "pending";
+
+function switchAdminTab(tab) {
+    currentAdminTab = tab;
+    document.getElementById('admSecPending').style.display = (tab === 'pending') ? 'block' : 'none';
+    document.getElementById('admSecReports').style.display = (tab === 'reports') ? 'block' : 'none';
+    document.getElementById('admSecUsers').style.display = (tab === 'users') ? 'block' : 'none';
+
+    document.getElementById('btnAdmTabPending').style.background = (tab === 'pending') ? "var(--primary-gradient)" : "rgba(255,255,255,0.06)";
+    document.getElementById('btnAdmTabReports').style.background = (tab === 'reports') ? "var(--primary-gradient)" : "rgba(255,255,255,0.06)";
+    document.getElementById('btnAdmTabUsers').style.background = (tab === 'users') ? "var(--primary-gradient)" : "rgba(255,255,255,0.06)";
+
+    if (tab === 'pending') loadAdminPending();
+    if (tab === 'reports') loadAdminReports();
+    if (tab === 'users') loadAdminUsers();
+}
+
+async function loadAdminData() {
+    try {
+        const res = await fetch(`${API_URL}/api/admin/stats?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('admStatPending').textContent = data.stats.pending;
+            document.getElementById('admStatApproved').textContent = data.stats.approved;
+            document.getElementById('admStatTotal').textContent = data.stats.total;
+        }
+    } catch (e) {}
+    switchAdminTab(currentAdminTab);
+}
+
+async function loadAdminPending() {
+    const container = document.getElementById('admPendingList');
+    container.innerHTML = "<p style='color: var(--text-muted);'>Arizalar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/pending?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const users = data.users;
+            if (users.length === 0) {
+                container.innerHTML = "<p style='color: var(--accent-green); font-weight: bold; text-align: center;'>Kutilayotgan arizalar yo'q!</p>";
+                return;
+            }
+            container.innerHTML = "";
+            users.forEach(u => {
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.padding = "14px";
+                card.innerHTML = `
+                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
+                        <img src="${u.photo}" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);">
+                        <div>
+                            <h4 style="margin: 0; color: var(--primary);">${u.name}, ${u.age}</h4>
+                            <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">${u.city}</p>
+                        </div>
+                    </div>
+                    <p style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-sub);">${u.bio}</p>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="adminApproveUser(${u.id})" style="flex: 1; background: var(--accent-green); color: #000; border: none; padding: 8px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Tasdiqlash ✅</button>
+                        <button onclick="adminRejectUser(${u.id})" style="flex: 1; background: var(--primary); color: #fff; border: none; padding: 8px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Rad etish ❌</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    } catch (e) { container.innerHTML = e.message; }
+}
+
+async function adminApproveUser(id) {
+    try {
+        const res = await fetch(`${API_URL}/api/admin/approve?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ user_id: id })
+        });
+        if (res.ok) loadAdminData();
+    } catch (e) { alert(e.message); }
+}
+
+async function adminRejectUser(id) {
+    try {
+        const res = await fetch(`${API_URL}/api/admin/reject?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ user_id: id })
+        });
+        if (res.ok) loadAdminData();
+    } catch (e) { alert(e.message); }
+}
+
+async function loadAdminReports() {
+    const container = document.getElementById('admReportsList');
+    container.innerHTML = "<p style='color: var(--text-muted);'>Shikoyatlar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/reports?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const reports = data.reports;
+            if (reports.length === 0) {
+                container.innerHTML = "<p style='color: var(--accent-green); text-align: center;'>Ochiq shikoyatlar yo'q!</p>";
+                return;
+            }
+            container.innerHTML = "";
+            reports.forEach(r => {
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.padding = "14px";
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: var(--primary); font-weight: bold; font-size: 13px;">${r.reason}</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">${r.status}</span>
+                    </div>
+                    <p style="margin: 0 0 8px 0; font-size: 13px; color: var(--text-sub);">${r.description || 'Izohsiz'}</p>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+                        Shikoyat qilingan: <b>${r.reported ? r.reported.name : 'Noma`lum'}</b> (ID: ${r.reported ? r.reported.id : '?'})
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="adminResolveReport(${r.id}, 'RESOLVE')" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 7px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer;">Yopish</button>
+                        <button onclick="adminResolveReport(${r.id}, 'BAN_USER')" style="flex: 1; background: #ff4747; color: #fff; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Bloklash ⛔</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    } catch (e) { container.innerHTML = e.message; }
+}
+
+async function adminResolveReport(id, action) {
+    try {
+        const res = await fetch(`${API_URL}/api/admin/report/resolve?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ report_id: id, action: action })
+        });
+        if (res.ok) loadAdminReports();
+    } catch (e) { alert(e.message); }
+}
+
+let searchTimer = null;
+function debounceUserSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadAdminUsers, 400);
+}
+
+async function loadAdminUsers() {
+    const container = document.getElementById('admUsersList');
+    const q = document.getElementById('admUserSearch').value;
+    container.innerHTML = "<p style='color: var(--text-muted);'>Foydalanuvchilar qidirilmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/users?q=${encodeURIComponent(q)}&${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const users = data.users;
+            if (users.length === 0) {
+                container.innerHTML = "<p style='color: var(--text-muted); text-align: center;'>Foydalanuvchi topilmadi.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            users.forEach(u => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.cssText = "padding: 10px; display: flex; justify-content: space-between; align-items: center;";
+                const isBanned = u.status === 'BANNED';
+                item.innerHTML = `
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <img src="${u.photo || ''}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px;">${u.name || 'Draft'}, ${u.age || '?'}</h4>
+                            <span style="font-size: 11px; color: ${isBanned ? '#ff4747' : 'var(--accent-green)'};">${u.status}</span>
+                        </div>
+                    </div>
+                    <button onclick="adminToggleBan(${u.id}, ${!isBanned})" style="background: ${isBanned ? 'var(--accent-green)' : '#ff4747'}; color: #000; border: none; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">
+                        ${isBanned ? 'Faollashtirish' : 'Bloklash'}
+                    </button>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch (e) { container.innerHTML = e.message; }
+}
+
+async function adminToggleBan(userId, isBan) {
+    try {
+        const res = await fetch(`${API_URL}/api/admin/user/ban?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ user_id: userId, is_ban: isBan })
+        });
+        if (res.ok) loadAdminUsers();
+    } catch (e) { alert(e.message); }
+}
+
+// ----------------- STARTUP -----------------
 if (tg) {
     try {
         tg.ready();
         tg.expand();
-    } catch(err) {}
+    } catch (err) {}
 }
 
-document.getElementById('btnRetry').addEventListener('click', verifySession);
 verifySession();
