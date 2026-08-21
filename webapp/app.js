@@ -3,6 +3,21 @@ const API_URL = (window.location.origin.includes("localhost") || window.location
     ? window.location.origin
     : "https://amorix-bot-production.up.railway.app";
 
+// ----------------- DEFAULT AVATAR (BASE64 ENCODED TO PREVENT DOM LEAKS) -----------------
+function getDefaultAvatar(name = "K", gender = "OTHER") {
+    const initial = (name && typeof name === 'string' && name.trim().length > 0) ? name.trim().charAt(0).toUpperCase() : "K";
+    const bg1 = gender === 'MALE' ? '#05d9e8' : (gender === 'FEMALE' ? '#ff2a6d' : '#9b00e8');
+    const bg2 = gender === 'MALE' ? '#7928ca' : (gender === 'FEMALE' ? '#9b00e8' : '#ff007a');
+    
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${bg1}"/><stop offset="100%" stop-color="${bg2}"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><circle cx="200" cy="155" r="65" fill="rgba(255,255,255,0.22)"/><path d="M85 360 C85 260, 315 260, 315 360 Z" fill="rgba(255,255,255,0.22)"/><text x="200" y="175" text-anchor="middle" fill="#ffffff" font-size="64" font-family="sans-serif" font-weight="bold">${initial}</text></svg>`;
+    return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+}
+
+window.handleImgError = function(img, name = "K", gender = "OTHER") {
+    img.onerror = null;
+    img.src = getDefaultAvatar(name, gender);
+};
+
 // ----------------- MULTI-LANGUAGE I18N (UZ, RU, EN) -----------------
 let currentLang = localStorage.getItem("kairyx_lang") || "uz";
 
@@ -352,15 +367,6 @@ function setAppLanguage(lang) {
     closeLanguageModal();
 }
 
-// ----------------- DEFAULT AVATAR SVG GENERATOR -----------------
-function getDefaultAvatar(name = "Kairyx", gender = "OTHER") {
-    const initial = (name && name.length > 0) ? name.charAt(0).toUpperCase() : "K";
-    const bg1 = gender === 'MALE' ? '%2305d9e8' : (gender === 'FEMALE' ? '%23ff2a6d' : '%239b00e8');
-    const bg2 = gender === 'MALE' ? '%237928ca' : (gender === 'FEMALE' ? '%239b00e8' : '%23ff007a');
-    
-    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${bg1}"/><stop offset="100%" stop-color="${bg2}"/></linearGradient></defs><rect width="400" height="400" fill="url(%23g)"/><circle cx="200" cy="155" r="65" fill="rgba(255,255,255,0.22)"/><path d="M85 360 C85 260, 315 260, 315 360 Z" fill="rgba(255,255,255,0.22)"/><text x="50%" y="45%" text-anchor="middle" fill="%23ffffff" font-size="64" font-family="sans-serif" font-weight="bold" dy=".3em">${initial}</text></svg>`;
-}
-
 // ----------------- GLOBAL STATE & AUTH -----------------
 const AVAILABLE_INTERESTS = [
     "🎮 Gaming", "🎵 Music", "🏋️ Fitness", "✈️ Travel", 
@@ -384,6 +390,7 @@ let selectedCheckoutAmount = 49000;
 
 let discoverProfiles = [];
 let currentDiscoverIndex = 0;
+let previousSwipeProfile = null;
 let activeTargetUser = null;
 let activeMatchId = null;
 let chatPollInterval = null;
@@ -543,7 +550,7 @@ function initRegInterests() {
     container.innerHTML = "";
     AVAILABLE_INTERESTS.forEach(intTag => {
         const span = document.createElement('span');
-        span.className = "tag-badge tag-selectable";
+        span.className = "tag-badge tag-selectable" + (selectedRegInterests.includes(intTag) ? " selected" : "");
         span.textContent = intTag;
         span.onclick = () => {
             if (selectedRegInterests.includes(intTag)) {
@@ -569,13 +576,13 @@ document.getElementById('regPhotoInput').addEventListener('change', async functi
     const file = e.target.files[0];
     if (file) {
         try {
-            document.getElementById('photoPlaceholderText').innerHTML = "<span style='font-size:12px; color:var(--primary);'>Siqilmoqda...</span>";
+            document.getElementById('photoPlaceholderText').innerHTML = "<span style='font-size:13px; font-weight:bold; color:var(--primary);'>Rasm siqilmoqda...</span>";
             base64Photo = await compressImage(file, 800, 0.75);
             document.getElementById('regPhotoPreview').src = base64Photo;
             document.getElementById('regPhotoPreview').style.display = 'block';
             document.getElementById('photoPlaceholderText').style.display = 'none';
         } catch(err) {
-            alert("Rasm xatosi: " + err.message);
+            alert("Rasm yuklashda xatolik: " + err.message);
         }
     }
 });
@@ -605,8 +612,9 @@ function nextRegStep(currStep) {
             alert(currentLang === 'ru' ? "Напишите о себе!" : "O'zingiz haqingizda yozing!");
             return;
         }
-        document.getElementById('summaryPhoto').src = base64Photo || getDefaultAvatar(document.getElementById('regName').value.trim(), selectedRegGender);
-        document.getElementById('summaryNameAge').textContent = `${document.getElementById('regName').value.trim()}, ${document.getElementById('regAge').value}`;
+        const nameVal = document.getElementById('regName').value.trim();
+        document.getElementById('summaryPhoto').src = base64Photo || getDefaultAvatar(nameVal, selectedRegGender);
+        document.getElementById('summaryNameAge').textContent = `${nameVal}, ${document.getElementById('regAge').value}`;
         const gName = selectedRegGender === 'MALE' ? '👨 Erkak' : (selectedRegGender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
         document.getElementById('summaryDetails').textContent = `${document.getElementById('regCity').value.trim()} • ${gName}`;
         document.getElementById('summaryBio').textContent = bio;
@@ -713,7 +721,7 @@ function switchTab(tabId) {
 async function openDailyRewardModal() {
     document.getElementById('dailyRewardModal').style.display = 'flex';
     const container = document.getElementById('streakGridContainer');
-    container.innerHTML = "<p style='grid-column:span 7; color:var(--text-muted); font-size:11px;'>Yuklanmoqda...</p>";
+    container.innerHTML = "<p style='grid-column:span 7; color:var(--text-muted); font-size:12px; text-align:center;'>Yuklanmoqda...</p>";
 
     try {
         const res = await fetch(`${API_URL}/api/rewards/daily/status?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
@@ -733,7 +741,7 @@ async function openDailyRewardModal() {
                 box.className = `streak-day-box ${isCurrent ? 'active' : ''} ${isClaimed ? 'claimed' : ''} ${dayNum === 7 ? 'bonus-day' : ''}`;
                 box.innerHTML = `
                     <div style="font-weight:bold; font-size:10px;">${dayNum}-kun</div>
-                    <div style="font-size:16px; margin:4px 0;">${dayNum === 7 ? '⭐' : '🎁'}</div>
+                    <div style="font-size:18px; margin:4px 0;">${dayNum === 7 ? '⭐' : '🎁'}</div>
                     <div style="font-size:9px; font-weight:bold;">${isClaimed ? '✓' : (isCurrent ? 'Olish' : `+${r.xp}XP`)}</div>
                 `;
                 container.appendChild(box);
@@ -796,20 +804,20 @@ async function openLeaderboardModal() {
             list.forEach(u => {
                 const item = document.createElement('div');
                 item.className = "glass-panel";
-                item.style.cssText = "padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;";
+                item.style.cssText = "padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;";
                 const medal = u.rank === 1 ? '🥇' : (u.rank === 2 ? '🥈' : (u.rank === 3 ? '🥉' : `#${u.rank}`));
                 const userPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name);
 
                 item.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-weight:bold; font-size:14px; width:22px; color:var(--accent-gold);">${medal}</span>
-                        <img src="${userPhoto}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid var(--primary);" onerror="this.src='${getDefaultAvatar(u.name)}'">
+                        <span style="font-weight:bold; font-size:15px; width:24px; color:var(--accent-gold);">${medal}</span>
+                        <img src="${userPhoto}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1.5px solid var(--primary);" onerror="handleImgError(this, '${u.name || "K"}')">
                         <div>
-                            <h4 style="margin:0; font-size:13px; color:#fff;">${u.name || 'User'}</h4>
-                            <span style="font-size:10px; color:var(--text-muted);">Level ${u.level} • 🔥 ${u.streak_days}d streak</span>
+                            <h4 style="margin:0; font-size:14px; color:#fff;">${u.name || 'User'}</h4>
+                            <span style="font-size:11px; color:var(--text-muted);">Level ${u.level} • 🔥 ${u.streak_days}d streak</span>
                         </div>
                     </div>
-                    <span style="font-weight:bold; font-size:13px; color:var(--accent-green);">${u.xp} XP</span>
+                    <span style="font-weight:bold; font-size:14px; color:var(--accent-green);">${u.xp} XP</span>
                 `;
                 container.appendChild(item);
             });
@@ -821,7 +829,7 @@ function closeLeaderboardModal() { document.getElementById('leaderboardModal').s
 
 async function loadProfileMissions() {
     const container = document.getElementById('profileMissionsList');
-    container.innerHTML = "<p style='color:var(--text-muted); font-size:11px;'>Vazifalar tekshirilmoqda...</p>";
+    container.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>Vazifalar tekshirilmoqda...</p>";
 
     try {
         const res = await fetch(`${API_URL}/api/missions?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
@@ -830,18 +838,18 @@ async function loadProfileMissions() {
             container.innerHTML = "";
             data.missions.forEach(m => {
                 const item = document.createElement('div');
-                item.style.cssText = "background: rgba(255,255,255,0.03); border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center;";
+                item.style.cssText = "background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center;";
                 const pct = Math.min(100, Math.round((m.current / m.target) * 100));
 
                 item.innerHTML = `
                     <div style="flex:1; margin-right:10px;">
-                        <div style="font-size:12px; font-weight:bold; color:#fff;">${m.title}</div>
-                        <div style="font-size:10px; color:var(--text-muted);">${m.desc}</div>
-                        <div class="progress-bar-bg" style="height:4px; margin-top:4px;">
+                        <div style="font-size:13px; font-weight:bold; color:#fff;">${m.title}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">${m.desc}</div>
+                        <div class="progress-bar-bg" style="height:5px; margin-top:5px;">
                             <div class="progress-bar-fill" style="width:${pct}%;"></div>
                         </div>
                     </div>
-                    <span style="font-size:11px; font-weight:bold; color:${m.completed ? 'var(--accent-green)' : 'var(--accent-gold)'};">
+                    <span style="font-size:12px; font-weight:bold; color:${m.completed ? 'var(--accent-green)' : 'var(--accent-gold)'};">
                         ${m.completed ? '✓ +'+m.xp+'XP' : `${m.current}/${m.target}`}
                     </span>
                 `;
@@ -870,7 +878,7 @@ async function openReferralModal() {
                 const isUnlocked = (data.referral_count >= m.target);
                 const item = document.createElement('div');
                 item.className = "glass-panel";
-                item.style.cssText = "padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;";
+                item.style.cssText = "padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;";
                 item.innerHTML = `
                     <div>
                         <b>${m.target} ta do'st:</b> ${m.label}
@@ -958,7 +966,7 @@ document.getElementById('receiptFileInput').addEventListener('change', async fun
     const file = e.target.files[0];
     if (file) {
         try {
-            document.getElementById('receiptPlaceholderText').innerHTML = "<span style='font-size:12px; color:var(--primary);'>Chek siqilmoqda...</span>";
+            document.getElementById('receiptPlaceholderText').innerHTML = "<span style='font-size:13px; font-weight:bold; color:var(--primary);'>Chek siqilmoqda...</span>";
             base64ReceiptPhoto = await compressImage(file, 900, 0.8);
             document.getElementById('receiptPhotoPreview').src = base64ReceiptPhoto;
             document.getElementById('receiptPhotoPreview').style.display = 'block';
@@ -1031,13 +1039,13 @@ async function redeemCouponCode() {
     } catch(e) { alert(e.message); }
 }
 
-// ----------------- DISCOVERY & SWIPING (WITH SAFE AVATAR FALLBACK) -----------------
+// ----------------- DISCOVERY & SWIPING (WITH SAFE AVATARS & DETAILS) -----------------
 async function loadDiscoverProfiles() {
     const container = document.getElementById('cardStackContainer');
     container.innerHTML = `
         <div class="glass-panel" style="padding: 60px 20px; text-align: center; margin-top: 40px;">
-            <div class="pulsing-heart" style="font-size: 36px; margin-bottom: 8px;">💖</div>
-            <p style="color: var(--text-muted); font-size: 13px;">Yangi anketalar qidirilmoqda...</p>
+            <div class="pulsing-heart" style="font-size: 38px; margin-bottom: 10px;">💖</div>
+            <p style="color: var(--text-muted); font-size: 14px;">Yangi anketalar qidirilmoqda...</p>
         </div>
     `;
 
@@ -1078,9 +1086,9 @@ function renderDiscoverCard() {
     if (!discoverProfiles || discoverProfiles.length === 0 || currentDiscoverIndex >= discoverProfiles.length) {
         container.innerHTML = `
             <div class="glass-panel" style="padding: 50px 20px; text-align: center; margin-top: 40px;">
-                <div style="font-size: 44px; margin-bottom: 10px;">💫</div>
-                <h3 style="color: var(--primary); margin-top: 0;">${t.noProfiles}</h3>
-                <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 8px 0 16px 0;">${t.noProfilesSub}</p>
+                <div style="font-size: 46px; margin-bottom: 12px;">💫</div>
+                <h3 style="color: var(--primary); margin-top: 0; font-size: 20px;">${t.noProfiles}</h3>
+                <p style="color: var(--text-muted); font-size: 14px; line-height: 1.5; margin: 8px 0 18px 0;">${t.noProfilesSub}</p>
                 <button onclick="loadDiscoverProfiles()" class="btn-primary-gradient">🔄 ${t.btnRetry}</button>
             </div>
         `;
@@ -1093,24 +1101,32 @@ function renderDiscoverCard() {
     activeTargetUser = p;
     const gIcon = p.gender === 'MALE' ? '👨' : (p.gender === 'FEMALE' ? '👩' : '🌈');
     const isVip = (p.plan_tier === 'VIP');
-    const safeName = p.name ? String(p.name).replace(/'/g, "\\'") : "User";
-    const safeCity = p.city ? String(p.city) : "Toshkent";
-    const safeBio = p.bio ? String(p.bio) : "Kairyx foydalanuvchisi";
-    const photoSrc = (p.photo && String(p.photo).length > 20) ? p.photo : getDefaultAvatar(safeName, p.gender);
+    const isVerified = !!p.is_verified;
+    const displayName = (p.name && typeof p.name === 'string' && p.name.trim().length > 0) ? p.name.trim() : "Foydalanuvchi";
+    const displayAge = p.age || 20;
+    const displayCity = (p.city && typeof p.city === 'string' && p.city.trim().length > 0) ? p.city.trim() : "Toshkent";
+    const displayBio = (p.bio && typeof p.bio === 'string' && p.bio.trim().length > 0) ? p.bio.trim() : "Kairyx a'zosi";
+    const photoSrc = (p.photo && typeof p.photo === 'string' && p.photo.length > 20) ? p.photo : getDefaultAvatar(displayName, p.gender);
 
     container.innerHTML = `
         <div class="dating-card">
             <div class="card-image-wrap" onclick="openProfileDetailModal(${p.id})">
-                <img src="${photoSrc}" onerror="this.onerror=null; this.src='${getDefaultAvatar(safeName, p.gender)}';">
-                ${isVip ? `<div style="position: absolute; top: 12px; left: 12px; background: var(--vip-gradient); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-full); box-shadow: 0 0 12px var(--vip-glow);">👑 VIP SPOTLIGHT</div>` : ''}
+                <img src="${photoSrc}" onerror="handleImgError(this, '${displayName}', '${p.gender || "OTHER"}')">
+                <div style="position: absolute; top: 12px; left: 12px; display: flex; gap: 6px;">
+                    ${isVip ? `<div style="background: var(--vip-gradient); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-full); box-shadow: 0 0 12px var(--vip-glow);">👑 VIP</div>` : ''}
+                    ${isVerified ? `<div style="background: rgba(5, 217, 232, 0.85); color: #000; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: var(--radius-full);">✓ Verified</div>` : ''}
+                </div>
                 <div class="card-overlay-info">
-                    <h2 style="margin: 0; font-size: 24px; color: #fff;">${p.name || 'User'}, ${p.age || 20}</h2>
-                    <p style="margin: 4px 0 6px 0; color: var(--primary); font-size: 13px; font-weight: bold;">📍 ${safeCity} • ${gIcon}</p>
-                    <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${safeBio}</p>
+                    <h2 style="margin: 0; font-size: 24px; color: #fff; display: flex; align-items: center; gap: 6px;">
+                        ${displayName}, ${displayAge} ${isVerified ? '🔹' : ''}
+                    </h2>
+                    <p style="margin: 4px 0 6px 0; color: var(--primary); font-size: 14px; font-weight: bold;">📍 ${displayCity} • ${gIcon}</p>
+                    <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${displayBio}</p>
                 </div>
             </div>
             <div class="card-actions-row">
                 <button class="btn-action-circle btn-pass" title="Dislike" onclick="handleSwipe(${p.id}, false)">👎</button>
+                <button class="btn-action-circle btn-undo" title="Orqaga qaytarish (VIP)" onclick="handleUndoSwipe()">↩️</button>
                 <button class="btn-action-circle btn-report" title="Shikoyat" onclick="openReportModal(${p.id})">⚠️</button>
                 <button class="btn-action-circle btn-info" title="Batafsil" onclick="openProfileDetailModal(${p.id})">ℹ️</button>
                 <button class="btn-action-circle btn-like" title="Like" onclick="handleSwipe(${p.id}, true)">💖</button>
@@ -1121,6 +1137,8 @@ function renderDiscoverCard() {
 
 async function handleSwipe(targetId, isLike) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+    previousSwipeProfile = discoverProfiles[currentDiscoverIndex];
 
     try {
         const res = await fetch(`${API_URL}/api/swipe?${getQueryParams()}`, {
@@ -1140,9 +1158,25 @@ async function handleSwipe(targetId, isLike) {
     renderDiscoverCard();
 }
 
+function handleUndoSwipe() {
+    if (!currentUser?.is_premium && currentUser?.plan_tier !== 'VIP') {
+        alert("↩️ Svaypni orqaga qaytarish faqat VIP va Premium foydalanuvchilar uchun ochiq!");
+        openPaywallModal();
+        return;
+    }
+    if (currentDiscoverIndex > 0) {
+        currentDiscoverIndex--;
+        renderDiscoverCard();
+        alert("Oldingi anketa qaytarildi ↩️");
+    } else {
+        alert("Qaytarish uchun oldingi anketa yo'q");
+    }
+}
+
 function showMatchModal(partner, matchId) {
-    document.getElementById('matchPartnerName').textContent = partner?.name || "Juftlik";
-    document.getElementById('matchPartnerAvatar').src = partner?.photo || getDefaultAvatar(partner?.name);
+    const partnerName = (partner?.name && partner.name.length > 0) ? partner.name : "Juftlik";
+    document.getElementById('matchPartnerName').textContent = partnerName;
+    document.getElementById('matchPartnerAvatar').src = partner?.photo || getDefaultAvatar(partnerName);
     document.getElementById('matchMyAvatar').src = currentUser?.photo || getDefaultAvatar(currentUser?.name);
     document.getElementById('btnMatchChat').onclick = () => {
         closeMatchModal();
@@ -1178,29 +1212,30 @@ async function loadReceivedLikes() {
             data.profiles.forEach(p => {
                 const card = document.createElement('div');
                 card.className = "glass-panel";
-                card.style.cssText = "padding: 10px; text-align: center; position: relative; overflow: hidden;";
-                const photoSrc = (p.photo && p.photo.length > 20) ? p.photo : getDefaultAvatar(p.name, p.gender);
+                card.style.cssText = "padding: 12px; text-align: center; position: relative; overflow: hidden;";
+                const pName = p.name || "User";
+                const photoSrc = (p.photo && p.photo.length > 20) ? p.photo : getDefaultAvatar(pName, p.gender);
 
                 if (!isPrem) {
                     card.innerHTML = `
                         <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; position: relative;">
-                            <img src="${photoSrc}" class="blurred-photo" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${getDefaultAvatar(p.name)}'">
-                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3);">
-                                <span style="font-size: 26px;">⭐</span>
+                            <img src="${photoSrc}" class="blurred-photo" style="width: 100%; height: 100%; object-fit: cover;" onerror="handleImgError(this, '${pName}')">
+                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35);">
+                                <span style="font-size: 28px;">⭐</span>
                             </div>
                         </div>
-                        <h4 style="margin: 0; font-size: 13px; color: #fff;">${p.name}, ${p.age || '?'}</h4>
-                        <p style="margin: 2px 0 6px 0; font-size: 11px; color: var(--text-muted);">${p.city || 'Toshkent'}</p>
-                        <button onclick="openPaywallModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 5px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
+                        <h4 style="margin: 0; font-size: 14px; color: #fff;">${pName}, ${p.age || '?'}</h4>
+                        <p style="margin: 2px 0 8px 0; font-size: 12px; color: var(--text-muted);">${p.city || 'Toshkent'}</p>
+                        <button onclick="openPaywallModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
                     `;
                 } else {
                     card.innerHTML = `
                         <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; cursor: pointer;" onclick="openProfileDetailModal(${p.id})">
-                            <img src="${photoSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${getDefaultAvatar(p.name)}'">
+                            <img src="${photoSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="handleImgError(this, '${pName}')">
                         </div>
-                        <h4 style="margin: 0; font-size: 13px; color: #fff;">${p.name}, ${p.age}</h4>
-                        <p style="margin: 2px 0 8px 0; font-size: 11px; color: var(--primary); font-weight: bold;">📍 ${p.city}</p>
-                        <button onclick="handleSwipe(${p.id}, true)" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 6px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">💖 Like / Match</button>
+                        <h4 style="margin: 0; font-size: 14px; color: #fff;">${pName}, ${p.age}</h4>
+                        <p style="margin: 2px 0 8px 0; font-size: 12px; color: var(--primary); font-weight: bold;">📍 ${p.city || 'Toshkent'}</p>
+                        <button onclick="handleSwipe(${p.id}, true)" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">💖 Like / Match</button>
                     `;
                 }
                 container.appendChild(card);
@@ -1228,7 +1263,7 @@ function openProfileDetailModal(userId) {
     const user = discoverProfiles.find(u => u.id === userId) || activeTargetUser;
     if (!user) return;
 
-    const safeName = user.name || "User";
+    const safeName = user.name || "Foydalanuvchi";
     document.getElementById('detailPhoto').src = (user.photo && user.photo.length > 20) ? user.photo : getDefaultAvatar(safeName, user.gender);
     document.getElementById('detailPhoto').onerror = () => { document.getElementById('detailPhoto').src = getDefaultAvatar(safeName, user.gender); };
     document.getElementById('detailNameAge').textContent = `${safeName}, ${user.age || 20}`;
@@ -1287,7 +1322,7 @@ async function submitUserReport() {
             body: JSON.stringify({ target_id: reportTargetId, reason: reason, description: desc })
         });
         if (res.ok) {
-            alert("Shikoyatingiz yuborildi!");
+            alert("Shikoyatingiz qabul qilindi. Moderatorlar ko'rib chiqadi!");
             closeReportModal();
             closeProfileDetailModal();
         }
@@ -1313,14 +1348,15 @@ async function loadMatchesList() {
             matches.forEach(m => {
                 const card = document.createElement('div');
                 card.className = "glass-panel";
-                card.style.cssText = "padding: 12px; text-align: center; cursor: pointer;";
+                card.style.cssText = "padding: 14px; text-align: center; cursor: pointer;";
                 card.onclick = () => openChatWindow(m.match_id, m.partner);
-                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(m.partner.name, m.partner.gender);
+                const pName = m.partner.name || "Juftlik";
+                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(pName, m.partner.gender);
 
                 card.innerHTML = `
-                    <img src="${pPhoto}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary); margin: 0 auto 8px auto; display: block;" onerror="this.src='${getDefaultAvatar(m.partner.name)}'">
-                    <h4 style="margin: 0; font-size: 14px; color: #fff;">${m.partner.name}</h4>
-                    <span style="font-size: 11px; color: var(--primary); margin-top: 4px; display: inline-block;">💬 Suhbat</span>
+                    <img src="${pPhoto}" style="width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 2.5px solid var(--primary); margin: 0 auto 8px auto; display: block;" onerror="handleImgError(this, '${pName}')">
+                    <h4 style="margin: 0; font-size: 15px; color: #fff;">${pName}</h4>
+                    <span style="font-size: 12px; color: var(--primary); margin-top: 4px; display: inline-block; font-weight: bold;">💬 Suhbat</span>
                 `;
                 container.appendChild(card);
             });
@@ -1351,13 +1387,14 @@ async function loadChatsList() {
                 item.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;";
                 item.onclick = () => openChatWindow(m.match_id, m.partner);
                 const lastTxt = m.last_message ? m.last_message.text : "Yangi juftlik! Suhbatni boshlang.";
-                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(m.partner.name, m.partner.gender);
+                const pName = m.partner.name || "User";
+                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(pName, m.partner.gender);
 
                 item.innerHTML = `
-                    <img src="${pPhoto}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary);" onerror="this.src='${getDefaultAvatar(m.partner.name)}'">
+                    <img src="${pPhoto}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 1.5px solid var(--primary);" onerror="handleImgError(this, '${pName}')">
                     <div style="flex: 1; min-width: 0;">
                         <div style="display: flex; justify-content: space-between;">
-                            <h4 style="margin: 0; font-size: 15px; color: #fff;">${m.partner.name}</h4>
+                            <h4 style="margin: 0; font-size: 15px; color: #fff;">${pName}</h4>
                         </div>
                         <p style="margin: 3px 0 0 0; font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lastTxt}</p>
                     </div>
@@ -1373,10 +1410,11 @@ async function loadChatsList() {
 function openChatWindow(matchId, partner) {
     activeMatchId = matchId;
     activeTargetUser = partner;
-    const pPhoto = (partner?.photo && partner.photo.length > 20) ? partner.photo : getDefaultAvatar(partner?.name);
+    const partnerName = partner?.name || "Suhbatdosh";
+    const pPhoto = (partner?.photo && partner.photo.length > 20) ? partner.photo : getDefaultAvatar(partnerName);
     document.getElementById('chatPartnerPhoto').src = pPhoto;
-    document.getElementById('chatPartnerPhoto').onerror = () => { document.getElementById('chatPartnerPhoto').src = getDefaultAvatar(partner?.name); };
-    document.getElementById('chatPartnerName').textContent = partner?.name || "Suhbatdosh";
+    document.getElementById('chatPartnerPhoto').onerror = () => { document.getElementById('chatPartnerPhoto').src = getDefaultAvatar(partnerName); };
+    document.getElementById('chatPartnerName').textContent = partnerName;
     document.getElementById('chatOverlay').style.display = 'flex';
     document.getElementById('chatMessages').innerHTML = "";
     loadChatMessages();
@@ -1415,7 +1453,7 @@ async function loadChatMessages() {
                 const bubble = document.createElement('div');
                 const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 if (m.sender_id === 0) {
-                    bubble.style.cssText = "align-self: center; background: rgba(255,255,255,0.05); color: var(--text-muted); padding: 6px 14px; border-radius: var(--radius-full); font-size: 11px;";
+                    bubble.style.cssText = "align-self: center; background: rgba(255,255,255,0.06); color: var(--text-muted); padding: 6px 14px; border-radius: var(--radius-full); font-size: 11px;";
                     bubble.textContent = m.text;
                 } else if (m.sender_id === currentUser.id) {
                     bubble.className = "chat-bubble mine";
@@ -1484,7 +1522,7 @@ function populateMyProfile() {
     badges.forEach(b => {
         const span = document.createElement('span');
         span.className = "tag-badge";
-        span.style.cssText = "background: rgba(255,183,0,0.12); border-color: var(--accent-gold); color: var(--accent-gold); font-weight: bold;";
+        span.style.cssText = "background: rgba(255,183,0,0.14); border-color: var(--accent-gold); color: var(--accent-gold); font-weight: bold;";
         span.textContent = b;
         badgesContainer.appendChild(span);
     });
@@ -1572,14 +1610,15 @@ async function openBlockedUsersModal() {
             container.innerHTML = "";
             users.forEach(u => {
                 const item = document.createElement('div');
-                item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);";
-                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name);
+                item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-subtle);";
+                const uName = u.name || "User";
+                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(uName);
                 item.innerHTML = `
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <img src="${uPhoto}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 50%;" onerror="this.src='${getDefaultAvatar(u.name)}'">
-                        <span style="font-size: 14px; font-weight: bold;">${u.name}</span>
+                        <img src="${uPhoto}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 50%;" onerror="handleImgError(this, '${uName}')">
+                        <span style="font-size: 14px; font-weight: bold;">${uName}</span>
                     </div>
-                    <button onclick="unblockUser(${u.id})" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 10px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer;">Blokdan ochish</button>
+                    <button onclick="unblockUser(${u.id})" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;">Blokdan ochish</button>
                 `;
                 container.appendChild(item);
             });
@@ -1668,13 +1707,13 @@ async function openNotificationsModal() {
             notifs.forEach(n => {
                 const item = document.createElement('div');
                 item.className = "glass-panel";
-                item.style.padding = "10px 12px";
+                item.style.padding = "12px 14px";
                 item.innerHTML = `
                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <h4 style="margin:0; font-size:13px; color:${n.is_read ? '#fff' : 'var(--primary)'};">${n.title}</h4>
-                        <span style="font-size:10px; color:var(--text-muted);">${new Date(n.created_at).toLocaleDateString()}</span>
+                        <h4 style="margin:0; font-size:14px; color:${n.is_read ? '#fff' : 'var(--primary)'};">${n.title}</h4>
+                        <span style="font-size:11px; color:var(--text-muted);">${new Date(n.created_at).toLocaleDateString()}</span>
                     </div>
-                    <p style="margin:0; font-size:12px; color:var(--text-sub); line-height:1.4;">${n.body || n.text || ''}</p>
+                    <p style="margin:0; font-size:13px; color:var(--text-sub); line-height:1.4;">${n.body || n.text || ''}</p>
                 `;
                 if (n.deep_link === 'viewLikes') {
                     item.style.cursor = 'pointer';
@@ -1720,15 +1759,15 @@ async function loadUserTickets() {
             tickets.forEach(t => {
                 const item = document.createElement('div');
                 item.className = "glass-panel";
-                item.style.padding = "10px";
+                item.style.padding = "12px";
                 item.innerHTML = `
                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <span style="font-weight:bold; font-size:13px; color:var(--primary);">${t.subject}</span>
-                        <span style="font-size:11px; color:${t.status === 'ANSWERED' ? 'var(--accent-green)' : 'var(--accent-gold)'};">${t.status}</span>
+                        <span style="font-weight:bold; font-size:14px; color:var(--primary);">${t.subject}</span>
+                        <span style="font-size:12px; color:${t.status === 'ANSWERED' ? 'var(--accent-green)' : 'var(--accent-gold)'};">${t.status}</span>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
                         ${(t.messages || []).map(m => `
-                            <div style="background:${m.is_admin ? 'rgba(255,183,0,0.1)' : 'rgba(255,255,255,0.04)'}; padding:6px 10px; border-radius:6px; font-size:12px;">
+                            <div style="background:${m.is_admin ? 'rgba(255,183,0,0.12)' : 'rgba(255,255,255,0.05)'}; padding:8px 10px; border-radius:6px; font-size:13px;">
                                 <b>${m.is_admin ? '🛡️ Support' : 'Siz'}:</b> ${m.text}
                             </div>
                         `).join('')}
@@ -1831,11 +1870,11 @@ async function loadAdminPayments() {
                 card.style.padding = "14px";
                 const isPending = o.status === 'PENDING';
                 const statusColor = isPending ? 'var(--accent-gold)' : (o.status === 'APPROVED' ? 'var(--accent-green)' : '#ff4747');
-                const userPhoto = (o.user?.photo && o.user.photo.length > 20) ? o.user.photo : getDefaultAvatar(o.user?.name);
+                const uName = o.user?.name || "User";
 
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <span style="font-weight:bold; font-size:14px; color:${o.plan_tier === 'VIP' ? '#ff4fbf' : 'var(--accent-gold)'};">
+                        <span style="font-weight:bold; font-size:15px; color:${o.plan_tier === 'VIP' ? '#ff4fbf' : 'var(--accent-gold)'};">
                             ${o.plan_tier === 'VIP' ? '👑 VIP STATUS' : '⭐ PREMIUM'} (${o.period === 'yearly' ? 'Yillik' : 'Oylik'})
                         </span>
                         <span style="font-weight:bold; font-size:12px; color:${statusColor};">${o.status}</span>
@@ -1843,26 +1882,26 @@ async function loadAdminPayments() {
 
                     <div style="display:flex; gap:12px; margin-bottom:10px;">
                         <img src="${o.receipt_photo}" style="width:90px; height:120px; object-fit:cover; border-radius:6px; border:1px solid var(--border-subtle); cursor:pointer;" onclick="window.open('${o.receipt_photo}')" title="Kattalashtirish">
-                        <div style="flex:1; font-size:12px;">
-                            <p style="margin:0 0 4px 0;"><b>Mijoz:</b> ${o.user ? o.user.name : 'Noma`lum'} (ID: ${o.user ? o.user.id : '?'})</p>
+                        <div style="flex:1; font-size:13px;">
+                            <p style="margin:0 0 4px 0;"><b>Mijoz:</b> ${uName} (ID: ${o.user ? o.user.id : '?'})</p>
                             <p style="margin:0 0 4px 0;"><b>TG ID:</b> ${o.user ? o.user.telegram_id : '—'}</p>
-                            <p style="margin:0 0 4px 0;"><b>Summa:</b> <span style="font-weight:bold; color:var(--accent-green); font-size:14px;">${Number(o.amount).toLocaleString()} UZS</span></p>
-                            <p style="margin:0 0 4px 0; color:var(--text-muted); font-size:11px;">Karta: ${o.card_number}</p>
-                            <p style="margin:0; color:var(--text-muted); font-size:10px;">${new Date(o.created_at).toLocaleString()}</p>
+                            <p style="margin:0 0 4px 0;"><b>Summa:</b> <span style="font-weight:bold; color:var(--accent-green); font-size:15px;">${Number(o.amount).toLocaleString()} UZS</span></p>
+                            <p style="margin:0 0 4px 0; color:var(--text-muted); font-size:12px;">Karta: ${o.card_number}</p>
+                            <p style="margin:0; color:var(--text-muted); font-size:11px;">${new Date(o.created_at).toLocaleString()}</p>
                         </div>
                     </div>
 
                     ${isPending ? `
                         <div style="display:flex; gap:8px;">
-                            <button onclick="adminApprovePayment(${o.id})" style="flex:2; background:var(--accent-green); color:#000; border:none; padding:8px; border-radius:var(--radius-sm); font-weight:bold; cursor:pointer;">
+                            <button onclick="adminApprovePayment(${o.id})" style="flex:2; background:var(--accent-green); color:#000; border:none; padding:10px; border-radius:var(--radius-sm); font-weight:bold; cursor:pointer;">
                                 ✅ Tasdiqlash (Obunani yoqish)
                             </button>
-                            <button onclick="adminRejectPayment(${o.id})" style="flex:1; background:rgba(255,255,255,0.06); border:1px solid #ff4747; color:#ff4747; padding:8px; border-radius:var(--radius-sm); font-weight:bold; cursor:pointer;">
+                            <button onclick="adminRejectPayment(${o.id})" style="flex:1; background:rgba(255,255,255,0.06); border:1px solid #ff4747; color:#ff4747; padding:10px; border-radius:var(--radius-sm); font-weight:bold; cursor:pointer;">
                                 ❌ Rad etish
                             </button>
                         </div>
                     ` : `
-                        <div style="font-size:11px; color:var(--text-muted); background:rgba(255,255,255,0.02); padding:6px; border-radius:4px;">
+                        <div style="font-size:12px; color:var(--text-muted); background:rgba(255,255,255,0.03); padding:8px; border-radius:4px;">
                             Holat: <b>${o.status}</b> ${o.admin_note ? `(Sabab: ${o.admin_note})` : ''}
                         </div>
                     `}
@@ -1904,6 +1943,8 @@ async function adminRejectPayment(orderId) {
         if (data.success) {
             alert("To'lov rad etildi.");
             loadAdminData();
+        } else {
+            alert(data.error?.message || "Xatolik");
         }
     } catch(e) { alert(e.message); }
 }
@@ -1939,20 +1980,21 @@ async function loadAdminPending() {
                 const card = document.createElement('div');
                 card.className = "glass-panel";
                 card.style.padding = "14px";
-                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name, u.gender);
+                const uName = u.name || "A'zo";
+                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(uName, u.gender);
 
                 card.innerHTML = `
                     <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
-                        <img src="${uPhoto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);" onerror="this.src='${getDefaultAvatar(u.name)}'">
+                        <img src="${uPhoto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);" onerror="handleImgError(this, '${uName}')">
                         <div>
-                            <h4 style="margin: 0; color: var(--primary);">${u.name}, ${u.age}</h4>
+                            <h4 style="margin: 0; color: var(--primary); font-size: 15px;">${uName}, ${u.age || 20}</h4>
                             <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">${u.city} • ${u.gender}</p>
                         </div>
                     </div>
                     <p style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-sub);">${u.bio || 'Bio mavjud emas'}</p>
                     <div style="display: flex; gap: 8px;">
-                        <button onclick="adminApproveUser(${u.id})" style="flex: 1; background: var(--accent-green); color: #000; border: none; padding: 8px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Tasdiqlash ✅</button>
-                        <button onclick="adminRejectUser(${u.id})" style="flex: 1; background: var(--primary); color: #fff; border: none; padding: 8px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Rad etish ❌</button>
+                        <button onclick="adminApproveUser(${u.id})" style="flex: 1; background: var(--accent-green); color: #000; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Tasdiqlash ✅</button>
+                        <button onclick="adminRejectUser(${u.id})" style="flex: 1; background: var(--primary); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Rad etish ❌</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -2005,7 +2047,7 @@ async function loadAdminReports() {
                 card.style.padding = "14px";
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="color: var(--primary); font-weight: bold; font-size: 13px;">${r.reason}</span>
+                        <span style="color: var(--primary); font-weight: bold; font-size: 14px;">${r.reason}</span>
                         <span style="font-size: 11px; color: var(--text-muted);">${r.status}</span>
                     </div>
                     <p style="margin: 0 0 8px 0; font-size: 13px; color: var(--text-sub);">${r.description || 'Izohsiz'}</p>
@@ -2013,8 +2055,8 @@ async function loadAdminReports() {
                         Shikoyat qilingan: <b>${r.reported ? r.reported.name : 'Noma`lum'}</b> (ID: ${r.reported ? r.reported.id : '?'})
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button onclick="adminResolveReport(${r.id}, 'RESOLVE')" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 7px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer;">Yopish</button>
-                        <button onclick="adminResolveReport(${r.id}, 'BAN_USER')" style="flex: 1; background: #ff4747; color: #fff; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Bloklash ⛔</button>
+                        <button onclick="adminResolveReport(${r.id}, 'RESOLVE')" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;">Yopish</button>
+                        <button onclick="adminResolveReport(${r.id}, 'BAN_USER')" style="flex: 1; background: #ff4747; color: #fff; border: none; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Bloklash ⛔</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -2054,20 +2096,20 @@ async function loadAdminTickets() {
                 card.style.padding = "14px";
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="color: var(--primary); font-weight: bold; font-size: 13px;">${t.subject}</span>
+                        <span style="color: var(--primary); font-weight: bold; font-size: 14px;">${t.subject}</span>
                         <span style="font-size: 11px; color: ${t.status === 'OPEN' ? 'var(--accent-gold)' : 'var(--accent-green)'};">${t.status}</span>
                     </div>
                     <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 8px 0;">Mijoz: ${t.user ? t.user.name : 'User'}</p>
                     <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px;">
                         ${(t.messages || []).map(m => `
-                            <div style="background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px; font-size: 11px;">
+                            <div style="background: rgba(255,255,255,0.04); padding: 6px 10px; border-radius: 4px; font-size: 12px;">
                                 <b>${m.is_admin ? '🛡️ Siz' : 'Mijoz'}:</b> ${m.text}
                             </div>
                         `).join('')}
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button onclick="adminReplyTicketPrompt(${t.id})" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 6px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Javob yozish</button>
-                        <button onclick="adminCloseTicket(${t.id})" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer;">Yopish</button>
+                        <button onclick="adminReplyTicketPrompt(${t.id})" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Javob yozish</button>
+                        <button onclick="adminCloseTicket(${t.id})" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;">Yopish</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -2124,19 +2166,20 @@ async function loadAdminUsers() {
             users.forEach(u => {
                 const item = document.createElement('div');
                 item.className = "glass-panel";
-                item.style.cssText = "padding: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;";
+                item.style.cssText = "padding: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;";
                 const isBanned = u.status === 'BANNED';
-                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name, u.gender);
+                const uName = u.name || "A'zo";
+                const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(uName, u.gender);
                 item.onclick = () => openAdminUserDetail(u.id);
                 item.innerHTML = `
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <img src="${uPhoto}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;" onerror="this.src='${getDefaultAvatar(u.name)}'">
+                        <img src="${uPhoto}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 50%;" onerror="handleImgError(this, '${uName}')">
                         <div>
-                            <h4 style="margin: 0; font-size: 14px;">${u.name || 'Draft'}, ${u.age || '?'}</h4>
+                            <h4 style="margin: 0; font-size: 14px;">${uName}, ${u.age || '?'}</h4>
                             <span style="font-size: 11px; color: ${isBanned ? '#ff4747' : 'var(--accent-green)'};">${u.status} • ${u.city || ''}</span>
                         </div>
                     </div>
-                    <span style="font-size: 12px; color: var(--primary);">Batafsil ➔</span>
+                    <span style="font-size: 13px; color: var(--primary);">Batafsil ➔</span>
                 `;
                 container.appendChild(item);
             });
@@ -2154,38 +2197,39 @@ async function openAdminUserDetail(userId) {
         const data = await res.json();
         if (data.success) {
             const u = data.user;
-            const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name, u.gender);
+            const uName = u.name || "A'zo";
+            const uPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(uName, u.gender);
             container.innerHTML = `
                 <div style="display: flex; gap: 12px; align-items: center;">
-                    <img src="${uPhoto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary);" onerror="this.src='${getDefaultAvatar(u.name)}'">
+                    <img src="${uPhoto}" style="width: 64px; height: 64px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary);" onerror="handleImgError(this, '${uName}')">
                     <div>
-                        <h3 style="margin: 0;">${u.name || 'Noma`lum'}, ${u.age || '?'}</h3>
+                        <h3 style="margin: 0; font-size: 17px;">${uName}, ${u.age || '?'}</h3>
                         <p style="margin: 2px 0; color: var(--text-muted); font-size: 12px;">ID: ${u.id} • TG: ${u.telegram_id || '—'}</p>
-                        <span style="font-size: 11px; color: var(--accent-green); font-weight: bold;">Status: ${u.status}</span>
+                        <span style="font-size: 12px; color: var(--accent-green); font-weight: bold;">Status: ${u.status}</span>
                     </div>
                 </div>
 
-                <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; font-size: 12px;">
+                <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; font-size: 13px;">
                     <p style="margin: 0 0 4px 0;"><b>Shahar:</b> ${u.city || '—'} • <b>Jinsi:</b> ${u.gender} (Qidiruv: ${u.target_gender})</p>
                     <p style="margin: 0 0 4px 0;"><b>Bio:</b> ${u.bio || '—'}</p>
                     <p style="margin: 0;"><b>Tarif:</b> ${u.plan_tier} • <b>XP:</b> ${u.xp} (Lvl ${u.level}) • <b>Streak:</b> ${u.streak_days}d</p>
                 </div>
 
-                <h4 style="margin: 10px 0 4px 0; color: var(--accent-gold);">Statusni o'zgartirish:</h4>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    <button onclick="adminChangeUserStatus(${u.id}, 'APPROVED')" style="background: var(--accent-green); color: #000; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">ACTIVE / APPROVED</button>
-                    <button onclick="adminChangeUserStatus(${u.id}, 'SUSPENDED')" style="background: var(--accent-gold); color: #000; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">SUSPEND</button>
-                    <button onclick="adminChangeUserStatus(${u.id}, 'BANNED')" style="background: #ff4747; color: #fff; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">BAN</button>
+                <h4 style="margin: 12px 0 6px 0; color: var(--accent-gold);">Statusni o'zgartirish:</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button onclick="adminChangeUserStatus(${u.id}, 'APPROVED')" style="background: var(--accent-green); color: #000; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">ACTIVE / APPROVED</button>
+                    <button onclick="adminChangeUserStatus(${u.id}, 'SUSPENDED')" style="background: var(--accent-gold); color: #000; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">SUSPEND</button>
+                    <button onclick="adminChangeUserStatus(${u.id}, 'BANNED')" style="background: #ff4747; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">BAN</button>
                 </div>
 
-                <h4 style="margin: 12px 0 4px 0; color: var(--accent-gold);">Ichki admin izohi (Note):</h4>
+                <h4 style="margin: 14px 0 6px 0; color: var(--accent-gold);">Ichki admin izohi (Note):</h4>
                 <div style="display: flex; gap: 6px;">
-                    <input type="text" id="admNewNoteInput" placeholder="Izoh yozing..." style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px; color: #fff; font-size: 12px;">
-                    <button onclick="adminAddUserNote(${u.id})" style="background: var(--primary-gradient); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">Qo'shish</button>
+                    <input type="text" id="admNewNoteInput" placeholder="Izoh yozing..." style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 8px; color: #fff; font-size: 13px;">
+                    <button onclick="adminAddUserNote(${u.id})" style="background: var(--primary-gradient); color: #fff; border: none; padding: 8px 14px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">Qo'shish</button>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
-                    ${(data.notes || []).map(n => `<div style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 4px 8px; border-radius: 4px;">• ${n.note} (${new Date(n.created_at).toLocaleDateString()})</div>`).join('')}
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                    ${(data.notes || []).map(n => `<div style="font-size: 12px; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 4px;">• ${n.note} (${new Date(n.created_at).toLocaleDateString()})</div>`).join('')}
                 </div>
             `;
         }
@@ -2262,13 +2306,13 @@ async function loadAdminAuditLogs() {
             logs.forEach(l => {
                 const item = document.createElement('div');
                 item.className = "glass-panel";
-                item.style.padding = "8px 12px";
+                item.style.padding = "10px 14px";
                 item.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px;">
                         <b style="color: var(--primary);">${l.action}</b>
-                        <span style="color: var(--text-muted); font-size: 10px;">${new Date(l.created_at).toLocaleTimeString()}</span>
+                        <span style="color: var(--text-muted); font-size: 11px;">${new Date(l.created_at).toLocaleTimeString()}</span>
                     </div>
-                    <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-sub);">${l.target_type} #${l.target_id || ''}: ${l.new_value || ''}</p>
+                    <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-sub);">${l.target_type} #${l.target_id || ''}: ${l.new_value || ''}</p>
                 `;
                 container.appendChild(item);
             });
