@@ -4,6 +4,7 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    Text,
     BigInteger,
     DateTime,
     Enum,
@@ -14,7 +15,7 @@ from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
-class UserStatus(enum.Enum):
+class UserStatus(str, enum.Enum):
     DRAFT = "DRAFT"
     PENDING_APPROVAL = "PENDING_APPROVAL"
     APPROVED = "APPROVED"
@@ -27,14 +28,14 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     telegram_id = Column(BigInteger, unique=True, nullable=False, index=True)
     username = Column(String, nullable=True)
-    status = Column(Enum(UserStatus), default=UserStatus.DRAFT, nullable=False)
+    status = Column(Enum(UserStatus, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=UserStatus.DRAFT, nullable=False)
     
     # Registration columns
     name = Column(String, nullable=True)
     age = Column(Integer, nullable=True)
     city = Column(String, nullable=True)
-    photo = Column(String, nullable=True)
-    bio = Column(String, nullable=True)
+    photo = Column(Text, nullable=True)
+    bio = Column(Text, nullable=True)
     terms_accepted = Column(Boolean, default=False)
     
     created_at = Column(DateTime, default=func.now())
@@ -60,5 +61,5 @@ class Message(Base):
     id = Column(Integer, primary_key=True)
     match_id = Column(Integer, nullable=False, index=True)
     sender_id = Column(Integer, nullable=False)
-    text = Column(String, nullable=False)
+    text = Column(Text, nullable=False)
     created_at = Column(DateTime, default=func.now())

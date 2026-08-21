@@ -73,6 +73,11 @@ def is_admin(user_id: int) -> bool:
         return True
     return user_id in ADMIN_IDS
 
+def get_user_status_str(status) -> str:
+    if hasattr(status, "value"):
+        return str(status.value)
+    return str(status)
+
 async def handle_health(request):
     return web.json_response({"status": "ok", "timestamp": datetime.now().isoformat()})
 
@@ -82,6 +87,7 @@ async def handle_health_ready(request):
             await session.execute(select(1))
         return web.json_response({"status": "ready", "database": "connected"})
     except Exception as e:
+        logger.exception(f"Health ready check failed: {e}")
         return web.json_response({"status": "unhealthy", "database": "disconnected", "error": str(e)}, status=503)
 
 async def handle_session(request):
@@ -107,15 +113,16 @@ async def handle_session(request):
             await session.commit()
             await session.refresh(user)
 
+        status_str = get_user_status_str(user.status)
         return web.json_response({
             "success": True,
-            "user_status": user.status.value,
+            "user_status": status_str,
             "is_admin": is_admin(tg_user["id"]),
             "user": {
                 "id": user.id,
                 "telegram_id": user.telegram_id,
                 "username": user.username,
-                "status": user.status.value,
+                "status": status_str,
                 "name": user.name,
                 "age": user.age,
                 "city": user.city,
@@ -163,7 +170,8 @@ async def handle_register(request):
         if not user:
             return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
-        if user.status != UserStatus.DRAFT:
+        current_status = get_user_status_str(user.status)
+        if current_status != "DRAFT":
             return web.json_response({"success": False, "error": {"code": "INVALID_STATUS"}}, status=400)
 
         user.name = name
@@ -503,7 +511,17 @@ def create_webapp_app() -> web.Application:
             if request.method == "OPTIONS":
                 response = web.Response(status=200)
             else:
-                response = await handler(request)
+                try:
+                    response = await handler(request)
+                except Exception as exc:
+                    logger.exception(f"Unhandled error handling {request.method} {request.path}: {exc}")
+                    response = web.json_response({
+                        "success": False,
+                        "error": {
+                            "code": "INTERNAL_SERVER_ERROR",
+                            "message": str(exc)
+                        }
+                    }, status=500)
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-TG-Init-Data"
@@ -513,15 +531,29 @@ def create_webapp_app() -> web.Application:
     app.middlewares.append(cors_middleware)
 
     async def on_startup(app):
-        # Drop legacy tables once on deploy to update PostgreSQL schema definitions
         import engine as engine_module
         try:
             async with engine_module.engine.begin() as conn:
+                try:
+                    # In PostgreSQL, ensure status column is VARCHAR(32) rather than legacy enum type
+                    await conn.execute(text("""
+                        DO $$
+                        BEGIN
+                            IF EXISTS (
+                                SELECT 1 FROM information_schema.columns 
+                                WHERE table_name = 'users' AND column_name = 'status' AND udt_name = 'userstatus'
+                            ) THEN
+                                ALTER TABLE users ALTER COLUMN status TYPE VARCHAR(32) USING status::text;
+                            END IF;
+                        END $$;
+                    """))
+                except Exception as alter_e:
+                    logger.info(f"Auto-migration notice (non-Postgres or already varchar): {alter_e}")
 
                 await conn.run_sync(Base.metadata.create_all)
-            logger.info("Database schema dropped and successfully recreated from scratch.")
+            logger.info("Database schema initialized successfully.")
         except Exception as exc:
-            logger.warning(f"Database schema recreation failed: {exc}")
+            logger.warning(f"Database schema initialization failed: {exc}")
 
     app.on_startup.append(on_startup)
 
