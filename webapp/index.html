@@ -5,25 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Kairyx Platform</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=2.10.0">
+    <link rel="stylesheet" href="style.css?v=2.11.0">
 </head>
 <body>
 
     <!-- Header bar -->
-    <header style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); background: rgba(5,5,16,0.8); backdrop-filter: blur(10px); position: sticky; top:0; z-index:90;">
+    <header style="padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); background: rgba(5,5,16,0.85); backdrop-filter: blur(10px); position: sticky; top:0; z-index:90;">
         <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="switchTab('viewDiscover')">
             <span style="font-size: 20px;">💖</span>
             <span style="font-weight: 800; font-size: 18px; letter-spacing: 0.5px; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KAIRYX</span>
         </div>
-        <div id="headerActions" style="display: flex; gap: 10px; align-items: center;">
-            <button id="btnHeaderPremium" onclick="openPremiumModal()" style="background: rgba(255,183,0,0.12); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 5px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                ⭐ Premium
+        <div id="headerActions" style="display: flex; gap: 8px; align-items: center;">
+            <button id="btnHeaderStreak" onclick="openDailyRewardModal()" style="background: rgba(255,71,133,0.12); border: 1px solid var(--primary); color: #fff; padding: 4px 8px; border-radius: var(--radius-full); font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                🔥 <span id="headerStreakCount">0</span>
             </button>
-            <button id="btnHeaderNotif" onclick="openNotificationsModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); font-size: 16px; cursor: pointer; color: var(--text-main); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;">
+            <button id="btnHeaderLeaderboard" onclick="openLeaderboardModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); font-size: 14px; cursor: pointer; color: var(--text-main); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                🏆
+            </button>
+            <button id="btnHeaderPremium" onclick="openPaywallModal()" style="background: rgba(255,183,0,0.12); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 4px 9px; border-radius: var(--radius-full); font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                ⭐ VIP
+            </button>
+            <button id="btnHeaderNotif" onclick="openNotificationsModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); font-size: 14px; cursor: pointer; color: var(--text-main); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;">
                 🔔
                 <span id="notifBadge" class="badge-dot" style="display: none;">0</span>
             </button>
-            <button id="btnHeaderAdmin" onclick="openAdminScreen()" style="display: none; background: rgba(255,183,0,0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 5px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold; cursor: pointer;">🛡️ Admin</button>
+            <button id="btnHeaderAdmin" onclick="openAdminScreen()" style="display: none; background: rgba(255,183,0,0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 4px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: bold; cursor: pointer;">🛡️</button>
             <button id="btnHeaderSettings" onclick="openSettingsModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted);">⚙️</button>
         </div>
     </header>
@@ -283,7 +289,7 @@
             <div id="likesPremiumPromo" class="premium-banner" style="display: none; margin-bottom: 15px;">
                 <h3 style="margin: 0 0 6px 0; color: var(--accent-gold);">⭐ Kairyx Premium</h3>
                 <p style="margin: 0 0 12px 0; font-size: 13px; color: #fff; line-height: 1.4;">Sizga kim Like bosganini to'liq ko'rish va to'g'ridan-to'g'ri birinchi bo'lib yozish uchun Premium-ni faollashtiring!</p>
-                <button onclick="openPremiumModal()" style="background: var(--premium-gradient); color: #000; border: none; padding: 9px 20px; border-radius: var(--radius-full); font-weight: 800; cursor: pointer; font-size: 13px; box-shadow: 0 0 12px var(--premium-glow);">⭐ Premium-ni faollashtirish</button>
+                <button onclick="openPaywallModal()" style="background: var(--premium-gradient); color: #000; border: none; padding: 9px 20px; border-radius: var(--radius-full); font-weight: 800; cursor: pointer; font-size: 13px; box-shadow: 0 0 12px var(--premium-glow);">⭐ Premium-ni faollashtirish</button>
             </div>
 
             <div id="likesList" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
@@ -304,44 +310,66 @@
             </div>
         </section>
 
-        <!-- TAB 5: 👤 PROFILE & DASHBOARD -->
+        <!-- TAB 5: 👤 PROFILE, GAMIFICATION & DASHBOARD -->
         <section id="viewProfile" style="display: none; padding-bottom: 30px;">
-            <div class="glass-panel" style="padding: 20px; text-align: center; margin-bottom: 18px;">
-                <img id="myPhoto" src="" style="width: 105px; height: 105px; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary); box-shadow: 0 0 20px var(--primary-glow); margin: 0 auto;">
-                <h2 id="myNameAge" style="margin: 12px 0 4px 0;">—</h2>
+            <div class="glass-panel" style="padding: 20px; text-align: center; margin-bottom: 15px;">
+                <img id="myPhoto" src="" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary); box-shadow: 0 0 20px var(--primary-glow); margin: 0 auto;">
+                <h2 id="myNameAge" style="margin: 10px 0 4px 0;">—</h2>
                 <p id="myCityGender" style="margin: 0 0 12px 0; color: var(--text-muted); font-size: 13px;">—</p>
                 
-                <!-- Premium Status Ribbon -->
-                <div id="myPremiumStatusCard" style="margin-bottom: 15px;">
-                    <button onclick="openPremiumModal()" style="background: var(--premium-gradient); color: #000; border: none; padding: 8px 18px; border-radius: var(--radius-full); font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 0 15px var(--premium-glow);">⭐ KAIRYX PREMIUM</button>
+                <!-- Plan Ribbon & Badges -->
+                <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 15px;" id="myBadgesContainer">
+                </div>
+
+                <!-- Level & XP Progress Gauge -->
+                <div class="xp-gauge-wrap">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+                        <span id="myLevelLabel" style="font-weight: 800; color: var(--accent-gold);">⭐ Level 1</span>
+                        <span id="myXPLabel" style="color: var(--text-muted);">0 / 200 XP</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="myXPProgressBar" class="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Daily Streak Banner -->
+                <div style="background: rgba(255,71,133,0.08); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="text-align: left;">
+                        <div style="font-size: 13px; font-weight: bold; color: #fff;">🔥 <span id="myProfileStreak">0</span> kunlik Streak</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Kunlik bonuslarni yig'ing</div>
+                    </div>
+                    <button id="btnClaimDaily" onclick="openDailyRewardModal()" style="background: var(--primary-gradient); color: #fff; border: none; padding: 6px 14px; border-radius: var(--radius-full); font-size: 11px; font-weight: bold; cursor: pointer;">Olish 🎁</button>
                 </div>
 
                 <!-- Balance & Points Card -->
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="display: flex; gap: 8px; margin-bottom: 15px;">
                     <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px;">
                         <div style="font-size: 11px; color: var(--text-muted);">Balans</div>
-                        <div id="myBalance" style="font-size: 15px; font-weight: bold; color: var(--accent-green);">0 UZS</div>
+                        <div id="myBalance" style="font-size: 14px; font-weight: bold; color: var(--accent-green);">0 UZS</div>
                     </div>
                     <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px;">
                         <div style="font-size: 11px; color: var(--text-muted);">Bonus ballar</div>
-                        <div id="myBonusPoints" style="font-size: 15px; font-weight: bold; color: var(--accent-gold);">0 pts</div>
+                        <div id="myBonusPoints" style="font-size: 14px; font-weight: bold; color: var(--accent-gold);">0 pts</div>
+                    </div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px; cursor: pointer;" onclick="openReferralModal()">
+                        <div style="font-size: 11px; color: var(--text-muted);">Takliflar 👥</div>
+                        <div id="myReferralCount" style="font-size: 14px; font-weight: bold; color: var(--secondary);">0</div>
                     </div>
                 </div>
 
-                <!-- Profile Completion -->
+                <!-- Daily Missions Widget -->
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px; margin-bottom: 15px; text-align: left;">
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
-                        <span id="txtCompletionLabel">Profil to'liqligi:</span>
-                        <span id="myCompletionPct" style="color: var(--primary); font-weight: bold;">100%</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: bold; color: var(--primary);">🎯 Kunlik Vazifalar</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">+XP & Bonus</span>
                     </div>
-                    <div class="progress-bar-bg">
-                        <div id="myCompletionBar" class="progress-bar-fill" style="width: 100%;"></div>
-                    </div>
+                    <div id="profileMissionsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
                 </div>
 
-                <div style="text-align: left; margin-bottom: 15px;">
+                <!-- Bio & Interests -->
+                <div style="text-align: left; margin-bottom: 12px;">
                     <p id="lblMyBio" style="font-size: 12px; font-weight: bold; color: var(--primary); margin: 0 0 4px 0;">O'zim haqimda:</p>
-                    <p id="myBio" style="margin: 0; font-size: 14px; color: var(--text-sub); line-height: 1.4;">—</p>
+                    <p id="myBio" style="margin: 0; font-size: 13px; color: var(--text-sub); line-height: 1.4;">—</p>
                 </div>
 
                 <div style="text-align: left; margin-bottom: 15px;">
@@ -352,8 +380,25 @@
                 <button id="btnEditProfile" onclick="openEditProfileModal()" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; font-size: 13px;">✏️ Profilni tahrirlash</button>
             </div>
 
+            <!-- Promo Code Card -->
+            <div class="glass-panel" style="padding: 12px 16px; margin-bottom: 15px;">
+                <label style="font-size: 12px; font-weight: bold; color: var(--accent-gold); display: block; margin-bottom: 6px;">🎟️ Promo Kod (Kupon):</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="couponInput" placeholder="Masalan: KAIRYX2026" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px; color: #fff; font-size: 13px; text-transform: uppercase;">
+                    <button onclick="redeemCouponCode()" style="background: var(--primary-gradient); color: #fff; border: none; padding: 8px 14px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; font-size: 12px;">Qo'llash</button>
+                </div>
+            </div>
+
             <!-- Settings Menu List in Profile -->
             <div class="glass-panel" style="padding: 10px 15px;">
+                <div onclick="openReferralModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                    <span>👥 Do'stlarni taklif qilish (Referral)</span>
+                    <span style="color: var(--secondary); font-weight: bold; font-size: 12px;">+Bonuslar ➔</span>
+                </div>
+                <div onclick="openPaywallModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                    <span>⭐ Tariflar va Obuna (VIP)</span>
+                    <span style="color: var(--accent-gold); font-weight: bold; font-size: 12px;">Tariflar ➔</span>
+                </div>
                 <div onclick="openLanguageModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
                     <span id="txtMenuLang">🌐 Tilni o'zgartirish</span>
                     <span id="currentLangLabel" style="color: var(--primary); font-weight: bold; font-size: 12px;">O'zbekcha</span>
@@ -406,29 +451,34 @@
     <!-- 5. STANDALONE ADMIN DASHBOARD SCREEN -->
     <div id="adminScreen" style="display: none; max-width: 500px; margin: 0 auto; padding: 15px; padding-bottom: 50px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="color: var(--accent-gold); margin: 0;">🛡️ Kairyx Enterprise Admin</h3>
+            <h3 style="color: var(--accent-gold); margin: 0;">🛡️ Kairyx Enterprise Control Center</h3>
             <button onclick="closeAdminScreen()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;">✕ Yopish</button>
         </div>
 
         <!-- Stats Grid -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
-            <div class="glass-panel" style="padding: 10px; text-align: center;">
-                <div style="font-size: 10px; color: var(--text-muted);">Kutilmoqda</div>
-                <div id="admStatPending" style="font-size: 16px; font-weight: bold; color: var(--accent-gold); margin-top: 3px;">0</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 15px;">
+            <div class="glass-panel" style="padding: 8px; text-align: center;">
+                <div style="font-size: 9px; color: var(--text-muted);">Kutilmoqda</div>
+                <div id="admStatPending" style="font-size: 14px; font-weight: bold; color: var(--accent-gold); margin-top: 2px;">0</div>
             </div>
-            <div class="glass-panel" style="padding: 10px; text-align: center;">
-                <div style="font-size: 10px; color: var(--text-muted);">Tasdiqlangan</div>
-                <div id="admStatApproved" style="font-size: 16px; font-weight: bold; color: var(--accent-green); margin-top: 3px;">0</div>
+            <div class="glass-panel" style="padding: 8px; text-align: center;">
+                <div style="font-size: 9px; color: var(--text-muted);">Tasdiqlangan</div>
+                <div id="admStatApproved" style="font-size: 14px; font-weight: bold; color: var(--accent-green); margin-top: 2px;">0</div>
             </div>
-            <div class="glass-panel" style="padding: 10px; text-align: center;">
-                <div style="font-size: 10px; color: var(--text-muted);">Jami a'zolar</div>
-                <div id="admStatTotal" style="font-size: 16px; font-weight: bold; color: #fff; margin-top: 3px;">0</div>
+            <div class="glass-panel" style="padding: 8px; text-align: center;">
+                <div style="font-size: 9px; color: var(--text-muted);">Premium</div>
+                <div id="admStatPremium" style="font-size: 14px; font-weight: bold; color: var(--accent-gold); margin-top: 2px;">0</div>
+            </div>
+            <div class="glass-panel" style="padding: 8px; text-align: center;">
+                <div style="font-size: 9px; color: var(--text-muted);">Jami a'zolar</div>
+                <div id="admStatTotal" style="font-size: 14px; font-weight: bold; color: #fff; margin-top: 2px;">0</div>
             </div>
         </div>
 
         <!-- Admin Sub-navigation -->
         <div style="display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 4px;">
-            <button id="btnAdmTabPending" onclick="switchAdminTab('pending')" style="flex: 1; background: var(--primary-gradient); color: #fff; border: none; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Arizalar</button>
+            <button id="btnAdmTabRetention" onclick="switchAdminTab('retention')" style="flex: 1; background: var(--primary-gradient); color: #fff; border: none; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">📊 Retention</button>
+            <button id="btnAdmTabPending" onclick="switchAdminTab('pending')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Arizalar</button>
             <button id="btnAdmTabReports" onclick="switchAdminTab('reports')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Shikoyatlar</button>
             <button id="btnAdmTabTickets" onclick="switchAdminTab('tickets')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Tiketlar</button>
             <button id="btnAdmTabUsers" onclick="switchAdminTab('users')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">A'zolar</button>
@@ -436,7 +486,31 @@
             <button id="btnAdmTabAudit" onclick="switchAdminTab('audit')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Audit</button>
         </div>
 
-        <div id="admSecPending"><div id="admPendingList" style="display: flex; flex-direction: column; gap: 12px;"></div></div>
+        <div id="admSecRetention">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                <div class="glass-panel" style="padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--text-muted);">DAU (Kunlik)</div>
+                    <div id="retDau" style="font-size: 16px; font-weight: bold; color: var(--accent-green); margin-top: 3px;">0</div>
+                </div>
+                <div class="glass-panel" style="padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--text-muted);">WAU (Haftalik)</div>
+                    <div id="retWau" style="font-size: 16px; font-weight: bold; color: var(--accent-blue); margin-top: 3px;">0</div>
+                </div>
+                <div class="glass-panel" style="padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--text-muted);">MAU (Oylik)</div>
+                    <div id="retMau" style="font-size: 16px; font-weight: bold; color: #fff; margin-top: 3px;">0</div>
+                </div>
+            </div>
+            <div class="glass-panel" style="padding: 14px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: var(--accent-gold);">Retention & Konversiya</h4>
+                <p style="margin: 4px 0; font-size: 13px;">• 3+ kunlik Streak a'zolar: <b id="retStreakUsers">0</b></p>
+                <p style="margin: 4px 0; font-size: 13px;">• D1 Retention (Qaytish): <b id="retD1" style="color: var(--accent-green);">84%</b></p>
+                <p style="margin: 4px 0; font-size: 13px;">• D7 Retention: <b id="retD7" style="color: var(--accent-green);">62%</b></p>
+                <p style="margin: 4px 0; font-size: 13px;">• Premium Konversiya: <b id="retConv" style="color: var(--accent-gold);">18.5%</b></p>
+            </div>
+        </div>
+
+        <div id="admSecPending" style="display: none;"><div id="admPendingList" style="display: flex; flex-direction: column; gap: 12px;"></div></div>
         <div id="admSecReports" style="display: none;"><div id="admReportsList" style="display: flex; flex-direction: column; gap: 12px;"></div></div>
         <div id="admSecTickets" style="display: none;"><div id="admTicketsList" style="display: flex; flex-direction: column; gap: 12px;"></div></div>
         <div id="admSecUsers" style="display: none;">
@@ -488,36 +562,100 @@
     </div>
 
     <!-- 7. MODALS -->
-    <!-- Premium Modal -->
-    <div id="premiumModal" class="modal-backdrop" style="display: none;">
-        <div class="modal-content" style="border-color: var(--accent-gold);">
-            <div style="text-align: center; margin-bottom: 15px;">
-                <span style="font-size: 40px;">⭐</span>
-                <h2 style="margin: 6px 0 0 0; background: var(--premium-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KAIRYX PREMIUM</h2>
-                <p style="color: var(--text-sub); font-size: 13px; margin: 4px 0 0 0;">Cheksiz imkoniyatlar va maksimal tezkorlik</p>
+    <!-- Daily Reward & Streak Modal -->
+    <div id="dailyRewardModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content" style="text-align: center;">
+            <span style="font-size: 36px;">🔥</span>
+            <h3 style="margin: 6px 0 2px 0; color: #fff;">7 Kunlik Streak Kalendari</h3>
+            <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 15px 0;">Har kuni kiring va ketma-ketlikni saqlang!</p>
+
+            <div id="streakGridContainer" class="streak-grid"></div>
+
+            <div style="background: rgba(255,255,255,0.03); border-radius: var(--radius-md); padding: 12px; margin: 15px 0; text-align: left; font-size: 12px; color: var(--text-sub);">
+                <p style="margin: 0 0 4px 0;">💡 <b>Streak qoidasi:</b> Har 24 soatda 1 marta bonus ochiladi. 7-kunda <b>3 kunlik Kairyx Premium</b> beriladi!</p>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; font-size: 13px; color: var(--text-sub);">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="color: var(--accent-gold); font-size: 16px;">👀</span>
-                    <span>Sizga kim Like bosganini to'liq ko'rish</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="color: var(--accent-gold); font-size: 16px;">💬</span>
-                    <span>Moslikni kutmasdan to'g'ridan-to'g'ri yozish</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="color: var(--accent-gold); font-size: 16px;">🔥</span>
-                    <span>Cheksiz Like va qidiruv filtrlari</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="color: var(--accent-gold); font-size: 16px;">⚡</span>
-                    <span>Anketani qidiruvda TOP o'ringa ko'tarish</span>
-                </div>
+            <button id="btnClaimDailyAction" onclick="claimDailyRewardNow()" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: 800; cursor: pointer; font-size: 14px; box-shadow: 0 0 15px var(--primary-glow); margin-bottom: 8px;">🎁 BUGUNGI BONUSNI OLISH</button>
+            <button onclick="closeDailyRewardModal()" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Yopish</button>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--accent-gold);">🏆 Top Reyting (Leaderboard)</h3>
+                <button onclick="closeLeaderboardModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+            <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- Referral Center Modal -->
+    <div id="referralModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--secondary);">👥 Do'stlarni taklif qilish</h3>
+                <button onclick="closeReferralModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-sub); line-height: 1.4; margin-top: 0;">Har bir taklif qilingan faol do'stingiz uchun <b>+150 XP</b> va <b>+2,000 ball</b> oling!</p>
+
+            <div style="background: rgba(255,255,255,0.04); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span id="refLinkText" style="font-size: 12px; color: var(--primary); word-break: break-all;">https://t.me/Ka1ryx_bot?start=ref_...</span>
+                <button onclick="copyReferralLink()" style="background: var(--primary-gradient); color: #fff; border: none; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; margin-left: 8px;">Nusxalash 📋</button>
             </div>
 
-            <button onclick="activatePremiumNow()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 13px; border-radius: var(--radius-sm); font-weight: 800; cursor: pointer; font-size: 14px; box-shadow: 0 0 15px var(--premium-glow); margin-bottom: 10px;">⭐ 30 KUNLIK PREMIUM FAOLLASHTIRISH</button>
-            <button onclick="closePremiumModal()" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Yopish</button>
+            <h4 style="margin: 15px 0 8px 0; color: var(--accent-gold);">🏆 Bosqichli Mukofotlar:</h4>
+            <div id="refMilestonesList" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;"></div>
+        </div>
+    </div>
+
+    <!-- Paywall & Multi-Tier Plans Modal -->
+    <div id="paywallModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content" style="max-width: 460px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="margin: 0; background: var(--vip-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KAIRYX STATUS</h2>
+                <button onclick="closePaywallModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+
+            <!-- Billing Toggle -->
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                <button id="btnBillingMonthly" onclick="toggleBillingPeriod('monthly')" style="background: var(--primary-gradient); color: #fff; border: none; padding: 6px 14px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold; cursor: pointer;">Oylik</button>
+                <button id="btnBillingYearly" onclick="toggleBillingPeriod('yearly')" style="background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 6px 14px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold; cursor: pointer;">Yillik (-30%)</button>
+            </div>
+
+            <!-- Premium Plan Card -->
+            <div class="plan-tier-card featured">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <h3 style="margin: 0; color: var(--accent-gold);">⭐ PREMIUM</h3>
+                    <span id="priceLabelPremium" style="font-weight: 800; font-size: 14px; color: #fff;">49,000 UZS / oy</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-sub); margin: 0 0 10px 0;">Sizga kim like bosganini to'liq ko'ring va cheksiz tanishing.</p>
+                <ul style="padding-left: 18px; font-size: 12px; color: var(--text-sub); margin: 0 0 12px 0; line-height: 1.5;">
+                    <li>✓ Sizga kim Like bosganini to'liq ko'rish 👀</li>
+                    <li>✓ Cheksiz Like va qidiruv filtrlari 💖</li>
+                    <li>✓ 2x XP va daraja oshishi ⚡</li>
+                    <li>✓ Oltin nishon (Golden Badge)</li>
+                </ul>
+                <button onclick="subscribePlan('PREMIUM')" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 9px; border-radius: var(--radius-sm); font-weight: 800; cursor: pointer; font-size: 13px;">⭐ PREMIUM FAOLLASHTIRISH</button>
+            </div>
+
+            <!-- VIP Plan Card -->
+            <div class="plan-tier-card vip">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <h3 style="margin: 0; color: #ec4899;">👑 VIP STATUS</h3>
+                    <span id="priceLabelVIP" style="font-weight: 800; font-size: 14px; color: #fff;">89,000 UZS / oy</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-sub); margin: 0 0 10px 0;">Maksimal e'tibor va to'g'ridan-to'g'ri birinchi bo'lib yozish.</p>
+                <ul style="padding-left: 18px; font-size: 12px; color: var(--text-sub); margin: 0 0 12px 0; line-height: 1.5;">
+                    <li>✓ Barcha Premium imkoniyatlari</li>
+                    <li>✓ Moslikni kutmasdan birinchi bo'lib yozish 💬</li>
+                    <li>✓ Qidiruvda doim 1-o'rinda (TOP Spotlight) 🔥</li>
+                    <li>✓ Qirollik VIP nishoni 👑</li>
+                    <li>✓ Ustuvor 24/7 yordam</li>
+                </ul>
+                <button onclick="subscribePlan('VIP')" style="width: 100%; background: var(--vip-gradient); color: #fff; border: none; padding: 9px; border-radius: var(--radius-sm); font-weight: 800; cursor: pointer; font-size: 13px; box-shadow: 0 0 12px var(--vip-glow);">👑 VIP STATUSGA O'TISH</button>
+            </div>
         </div>
     </div>
 
@@ -674,13 +812,13 @@
 
     <!-- Match Celebration Modal -->
     <div id="matchModal" class="modal-backdrop" style="display: none;">
-        <div class="modal-content match-popup" style="border-color: var(--primary);">
+        <div class="modal-content match-popup" style="border-color: var(--primary); text-align: center;">
             <h2 style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 0; font-size: 26px;">IT'S A MATCH! ❤️</h2>
             <p style="color: var(--text-sub); font-size: 14px;"><span id="txtMatchYou">Siz va</span> <b id="matchPartnerName" style="color: #fff;">—</b> <span id="txtMatchLiked">bir-biringizga yoqdingiz!</span></p>
             
-            <div class="dual-avatar-wrap">
-                <img id="matchMyAvatar" src="" class="dual-avatar">
-                <img id="matchPartnerAvatar" src="" class="dual-avatar" style="margin-left: -20px;">
+            <div style="display: flex; justify-content: center; margin: 15px 0;">
+                <img id="matchMyAvatar" src="" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
+                <img id="matchPartnerAvatar" src="" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 3px solid var(--secondary); margin-left: -20px;">
             </div>
 
             <button id="btnMatchChat" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; font-size: 15px; margin-bottom: 10px;">💬 Suhbatni boshlash</button>
@@ -798,6 +936,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=2.10.0"></script>
+    <script src="app.js?v=2.11.0"></script>
 </body>
 </html>

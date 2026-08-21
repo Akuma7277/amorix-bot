@@ -33,6 +33,11 @@ class UserRole(str, enum.Enum):
     SUPPORT = "SUPPORT"
     USER = "USER"
 
+class PlanTier(str, enum.Enum):
+    FREE = "FREE"
+    PREMIUM = "PREMIUM"
+    VIP = "VIP"
+
 class User(Base):
     __tablename__ = "users"
     
@@ -42,11 +47,24 @@ class User(Base):
     role = Column(String(32), default="USER", nullable=False)
     status = Column(Enum(UserStatus, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=UserStatus.DRAFT, nullable=False)
     
-    # Financial & Premium
+    # Financial & Monetization
     balance = Column(Float, default=0.0)
     bonus_points = Column(Integer, default=0)
+    plan_tier = Column(String(20), default="FREE", nullable=False) # FREE, PREMIUM, VIP
     is_premium = Column(Boolean, default=False)
     premium_until = Column(DateTime, nullable=True)
+    
+    # Gamification & Retention (XP, Levels, Streaks)
+    xp = Column(Integer, default=0, nullable=False)
+    level = Column(Integer, default=1, nullable=False)
+    streak_days = Column(Integer, default=0, nullable=False)
+    last_daily_claim = Column(DateTime, nullable=True)
+    badges = Column(Text, default="[]", nullable=False) # JSON array of badges
+    
+    # Referral System
+    referred_by = Column(BigInteger, nullable=True)
+    referral_count = Column(Integer, default=0, nullable=False)
+    referral_claimed_tier = Column(Integer, default=0, nullable=False)
     
     # Settings & Localization
     language = Column(String(10), default="uz", nullable=False)
@@ -76,7 +94,7 @@ class UserStatusHistory(Base):
     user_id = Column(Integer, nullable=False, index=True)
     old_status = Column(String(32), nullable=False)
     new_status = Column(String(32), nullable=False)
-    changed_by = Column(BigInteger, nullable=False) # Telegram ID of admin or system
+    changed_by = Column(BigInteger, nullable=False)
     reason = Column(Text, nullable=True)
     created_at = Column(DateTime, default=func.now())
 
@@ -84,7 +102,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False, index=True)
-    type = Column(String(32), default="system", nullable=False) # system, account, security, match, message, like, admin
+    type = Column(String(32), default="system", nullable=False) # system, account, security, match, message, like, reward, streak, admin
     title = Column(String(128), nullable=False)
     body = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
@@ -97,8 +115,8 @@ class SupportTicket(Base):
     user_id = Column(Integer, nullable=False, index=True)
     subject = Column(String(128), nullable=False)
     category = Column(String(64), default="General", nullable=False)
-    priority = Column(String(32), default="NORMAL", nullable=False) # LOW, NORMAL, HIGH, URGENT
-    status = Column(String(32), default="OPEN", nullable=False) # OPEN, ANSWERED, CLOSED
+    priority = Column(String(32), default="NORMAL", nullable=False)
+    status = Column(String(32), default="OPEN", nullable=False)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
@@ -109,6 +127,33 @@ class TicketMessage(Base):
     sender_id = Column(Integer, nullable=False)
     text = Column(Text, nullable=False)
     is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=func.now())
+
+class Coupon(Base):
+    __tablename__ = "coupons"
+    id = Column(Integer, primary_key=True)
+    code = Column(String(64), unique=True, nullable=False, index=True)
+    reward_type = Column(String(32), default="PREMIUM_DAYS", nullable=False) # PREMIUM_DAYS, BONUS_POINTS, DISCOUNT_PCT
+    reward_value = Column(Float, default=7.0, nullable=False) # e.g. 7 days or 5000 points
+    max_uses = Column(Integer, default=100, nullable=False)
+    used_count = Column(Integer, default=0, nullable=False)
+    expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+
+class CouponRedemption(Base):
+    __tablename__ = "coupon_redemptions"
+    id = Column(Integer, primary_key=True)
+    coupon_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime, default=func.now())
+
+class ReferralReward(Base):
+    __tablename__ = "referral_rewards"
+    id = Column(Integer, primary_key=True)
+    referrer_id = Column(Integer, nullable=False, index=True)
+    referee_id = Column(Integer, nullable=False, index=True)
+    xp_awarded = Column(Integer, default=100)
+    bonus_awarded = Column(Float, default=1000.0)
     created_at = Column(DateTime, default=func.now())
 
 class AdminAuditLog(Base):
@@ -168,5 +213,5 @@ class Report(Base):
     reported_id = Column(Integer, nullable=False, index=True)
     reason = Column(String(64), nullable=False)
     description = Column(Text, nullable=True)
-    status = Column(String(32), default="OPEN", nullable=False) # OPEN, REVIEWING, RESOLVED, REJECTED
+    status = Column(String(32), default="OPEN", nullable=False)
     created_at = Column(DateTime, default=func.now())

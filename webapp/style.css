@@ -1,4 +1,4 @@
-/* KAIRYX ENTERPRISE DATING & PLATFORM - DESIGN SYSTEM v2.10.0 */
+/* KAIRYX ENTERPRISE DATING, GAMIFICATION & RETENTION SYSTEM v2.11.0 */
 :root {
     --bg-main: #050510;
     --bg-card: rgba(255, 255, 255, 0.03);
@@ -9,6 +9,8 @@
     --primary-glow: rgba(255, 71, 133, 0.35);
     --premium-gradient: linear-gradient(135deg, #ffb700 0%, #ff8800 100%);
     --premium-glow: rgba(255, 183, 0, 0.4);
+    --vip-gradient: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #eab308 100%);
+    --vip-glow: rgba(236, 72, 153, 0.4);
     --secondary: #b624ff;
     --accent-gold: #ffb700;
     --accent-green: #24ff8a;
@@ -46,13 +48,79 @@ input, textarea, button, select {
     outline: none;
 }
 
-/* Glassmorphic Container */
+/* Glassmorphic Panel */
 .glass-panel {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: var(--radius-md);
+}
+
+/* 7-Day Streak Calendar Grid */
+.streak-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin: 12px 0;
+}
+
+.streak-day-box {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.streak-day-box.active {
+    background: rgba(255, 71, 133, 0.15);
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.streak-day-box.claimed {
+    background: rgba(36, 255, 138, 0.12);
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+.streak-day-box.bonus-day {
+    border-color: var(--accent-gold);
+    background: rgba(255, 183, 0, 0.12);
+}
+
+/* Level & XP Gauge */
+.xp-gauge-wrap {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+}
+
+/* Paywall Cards & Toggle */
+.plan-tier-card {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.plan-tier-card.featured {
+    border-color: var(--accent-gold);
+    background: linear-gradient(135deg, rgba(255, 183, 0, 0.08) 0%, rgba(255, 71, 133, 0.08) 100%);
+    box-shadow: 0 0 15px var(--premium-glow);
+}
+
+.plan-tier-card.vip {
+    border-color: #ec4899;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.15) 100%);
+    box-shadow: 0 0 15px var(--vip-glow);
 }
 
 /* Gender Selection Cards */
@@ -133,7 +201,7 @@ input, textarea, button, select {
     align-items: center;
     gap: 3px;
     transition: all 0.2s ease;
-    padding: 6px 10px;
+    padding: 6px 8px;
     border-radius: var(--radius-sm);
     position: relative;
 }
@@ -151,7 +219,7 @@ input, textarea, button, select {
 .badge-dot {
     position: absolute;
     top: 4px;
-    right: 10px;
+    right: 6px;
     background: var(--primary);
     color: #fff;
     font-size: 9px;
@@ -280,7 +348,7 @@ input, textarea, button, select {
     font-size: 24px;
 }
 
-/* Premium Card & Blurred Preview */
+/* Blurred Photo */
 .blurred-photo {
     filter: blur(16px);
     transform: scale(1.1);
@@ -359,7 +427,7 @@ input, textarea, button, select {
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Chat Styles */
+/* Chat Overlay */
 .chat-overlay {
     position: fixed;
     top: 0;

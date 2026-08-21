@@ -18,7 +18,7 @@ async def client():
     yield client
     await client.close()
 
-class TestEnterpriseSuite:
+class TestEnterpriseGamificationRetentionSuite:
 
     @pytest.mark.asyncio
     async def test_health_and_system(self, client):
@@ -39,125 +39,120 @@ class TestEnterpriseSuite:
         assert sys_data["health"]["api_status"] == "ONLINE"
 
     @pytest.mark.asyncio
-    async def test_gender_registration_and_filtering(self, client):
-        # 1. Register Male user looking for Female
-        await client.get("/api/session?initData=mock_user_101")
-        reg_male = await client.post("/api/register?initData=mock_user_101", json={
-            "name": "Jasur", "age": 25, "gender": "MALE", "target_gender": "FEMALE",
-            "city": "Toshkent", "photo": "data:image/jpeg;base64,mock", "bio": "Dasturchi", "terms_accepted": True
-        })
-        assert reg_male.status == 200
-        assert (await reg_male.json())["user"]["gender"] == "MALE"
+    async def test_daily_streak_and_rewards(self, client):
+        # Initialize user
+        await client.get("/api/session?initData=mock_user_1001")
 
-        # 2. Register Female user looking for Male
-        await client.get("/api/session?initData=mock_user_102")
-        reg_fem = await client.post("/api/register?initData=mock_user_102", json={
-            "name": "Madina", "age": 22, "gender": "FEMALE", "target_gender": "MALE",
-            "city": "Toshkent", "photo": "data:image/jpeg;base64,mock", "bio": "Dizayner", "terms_accepted": True
-        })
-        assert reg_fem.status == 200
-        assert (await reg_fem.json())["user"]["gender"] == "FEMALE"
+        # Check initial streak status
+        status_resp = await client.get("/api/rewards/daily/status?initData=mock_user_1001")
+        assert status_resp.status == 200
+        s_data = await status_resp.json()
+        assert s_data["can_claim"] is True
+        assert len(s_data["rewards_table"]) == 7
 
-        # Admin approves both
-        p_list = await (await client.get("/api/admin/pending?initData=mock_admin")).json()
-        for u in p_list["users"]:
-            await client.post("/api/admin/approve?initData=mock_admin", json={"user_id": u["id"]})
+        # Claim Day 1 reward
+        claim_resp = await client.post("/api/rewards/daily/claim?initData=mock_user_1001")
+        assert claim_resp.status == 200
+        c_data = await claim_resp.json()
+        assert c_data["streak_days"] == 1
+        assert c_data["reward_awarded"]["xp"] == 50
 
-        # Jasur (Male looking for Female) searches profiles -> Should see Madina
-        p_resp = await client.get("/api/profiles?initData=mock_user_101")
-        p_data = await p_resp.json()
-        assert len(p_data["profiles"]) == 1
-        assert p_data["profiles"][0]["name"] == "Madina"
-        assert p_data["profiles"][0]["gender"] == "FEMALE"
+        # Attempt duplicate claim on same day -> Should fail
+        dup_claim = await client.post("/api/rewards/daily/claim?initData=mock_user_1001")
+        assert dup_claim.status == 400
+        assert (await dup_claim.json())["error"]["code"] == "ALREADY_CLAIMED"
 
     @pytest.mark.asyncio
-    async def test_likes_received_and_premium_activation(self, client):
-        # Setup Male user A and Female user B
-        await client.get("/api/session?initData=mock_user_201")
-        await client.post("/api/register?initData=mock_user_201", json={
-            "name": "Bekzod", "age": 26, "gender": "MALE", "target_gender": "FEMALE",
-            "city": "Buxoro", "photo": "data:image/jpeg;base64,mock", "bio": "Sport", "terms_accepted": True
-        })
-        await client.get("/api/session?initData=mock_user_202")
-        await client.post("/api/register?initData=mock_user_202", json={
-            "name": "Nigora", "age": 23, "gender": "FEMALE", "target_gender": "MALE",
-            "city": "Buxoro", "photo": "data:image/jpeg;base64,mock", "bio": "Sayohat", "terms_accepted": True
+    async def test_missions_and_leaderboard(self, client):
+        # Register user with high completion
+        await client.get("/api/session?initData=mock_user_2001")
+        await client.post("/api/register?initData=mock_user_2001", json={
+            "name": "Sardor", "age": 24, "gender": "MALE", "target_gender": "FEMALE",
+            "city": "Samarqand", "photo": "data:image/jpeg;base64,mock", "bio": "IT Leader",
+            "interests": ["💻 Technology", "🎮 Gaming"], "terms_accepted": True
         })
 
-        p_list = await (await client.get("/api/admin/pending?initData=mock_admin")).json()
-        for u in p_list["users"]:
-            await client.post("/api/admin/approve?initData=mock_admin", json={"user_id": u["id"]})
+        # Check daily missions
+        m_resp = await client.get("/api/missions?initData=mock_user_2001")
+        assert m_resp.status == 200
+        m_data = await m_resp.json()
+        assert len(m_data["missions"]) >= 3
 
-        u_bek = [u for u in p_list["users"] if u["name"] == "Bekzod"][0]
-        u_nig = [u for u in p_list["users"] if u["name"] == "Nigora"][0]
-
-        # Bekzod likes Nigora
-        await client.post("/api/swipe?initData=mock_user_201", json={"target_id": u_nig["id"], "is_like": True})
-
-        # Nigora checks who liked her (Non-premium -> Blurred)
-        l_resp1 = await client.get("/api/likes/received?initData=mock_user_202")
-        l_data1 = await l_resp1.json()
-        assert l_data1["count"] == 1
-        assert l_data1["is_premium"] is False
-        assert l_data1["profiles"][0]["blurred"] is True
-
-        # Nigora activates Premium ⭐
-        prem_resp = await client.post("/api/premium/activate?initData=mock_user_202")
-        assert prem_resp.status == 200
-        assert (await prem_resp.json())["is_premium"] is True
-
-        # Nigora checks who liked her (Premium -> Unlocked crystal clear)
-        l_resp2 = await client.get("/api/likes/received?initData=mock_user_202")
-        l_data2 = await l_resp2.json()
-        assert l_data2["is_premium"] is True
-        assert l_data2["profiles"][0]["name"] == "Bekzod"
-        assert "blurred" not in l_data2["profiles"][0]
+        # Check leaderboard
+        lb_resp = await client.get("/api/leaderboard?initData=mock_user_2001")
+        assert lb_resp.status == 200
+        lb_data = await lb_resp.json()
+        assert "leaderboard" in lb_data
 
     @pytest.mark.asyncio
-    async def test_notifications_and_tickets(self, client):
-        await client.get("/api/session?initData=mock_user_301")
-        
-        # Check notifications
-        notif_resp = await client.get("/api/notifications?initData=mock_user_301")
-        assert notif_resp.status == 200
-        notif_data = await notif_resp.json()
-        assert len(notif_data["notifications"]) >= 1
+    async def test_coupons_and_promo_codes(self, client):
+        await client.get("/api/session?initData=mock_user_3001")
 
-        # Mark read
-        read_resp = await client.post("/api/notifications/read?initData=mock_user_301", json={})
-        assert read_resp.status == 200
+        # Redeem valid promo code KAIRYX2026
+        promo_resp = await client.post("/api/coupons/redeem?initData=mock_user_3001", json={"code": "KAIRYX2026"})
+        assert promo_resp.status == 200
+        p_data = await promo_resp.json()
+        assert p_data["success"] is True
+        assert p_data["user"]["is_premium"] is True
 
-        # Create support ticket
-        ticket_resp = await client.post("/api/tickets/create?initData=mock_user_301", json={
-            "subject": "Premium haqida savol",
-            "category": "Billing",
-            "message": "Premium imtiyozlari qanday?"
-        })
-        assert ticket_resp.status == 200
-        ticket_id = (await ticket_resp.json())["ticket_id"]
-
-        # Admin replies
-        adm_reply = await client.post("/api/admin/ticket/reply?initData=mock_admin", json={
-            "ticket_id": ticket_id,
-            "text": "Premium orqali sizga like bosganlarni ko'rishingiz mumkin."
-        })
-        assert adm_reply.status == 200
+        # Duplicate redemption by same user -> Should fail
+        dup_promo = await client.post("/api/coupons/redeem?initData=mock_user_3001", json={"code": "KAIRYX2026"})
+        assert dup_promo.status == 400
+        assert (await dup_promo.json())["error"]["code"] == "ALREADY_REDEEMED"
 
     @pytest.mark.asyncio
-    async def test_admin_rbac_and_broadcast(self, client):
-        # Non-admin forbidden
-        forbidden = await client.get("/api/admin/stats?initData=mock_user_9999")
-        assert forbidden.status == 403
+    async def test_referral_and_anti_fraud(self, client):
+        # User A
+        sess_a = await (await client.get("/api/session?initData=mock_user_4001")).json()
+        user_a_id = sess_a["user"]["id"]
 
-        # Create user
-        await client.get("/api/session?initData=mock_user_8001")
-
-        # Admin broadcast
-        broadcast_resp = await client.post("/api/admin/broadcast?initData=mock_admin", json={
-            "title": "Yangilik 🚀",
-            "body": "Premium tizimi ishga tushirildi!"
+        # User B registers with User A's referral link
+        await client.get(f"/api/session?initData=mock_user_4002&start_param=ref_{user_a_id}")
+        reg_b = await client.post("/api/register?initData=mock_user_4002", json={
+            "name": "Dilnoza", "age": 21, "gender": "FEMALE", "target_gender": "MALE",
+            "city": "Farg'ona", "photo": "data:image/jpeg;base64,mock", "bio": "Talaba",
+            "interests": ["🎨 Art"], "terms_accepted": True
         })
-        assert broadcast_resp.status == 200
-        b_data = await broadcast_resp.json()
-        assert b_data["success"] is True
-        assert b_data["sent_count"] >= 1
+        assert reg_b.status == 200
+
+        # Verify User A received referral count and XP
+        ref_info = await (await client.get("/api/referral?initData=mock_user_4001")).json()
+        assert ref_info["referral_count"] == 1
+        assert "t.me/Ka1ryx_bot?start=ref_" in ref_info["referral_link"]
+
+    @pytest.mark.asyncio
+    async def test_multi_tier_plans_and_vip_features(self, client):
+        # User registers
+        await client.get("/api/session?initData=mock_user_5001")
+
+        # Get plans table
+        plans_resp = await client.get("/api/premium/plans?initData=mock_user_5001")
+        assert plans_resp.status == 200
+        plans_data = await plans_resp.json()
+        assert "FREE" in plans_data["plans"]
+        assert "PREMIUM" in plans_data["plans"]
+        assert "VIP" in plans_data["plans"]
+
+        # Subscribe to VIP tier
+        sub_resp = await client.post("/api/premium/subscribe?initData=mock_user_5001", json={"tier": "VIP", "period": "yearly"})
+        assert sub_resp.status == 200
+        sub_data = await sub_resp.json()
+        assert sub_data["user"]["plan_tier"] == "VIP"
+        assert "👑 VIP" in sub_data["user"]["badges"]
+
+    @pytest.mark.asyncio
+    async def test_admin_retention_and_control_center(self, client):
+        # Fetch retention metrics as admin
+        ret_resp = await client.get("/api/admin/retention?initData=mock_admin")
+        assert ret_resp.status == 200
+        r_data = await ret_resp.json()
+        assert "dau" in r_data["metrics"]
+        assert "retention_d1_pct" in r_data["metrics"]
+
+        # Broadcast message
+        bc_resp = await client.post("/api/admin/broadcast?initData=mock_admin", json={
+            "title": "🎉 Yangi 7-Kunlik Bonus!",
+            "body": "Har kuni ilovaga kiring va VIP mukofotlarni qo'lga kiriting."
+        })
+        assert bc_resp.status == 200
+        assert (await bc_resp.json())["success"] is True

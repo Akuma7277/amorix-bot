@@ -65,8 +65,6 @@ const I18N = {
         likesHeader: "Sizga Like bosganlar ⭐",
         matchesHeader: "O'zaro Juftliklar 💖",
         chatsHeader: "Suhbatlar 💬",
-        profileActiveBadge: "🟢 Tasdiqlangan (Faol)",
-        completionLabel: "Profil to'liqligi:",
         myBioLabel: "O'zim haqimda:",
         myInterestsLabel: "Qiziqishlarim:",
         btnEditProfile: "✏️ Profilni tahrirlash",
@@ -165,8 +163,6 @@ const I18N = {
         likesHeader: "Кому вы понравились ⭐",
         matchesHeader: "Взаимные симпатии 💖",
         chatsHeader: "Сообщения 💬",
-        profileActiveBadge: "🟢 Подтвержден (Активен)",
-        completionLabel: "Заполненность профиля:",
         myBioLabel: "О себе:",
         myInterestsLabel: "Мои интересы:",
         btnEditProfile: "✏️ Редактировать профиль",
@@ -265,8 +261,6 @@ const I18N = {
         likesHeader: "Who Liked You ⭐",
         matchesHeader: "Mutual Matches 💖",
         chatsHeader: "Conversations 💬",
-        profileActiveBadge: "🟢 Verified (Active)",
-        completionLabel: "Profile Completeness:",
         myBioLabel: "About Me:",
         myInterestsLabel: "My Interests:",
         btnEditProfile: "✏️ Edit Profile",
@@ -387,7 +381,6 @@ function applyTranslations() {
     if (document.getElementById('txtLikesHeader')) document.getElementById('txtLikesHeader').textContent = t.likesHeader;
     if (document.getElementById('txtMatchesHeader')) document.getElementById('txtMatchesHeader').textContent = t.matchesHeader;
     if (document.getElementById('txtChatsHeader')) document.getElementById('txtChatsHeader').textContent = t.chatsHeader;
-    if (document.getElementById('txtCompletionLabel')) document.getElementById('txtCompletionLabel').textContent = t.completionLabel;
     if (document.getElementById('lblMyBio')) document.getElementById('lblMyBio').textContent = t.myBioLabel;
     if (document.getElementById('lblMyInterests')) document.getElementById('lblMyInterests').textContent = t.myInterestsLabel;
     if (document.getElementById('btnEditProfile')) document.getElementById('btnEditProfile').textContent = t.btnEditProfile;
@@ -448,6 +441,7 @@ let selectedRegGender = "MALE";
 let selectedRegTargetGender = "FEMALE";
 let selectedRegInterests = [];
 let selectedEditInterests = [];
+let currentBillingPeriod = "monthly";
 
 let discoverProfiles = [];
 let currentDiscoverIndex = 0;
@@ -526,6 +520,7 @@ async function verifySession() {
                 }
             }
 
+            document.getElementById('headerStreakCount').textContent = currentUser.streak_days || 0;
             const adminBtn = document.getElementById('btnHeaderAdmin');
             if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 
@@ -779,6 +774,253 @@ function switchTab(tabId) {
     if (tabId === 'viewProfile') populateMyProfile();
 }
 
+// ----------------- GAMIFICATION: DAILY REWARD MODAL & STREAK -----------------
+async function openDailyRewardModal() {
+    document.getElementById('dailyRewardModal').style.display = 'flex';
+    const container = document.getElementById('streakGridContainer');
+    container.innerHTML = "<p style='grid-column:span 7; color:var(--text-muted);'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/rewards/daily/status?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const table = data.rewards_table;
+            const cycleDay = data.cycle_day;
+            const canClaim = data.can_claim;
+
+            container.innerHTML = "";
+            table.forEach((r, idx) => {
+                const dayNum = r.day;
+                const isClaimed = dayNum < cycleDay || (dayNum === cycleDay && !canClaim);
+                const isCurrent = dayNum === cycleDay && canClaim;
+
+                const box = document.createElement('div');
+                box.className = `streak-day-box ${isCurrent ? 'active' : ''} ${isClaimed ? 'claimed' : ''} ${dayNum === 7 ? 'bonus-day' : ''}`;
+                box.innerHTML = `
+                    <div style="font-weight:bold; font-size:10px;">${dayNum}-kun</div>
+                    <div style="font-size:16px; margin:4px 0;">${dayNum === 7 ? '⭐' : '🎁'}</div>
+                    <div style="font-size:9px; font-weight:bold;">${isClaimed ? '✓' : (isCurrent ? 'Olish' : `+${r.xp}XP`)}</div>
+                `;
+                container.appendChild(box);
+            });
+
+            const btn = document.getElementById('btnClaimDailyAction');
+            if (canClaim) {
+                btn.disabled = false;
+                btn.textContent = "🎁 BUGUNGI BONUSNI OLISH";
+                btn.style.opacity = "1";
+            } else {
+                btn.disabled = true;
+                btn.textContent = "✓ Bugungi bonus olingan (Ertaga qayting)";
+                btn.style.opacity = "0.6";
+            }
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeDailyRewardModal() { document.getElementById('dailyRewardModal').style.display = 'none'; }
+
+async function claimDailyRewardNow() {
+    try {
+        const res = await fetch(`${API_URL}/api/rewards/daily/claim?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(`🎉 Tabriklaymiz! +${data.reward_awarded.xp} XP va +${data.reward_awarded.bonus} ball hisobingizga qo'shildi!`);
+            currentUser = data.user;
+            populateMyProfile();
+            openDailyRewardModal();
+        } else {
+            alert(data.error?.message || "Xatolik yuz berdi");
+        }
+    } catch(e) { alert(e.message); }
+}
+
+// ----------------- GAMIFICATION: LEADERBOARD & MISSIONS -----------------
+async function openLeaderboardModal() {
+    document.getElementById('leaderboardModal').style.display = 'flex';
+    const container = document.getElementById('leaderboardList');
+    container.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/leaderboard?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const list = data.leaderboard;
+            container.innerHTML = "";
+            list.forEach(u => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.cssText = "padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;";
+                const medal = u.rank === 1 ? '🥇' : (u.rank === 2 ? '🥈' : (u.rank === 3 ? '🥉' : `#${u.rank}`));
+
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-weight:bold; font-size:14px; width:22px; color:var(--accent-gold);">${medal}</span>
+                        <img src="${u.photo || ''}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid var(--primary);">
+                        <div>
+                            <h4 style="margin:0; font-size:13px; color:#fff;">${u.name || 'User'}</h4>
+                            <span style="font-size:10px; color:var(--text-muted);">Level ${u.level} • 🔥 ${u.streak_days}d streak</span>
+                        </div>
+                    </div>
+                    <span style="font-weight:bold; font-size:13px; color:var(--accent-green);">${u.xp} XP</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeLeaderboardModal() { document.getElementById('leaderboardModal').style.display = 'none'; }
+
+async function loadProfileMissions() {
+    const container = document.getElementById('profileMissionsList');
+    container.innerHTML = "<p style='color:var(--text-muted); font-size:11px;'>Vazifalar tekshirilmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/missions?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            container.innerHTML = "";
+            data.missions.forEach(m => {
+                const item = document.createElement('div');
+                item.style.cssText = "background: rgba(255,255,255,0.03); border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center;";
+                const pct = Math.min(100, Math.round((m.current / m.target) * 100));
+
+                item.innerHTML = `
+                    <div style="flex:1; margin-right:10px;">
+                        <div style="font-size:12px; font-weight:bold; color:#fff;">${m.title}</div>
+                        <div style="font-size:10px; color:var(--text-muted);">${m.desc}</div>
+                        <div class="progress-bar-bg" style="height:4px; margin-top:4px;">
+                            <div class="progress-bar-fill" style="width:${pct}%;"></div>
+                        </div>
+                    </div>
+                    <span style="font-size:11px; font-weight:bold; color:${m.completed ? 'var(--accent-green)' : 'var(--accent-gold)'};">
+                        ${m.completed ? '✓ +'+m.xp+'XP' : `${m.current}/${m.target}`}
+                    </span>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = ""; }
+}
+
+// ----------------- REFERRAL CENTER -----------------
+let globalRefLink = "";
+async function openReferralModal() {
+    document.getElementById('referralModal').style.display = 'flex';
+    const container = document.getElementById('refMilestonesList');
+    container.innerHTML = "<p style='color:var(--text-muted);'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/referral?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            globalRefLink = data.referral_link;
+            document.getElementById('refLinkText').textContent = data.referral_link;
+
+            container.innerHTML = "";
+            data.milestones.forEach(m => {
+                const isUnlocked = (data.referral_count >= m.target);
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.cssText = "padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;";
+                item.innerHTML = `
+                    <div>
+                        <b>${m.target} ta do'st:</b> ${m.label}
+                    </div>
+                    <span style="font-weight:bold; color:${isUnlocked ? 'var(--accent-green)' : 'var(--text-muted)'};">
+                        ${isUnlocked ? '✓ Olingan' : `${data.referral_count}/${m.target}`}
+                    </span>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeReferralModal() { document.getElementById('referralModal').style.display = 'none'; }
+
+function copyReferralLink() {
+    if (globalRefLink) {
+        navigator.clipboard.writeText(globalRefLink);
+        alert("Referral havola nusxalandi! Do'stlaringizga yuboring 👥");
+    }
+}
+
+// ----------------- PAYWALL & MULTI-TIER PLANS -----------------
+function openPaywallModal() {
+    document.getElementById('paywallModal').style.display = 'flex';
+    updatePaywallPrices();
+}
+function closePaywallModal() { document.getElementById('paywallModal').style.display = 'none'; }
+
+function toggleBillingPeriod(period) {
+    currentBillingPeriod = period;
+    document.getElementById('btnBillingMonthly').style.background = (period === 'monthly') ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.06)';
+    document.getElementById('btnBillingMonthly').style.color = (period === 'monthly') ? '#fff' : 'var(--text-muted)';
+    document.getElementById('btnBillingYearly').style.background = (period === 'yearly') ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.06)';
+    document.getElementById('btnBillingYearly').style.color = (period === 'yearly') ? '#fff' : 'var(--text-muted)';
+    updatePaywallPrices();
+}
+
+function updatePaywallPrices() {
+    if (currentBillingPeriod === 'yearly') {
+        document.getElementById('priceLabelPremium').textContent = "410,000 UZS / yil";
+        document.getElementById('priceLabelVIP').textContent = "710,000 UZS / yil";
+    } else {
+        document.getElementById('priceLabelPremium').textContent = "49,000 UZS / oy";
+        document.getElementById('priceLabelVIP').textContent = "89,000 UZS / oy";
+    }
+}
+
+async function subscribePlan(tier) {
+    try {
+        const res = await fetch(`${API_URL}/api/premium/subscribe?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ tier: tier, period: currentBillingPeriod })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(`🎉 Tabriklaymiz! ${tier} tarifi muvaffaqiyatli faollashtirildi.`);
+            currentUser = data.user;
+            closePaywallModal();
+            populateMyProfile();
+        } else {
+            alert(data.error?.message || "Xatolik yuz berdi");
+        }
+    } catch(e) { alert(e.message); }
+}
+
+async function redeemCouponCode() {
+    const input = document.getElementById('couponInput');
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+        alert("Promo kodni kiriting!");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/coupons/redeem?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ code: code })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            input.value = "";
+            currentUser = data.user;
+            populateMyProfile();
+        } else {
+            alert(data.error?.message || "Promo kod xato");
+        }
+    } catch(e) { alert(e.message); }
+}
+
 // ----------------- DISCOVERY & SWIPING -----------------
 async function loadDiscoverProfiles() {
     const container = document.getElementById('cardStackContainer');
@@ -826,11 +1068,13 @@ function renderDiscoverCard() {
     const p = discoverProfiles[currentDiscoverIndex];
     activeTargetUser = p;
     const gIcon = p.gender === 'MALE' ? '👨' : (p.gender === 'FEMALE' ? '👩' : '🌈');
+    const isVip = (p.plan_tier === 'VIP');
 
     container.innerHTML = `
         <div class="dating-card">
             <div class="card-image-wrap" onclick="openProfileDetailModal(${p.id})">
                 <img src="${p.photo}">
+                ${isVip ? `<div style="position: absolute; top: 12px; left: 12px; background: var(--vip-gradient); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-full); box-shadow: 0 0 10px var(--vip-glow);">👑 VIP SPOTLIGHT</div>` : ''}
                 <div class="card-overlay-info">
                     <h2 style="margin: 0; font-size: 24px; color: #fff;">${p.name}, ${p.age}</h2>
                     <p style="margin: 4px 0 8px 0; color: var(--primary); font-size: 13px; font-weight: bold;">📍 ${p.city} • ${gIcon}</p>
@@ -920,7 +1164,7 @@ async function loadReceivedLikes() {
                         </div>
                         <h4 style="margin: 0; font-size: 13px; color: #fff;">${p.name}, ${p.age}</h4>
                         <p style="margin: 2px 0 6px 0; font-size: 11px; color: var(--text-muted);">${p.city}</p>
-                        <button onclick="openPremiumModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 5px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
+                        <button onclick="openPaywallModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 5px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
                     `;
                 } else {
                     // Clear profile for Premium members
@@ -939,29 +1183,6 @@ async function loadReceivedLikes() {
     } catch(e) {
         container.innerHTML = `<p style='color:var(--primary); grid-column:span 2; text-align:center;'>${e.message}</p>`;
     }
-}
-
-// ----------------- PREMIUM MODAL -----------------
-function openPremiumModal() {
-    document.getElementById('premiumModal').style.display = 'flex';
-}
-function closePremiumModal() {
-    document.getElementById('premiumModal').style.display = 'none';
-}
-
-async function activatePremiumNow() {
-    try {
-        const res = await fetch(`${API_URL}/api/premium/activate?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders()
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert("Tabriklaymiz! Kairyx Premium muvaffaqiyatli faollashtirildi ⭐");
-            closePremiumModal();
-            verifySession();
-        }
-    } catch(e) { alert(e.message); }
 }
 
 // ----------------- FILTERS & DETAIL MODALS -----------------
@@ -1213,10 +1434,26 @@ function populateMyProfile() {
     document.getElementById('myBio').textContent = currentUser.bio || "Mavjud emas";
     document.getElementById('myBalance').textContent = `${currentUser.balance || 0} UZS`;
     document.getElementById('myBonusPoints').textContent = `${currentUser.bonus_points || 0} pts`;
+    document.getElementById('myReferralCount').textContent = `${currentUser.referral_count || 0}`;
+    document.getElementById('myProfileStreak').textContent = `${currentUser.streak_days || 0}`;
 
-    const pct = currentUser.completion_percentage || 100;
-    document.getElementById('myCompletionPct').textContent = `${pct}%`;
-    document.getElementById('myCompletionBar').style.width = `${pct}%`;
+    // Level & XP Gauge
+    document.getElementById('myLevelLabel').textContent = `⭐ Level ${currentUser.level || 1}`;
+    const prog = currentUser.xp_progress || { current: 0, needed: 200, pct: 0 };
+    document.getElementById('myXPLabel').textContent = `${prog.current} / ${prog.needed} XP`;
+    document.getElementById('myXPProgressBar').style.width = `${prog.pct}%`;
+
+    // Badges Showcase
+    const badgesContainer = document.getElementById('myBadgesContainer');
+    badgesContainer.innerHTML = "";
+    const badges = currentUser.badges || [];
+    badges.forEach(b => {
+        const span = document.createElement('span');
+        span.className = "tag-badge";
+        span.style.cssText = "background: rgba(255,183,0,0.12); border-color: var(--accent-gold); color: var(--accent-gold); font-weight: bold;";
+        span.textContent = b;
+        badgesContainer.appendChild(span);
+    });
 
     const intContainer = document.getElementById('myInterestsList');
     intContainer.innerHTML = "";
@@ -1226,6 +1463,8 @@ function populateMyProfile() {
         b.textContent = tag;
         intContainer.appendChild(b);
     });
+
+    loadProfileMissions();
 }
 
 function openEditProfileModal() {
@@ -1345,7 +1584,7 @@ function openRulesModal() {
 }
 function closeRulesModal() { document.getElementById('rulesModal').style.display = 'none'; }
 
-// ----------------- ADMIN DASHBOARD -----------------
+// ----------------- ADMIN DASHBOARD & RETENTION -----------------
 function openAdminScreen() {
     previousViewBeforeAdmin = currentView;
     showView('adminScreen');
@@ -1490,17 +1729,17 @@ async function submitNewSupportTicket() {
     } catch(e) { alert(e.message); }
 }
 
-let currentAdminTab = "pending";
+let currentAdminTab = "retention";
 
 function switchAdminTab(tab) {
     currentAdminTab = tab;
-    const sections = ['admSecPending', 'admSecReports', 'admSecTickets', 'admSecUsers', 'admSecBroadcast', 'admSecAudit'];
+    const sections = ['admSecRetention', 'admSecPending', 'admSecReports', 'admSecTickets', 'admSecUsers', 'admSecBroadcast', 'admSecAudit'];
     sections.forEach(s => {
         const el = document.getElementById(s);
         if (el) el.style.display = (s === `admSec${tab.charAt(0).toUpperCase() + tab.slice(1)}`) ? 'block' : 'none';
     });
 
-    const btns = ['btnAdmTabPending', 'btnAdmTabReports', 'btnAdmTabTickets', 'btnAdmTabUsers', 'btnAdmTabBroadcast', 'btnAdmTabAudit'];
+    const btns = ['btnAdmTabRetention', 'btnAdmTabPending', 'btnAdmTabReports', 'btnAdmTabTickets', 'btnAdmTabUsers', 'btnAdmTabBroadcast', 'btnAdmTabAudit'];
     btns.forEach(b => {
         const el = document.getElementById(b);
         if (el) {
@@ -1509,6 +1748,7 @@ function switchAdminTab(tab) {
         }
     });
 
+    if (tab === 'retention') loadAdminRetention();
     if (tab === 'pending') loadAdminPending();
     if (tab === 'reports') loadAdminReports();
     if (tab === 'tickets') loadAdminTickets();
@@ -1523,10 +1763,27 @@ async function loadAdminData() {
         if (data.success) {
             document.getElementById('admStatPending').textContent = data.stats.pending;
             document.getElementById('admStatApproved').textContent = data.stats.approved;
+            document.getElementById('admStatPremium').textContent = data.stats.premium_users;
             document.getElementById('admStatTotal').textContent = data.stats.total;
         }
     } catch (e) {}
     switchAdminTab(currentAdminTab);
+}
+
+async function loadAdminRetention() {
+    try {
+        const res = await fetch(`${API_URL}/api/admin/retention?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('retDau').textContent = data.metrics.dau;
+            document.getElementById('retWau').textContent = data.metrics.wau;
+            document.getElementById('retMau').textContent = data.metrics.mau;
+            document.getElementById('retStreakUsers').textContent = data.metrics.streak_3_plus;
+            document.getElementById('retD1').textContent = data.metrics.retention_d1_pct;
+            document.getElementById('retD7').textContent = data.metrics.retention_d7_pct;
+            document.getElementById('retConv').textContent = data.metrics.conversion_rate;
+        }
+    } catch(e) {}
 }
 
 async function loadAdminPending() {
@@ -1772,7 +2029,7 @@ async function openAdminUserDetail(userId) {
                 <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; font-size: 12px;">
                     <p style="margin: 0 0 4px 0;"><b>Shahar:</b> ${u.city || '—'} • <b>Jinsi:</b> ${u.gender} (Qidiruv: ${u.target_gender})</p>
                     <p style="margin: 0 0 4px 0;"><b>Bio:</b> ${u.bio || '—'}</p>
-                    <p style="margin: 0;"><b>Balans:</b> ${u.balance} UZS (${u.bonus_points} pts) • <b>Premium:</b> ${u.is_premium ? 'HA ⭐' : 'YO`Q'}</p>
+                    <p style="margin: 0;"><b>Tarif:</b> ${u.plan_tier} • <b>XP:</b> ${u.xp} (Lvl ${u.level}) • <b>Streak:</b> ${u.streak_days}d</p>
                 </div>
 
                 <h4 style="margin: 10px 0 4px 0; color: var(--accent-gold);">Statusni o'zgartirish:</h4>
