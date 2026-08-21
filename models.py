@@ -42,9 +42,11 @@ class User(Base):
     role = Column(String(32), default="USER", nullable=False)
     status = Column(Enum(UserStatus, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=UserStatus.DRAFT, nullable=False)
     
-    # Financial / Points
+    # Financial & Premium
     balance = Column(Float, default=0.0)
     bonus_points = Column(Integer, default=0)
+    is_premium = Column(Boolean, default=False)
+    premium_until = Column(DateTime, nullable=True)
     
     # Settings & Localization
     language = Column(String(10), default="uz", nullable=False)
@@ -53,6 +55,8 @@ class User(Base):
     name = Column(String, nullable=True)
     age = Column(Integer, nullable=True)
     city = Column(String, nullable=True)
+    gender = Column(String(20), default="OTHER", nullable=False) # MALE, FEMALE, OTHER
+    target_gender = Column(String(20), default="ANY", nullable=False) # MALE, FEMALE, ANY
     photo = Column(Text, nullable=True)
     bio = Column(Text, nullable=True)
     interests = Column(Text, nullable=True) # JSON list string e.g. ["🎮 Gaming", "🎵 Music"]
@@ -80,7 +84,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False, index=True)
-    type = Column(String(32), default="system", nullable=False) # system, account, security, match, message, admin
+    type = Column(String(32), default="system", nullable=False) # system, account, security, match, message, like, admin
     title = Column(String(128), nullable=False)
     body = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)

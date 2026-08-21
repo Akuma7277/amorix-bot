@@ -49,7 +49,6 @@ def validate_telegram_init_data(init_data: str, bot_token: str) -> dict | None:
         if not received_hash:
             return user_dict
 
-        # Replay attack protection (within 24 hours)
         if auth_date:
             try:
                 auth_ts = int(auth_date)
@@ -106,13 +105,15 @@ def parse_json_safely(val, default=None):
 
 def calculate_completion(user) -> int:
     score = 0
-    if user.name: score += 20
+    if user.name: score += 15
     if user.age and user.age >= 18: score += 15
+    if user.gender: score += 10
+    if user.target_gender: score += 10
     if user.city: score += 15
-    if user.photo: score += 25
-    if user.bio: score += 15
+    if user.photo: score += 20
+    if user.bio: score += 10
     interests = parse_json_safely(user.interests)
-    if interests and len(interests) > 0: score += 10
+    if interests and len(interests) > 0: score += 5
     return min(100, score)
 
 def serialize_user(user, include_private=False):
@@ -124,6 +125,8 @@ def serialize_user(user, include_private=False):
         "status": get_user_status_str(user.status),
         "name": user.name,
         "age": user.age,
+        "gender": user.gender or "OTHER",
+        "target_gender": user.target_gender or "ANY",
         "city": user.city,
         "photo": user.photo,
         "bio": user.bio,
@@ -131,6 +134,8 @@ def serialize_user(user, include_private=False):
         "language": user.language or "uz",
         "balance": float(user.balance or 0.0),
         "bonus_points": int(user.bonus_points or 0),
+        "is_premium": bool(user.is_premium),
+        "premium_until": user.premium_until.isoformat() if user.premium_until else None,
         "is_verified": bool(user.is_verified),
         "completion_percentage": calculate_completion(user),
         "last_active": user.last_active_at.isoformat() if user.last_active_at else None,
@@ -178,7 +183,7 @@ async def handle_system_health(request):
             "database": "CONNECTED",
             "uptime_seconds": uptime_seconds,
             "uptime_formatted": str(timedelta(seconds=uptime_seconds)),
-            "version": "2.9.0-Enterprise"
+            "version": "2.10.0-Enterprise"
         }
     })
 
@@ -205,13 +210,14 @@ async def handle_session(request):
                 username=tg_user.get("username"),
                 role=default_role,
                 status=UserStatus.DRAFT,
-                language="uz"
+                language="uz",
+                gender="OTHER",
+                target_gender="ANY"
             )
             session.add(user)
             await session.commit()
             await session.refresh(user)
 
-            # Send welcome notification
             welcome_notif = Notification(
                 user_id=user.id,
                 type="system",
@@ -233,6 +239,13 @@ async def handle_session(request):
         ))
         unread_notifs = (await session.execute(notif_stmt)).scalar() or 0
 
+        # Count received likes
+        likes_stmt = select(func.count()).select_from(Swipe).where(and_(
+            Swipe.swiped_id == user.id,
+            Swipe.is_like == True
+        ))
+        likes_received_count = (await session.execute(likes_stmt)).scalar() or 0
+
         status_str = get_user_status_str(user.status)
         return web.json_response({
             "success": True,
@@ -240,6 +253,7 @@ async def handle_session(request):
             "is_admin": admin_flag,
             "role": user.role,
             "unread_notifications": unread_notifs,
+            "likes_received_count": likes_received_count,
             "user": serialize_user(user, include_private=True)
         })
 
@@ -255,6 +269,8 @@ async def handle_register(request):
 
     name = data.get("name")
     age = data.get("age")
+    gender = data.get("gender", "OTHER")
+    target_gender = data.get("target_gender", "ANY")
     city = data.get("city")
     photo = data.get("photo")
     bio = data.get("bio")
@@ -287,6 +303,8 @@ async def handle_register(request):
         old_status = get_user_status_str(user.status)
         user.name = str(name).strip()
         user.age = age_int
+        user.gender = str(gender).upper()
+        user.target_gender = str(target_gender).upper()
         user.city = str(city).strip()
         user.photo = photo
         user.bio = str(bio).strip()
@@ -297,7 +315,6 @@ async def handle_register(request):
         user.status = UserStatus.PENDING_APPROVAL
         user.last_active_at = datetime.now()
 
-        # Log status transition
         hist = UserStatusHistory(
             user_id=user.id,
             old_status=old_status,
@@ -307,7 +324,6 @@ async def handle_register(request):
         )
         session.add(hist)
 
-        # Send notification
         notif = Notification(
             user_id=user.id,
             type="account",
@@ -345,6 +361,10 @@ async def handle_profile_update(request):
             user.name = str(data["name"]).strip()
         if "city" in data and data["city"]:
             user.city = str(data["city"]).strip()
+        if "gender" in data and data["gender"]:
+            user.gender = str(data["gender"]).upper()
+        if "target_gender" in data and data["target_gender"]:
+            user.target_gender = str(data["target_gender"]).upper()
         if "bio" in data and data["bio"]:
             user.bio = str(data["bio"]).strip()
         if "photo" in data and data["photo"]:
@@ -390,6 +410,97 @@ async def handle_account_delete(request):
         await session.commit()
 
         return web.json_response({"success": True, "message": "Account successfully deactivated"})
+
+# ----------------- PREMIUM & LIKES RECEIVED -----------------
+async def handle_likes_received(request):
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
+
+    async with async_session_maker() as session:
+        curr_user = (await session.execute(select(User).where(User.telegram_id == tg_user["id"]))).scalar_one_or_none()
+        if not curr_user:
+            return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
+
+        # Find swipers who liked current user
+        swipes_stmt = select(Swipe.swiper_id).where(and_(
+            Swipe.swiped_id == curr_user.id,
+            Swipe.is_like == True
+        ))
+        liker_ids = (await session.execute(swipes_stmt)).scalars().all()
+
+        if not liker_ids:
+            return web.json_response({
+                "success": True,
+                "count": 0,
+                "is_premium": bool(curr_user.is_premium),
+                "profiles": []
+            })
+
+        # Exclude blocked users
+        b_res = await session.execute(select(Block.blocked_id).where(Block.blocker_id == curr_user.id))
+        blocked_ids = set(b_res.scalars().all())
+        valid_liker_ids = [lid for lid in liker_ids if lid not in blocked_ids]
+
+        stmt = select(User).where(User.id.in_(valid_liker_ids))
+        likers = (await session.execute(stmt)).scalars().all()
+
+        if curr_user.is_premium:
+            # Full profile view for Premium members
+            profiles = [serialize_user(u) for u in likers if not u.is_deleted]
+            return web.json_response({
+                "success": True,
+                "count": len(profiles),
+                "is_premium": True,
+                "profiles": profiles
+            })
+        else:
+            # Teaser with blurred avatars for non-premium
+            profiles = [
+                {
+                    "id": u.id,
+                    "name": u.name[:1] + "***",
+                    "age": u.age,
+                    "city": u.city,
+                    "photo": u.photo,
+                    "blurred": True
+                } for u in likers if not u.is_deleted
+            ]
+            return web.json_response({
+                "success": True,
+                "count": len(profiles),
+                "is_premium": False,
+                "profiles": profiles
+            })
+
+async def handle_premium_activate(request):
+    tg_user = get_telegram_user(request)
+    if not tg_user:
+        return web.json_response({"success": False, "error": {"code": "AUTH_FAILED"}}, status=401)
+
+    async with async_session_maker() as session:
+        curr_user = (await session.execute(select(User).where(User.telegram_id == tg_user["id"]))).scalar_one_or_none()
+        if not curr_user:
+            return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
+
+        curr_user.is_premium = True
+        curr_user.premium_until = datetime.now() + timedelta(days=30)
+
+        notif = Notification(
+            user_id=curr_user.id,
+            type="system",
+            title="Kairyx Premium faollashtirildi! ⭐",
+            body="Tabriklaymiz! Endi sizga kim Like bosganini to'liq ko'rishingiz va to'g'ridan-to'g'ri suhbat boshlashingiz mumkin."
+        )
+        session.add(notif)
+        await session.commit()
+
+        return web.json_response({
+            "success": True,
+            "message": "Premium activated successfully",
+            "is_premium": True,
+            "premium_until": curr_user.premium_until.isoformat()
+        })
 
 # ----------------- NOTIFICATIONS & TICKETS -----------------
 async def handle_notifications_list(request):
@@ -446,7 +557,6 @@ async def handle_notifications_read(request):
             if n:
                 n.is_read = True
         else:
-            # Mark all as read
             stmt = update(Notification).where(Notification.user_id == curr_id).values(is_read=True)
             await session.execute(stmt)
 
@@ -582,7 +692,7 @@ async def handle_profiles(request):
     min_age = request.query.get("min_age")
     max_age = request.query.get("max_age")
     city_filter = request.query.get("city")
-    interest_filter = request.query.get("interest")
+    gender_filter = request.query.get("gender") # Manual filter if any
 
     async with async_session_maker() as session:
         user_res = await session.execute(select(User).where(User.telegram_id == tg_user["id"]))
@@ -608,6 +718,11 @@ async def handle_profiles(request):
         if excluded_ids:
             stmt = stmt.where(~User.id.in_(list(excluded_ids)))
 
+        # Target gender preference filter
+        preferred_gender = gender_filter or curr_user.target_gender
+        if preferred_gender and preferred_gender != "ANY":
+            stmt = stmt.where(User.gender == preferred_gender)
+
         if min_age:
             try: stmt = stmt.where(User.age >= int(min_age))
             except Exception: pass
@@ -623,13 +738,7 @@ async def handle_profiles(request):
         res = await session.execute(stmt)
         profiles = res.scalars().all()
 
-        results = []
-        for p in profiles:
-            p_interests = parse_json_safely(p.interests)
-            if interest_filter and interest_filter not in p_interests:
-                continue
-            results.append(serialize_user(p))
-
+        results = [serialize_user(p) for p in profiles]
         return web.json_response({"success": True, "profiles": results})
 
 async def handle_swipe(request):
@@ -674,12 +783,14 @@ async def handle_swipe(request):
         partner_info = None
 
         if is_like:
+            # Check if partner already liked
             partner_swipe_res = await session.execute(select(Swipe).where(and_(
                 Swipe.swiper_id == target_user.id,
                 Swipe.swiped_id == curr_user.id,
                 Swipe.is_like == True
             )))
             if partner_swipe_res.scalar_one_or_none():
+                # MUTUAL MATCH!
                 u1 = min(curr_user.id, target_user.id)
                 u2 = max(curr_user.id, target_user.id)
                 m_res = await session.execute(select(Match).where(and_(Match.user1_id == u1, Match.user2_id == u2)))
@@ -691,23 +802,32 @@ async def handle_swipe(request):
                     await session.flush()
                     session.add(Message(match_id=match.id, sender_id=0, text="🎉 Sizlarda o'zaro moslik bor! Suhbatni boshlang."))
 
-                    # Send notifications to both
+                    # Send mutual match notifications to both
                     session.add(Notification(
                         user_id=curr_user.id,
                         type="match",
                         title="Yangi juftlik! ❤️",
-                        body=f"Siz va {target_user.name} bir-biringizga yoqdingiz!"
+                        body=f"Siz va {target_user.name} bir-biringizga yoqdingiz! Suhbatni boshlang."
                     ))
                     session.add(Notification(
                         user_id=target_user.id,
                         type="match",
                         title="Yangi juftlik! ❤️",
-                        body=f"Siz va {curr_user.name} bir-biringizga yoqdingiz!"
+                        body=f"Siz va {curr_user.name} bir-biringizga yoqdingiz! Suhbatni boshlang."
                     ))
 
                 match_created = True
                 match_id = match.id
                 partner_info = serialize_user(target_user)
+            else:
+                # One-way like: send mystery like notification to target
+                session.add(Notification(
+                    user_id=target_user.id,
+                    type="like",
+                    title="Sizga kimdir yoqdi! 👀",
+                    body="Kim yoqtirganini bilish uchun Kairyx Premium-ni faollashtiring yoki siz ham Like bosing.",
+                    deep_link="viewLikes"
+                ))
 
         curr_user.last_active_at = datetime.now()
         await session.commit()
@@ -784,7 +904,6 @@ async def handle_chat_messages(request):
             return web.json_response({"success": False, "error": {"code": "FORBIDDEN"}}, status=403)
 
         partner_id = match_record.user2_id if match_record.user1_id == curr_id else match_record.user1_id
-        # Check blocks
         b_res = await session.execute(select(Block).where(or_(
             and_(Block.blocker_id == curr_id, Block.blocked_id == partner_id),
             and_(Block.blocker_id == partner_id, Block.blocked_id == curr_id)
@@ -1118,15 +1237,12 @@ async def handle_admin_user_detail(request):
         if not user:
             return web.json_response({"success": False, "error": {"code": "USER_NOT_FOUND"}}, status=404)
 
-        # Status History
         hist_stmt = select(UserStatusHistory).where(UserStatusHistory.user_id == user.id).order_by(UserStatusHistory.created_at.desc())
         history = (await session.execute(hist_stmt)).scalars().all()
 
-        # Admin Notes
         notes_stmt = select(AdminNote).where(AdminNote.user_id == user.id).order_by(AdminNote.created_at.desc())
         notes = (await session.execute(notes_stmt)).scalars().all()
 
-        # Tickets
         t_stmt = select(SupportTicket).where(SupportTicket.user_id == user.id).order_by(SupportTicket.created_at.desc())
         tickets = (await session.execute(t_stmt)).scalars().all()
 
@@ -1253,7 +1369,7 @@ async def handle_admin_report_resolve(request):
         return web.json_response({"success": False, "error": {"code": "INVALID_JSON"}}, status=400)
 
     report_id = data.get("report_id")
-    action = data.get("action") # RESOLVE, BAN_USER, REJECT
+    action = data.get("action")
 
     async with async_session_maker() as session:
         report = (await session.execute(select(Report).where(Report.id == int(report_id)))).scalar_one_or_none()
@@ -1347,7 +1463,6 @@ async def handle_admin_ticket_reply(request):
         ticket.status = "ANSWERED"
         ticket.updated_at = datetime.now()
 
-        # Send notification to user
         session.add(Notification(
             user_id=ticket.user_id,
             type="admin",
@@ -1448,7 +1563,7 @@ async def handle_index(request):
         resp = web.FileResponse(index_path)
         resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         return resp
-    return web.json_response({"message": "Kairyx API Server - Enterprise v2.9.0"})
+    return web.json_response({"message": "Kairyx API Server - Enterprise v2.10.0"})
 
 async def serve_style(request):
     webapp_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1500,7 +1615,7 @@ def create_webapp_app() -> web.Application:
         try:
             async with engine_module.engine.begin() as conn:
                 try:
-                    # Universal PostgreSQL auto-migration for Enums & Columns
+                    # PostgreSQL column auto-migration
                     await conn.execute(text("""
                         DO $$
                         DECLARE
@@ -1514,55 +1629,18 @@ def create_webapp_app() -> web.Application:
                                 EXECUTE format('ALTER TABLE %I ALTER COLUMN %I TYPE VARCHAR(64) USING %I::text;', r.table_name, r.column_name, r.column_name);
                             END LOOP;
 
-                            -- Users columns
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'role') THEN
-                                ALTER TABLE users ADD COLUMN role VARCHAR(32) DEFAULT 'USER';
+                            -- Users gender & target_gender & premium
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'gender') THEN
+                                ALTER TABLE users ADD COLUMN gender VARCHAR(20) DEFAULT 'OTHER';
                             END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'balance') THEN
-                                ALTER TABLE users ADD COLUMN balance DOUBLE PRECISION DEFAULT 0.0;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'target_gender') THEN
+                                ALTER TABLE users ADD COLUMN target_gender VARCHAR(20) DEFAULT 'ANY';
                             END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'bonus_points') THEN
-                                ALTER TABLE users ADD COLUMN bonus_points INTEGER DEFAULT 0;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_premium') THEN
+                                ALTER TABLE users ADD COLUMN is_premium BOOLEAN DEFAULT FALSE;
                             END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'language') THEN
-                                ALTER TABLE users ADD COLUMN language VARCHAR(10) DEFAULT 'uz';
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'interests') THEN
-                                ALTER TABLE users ADD COLUMN interests TEXT;
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_verified') THEN
-                                ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT FALSE;
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_deleted') THEN
-                                ALTER TABLE users ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE;
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'last_active_at') THEN
-                                ALTER TABLE users ADD COLUMN last_active_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-                            END IF;
-
-                            -- Reports columns
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'reason') THEN
-                                ALTER TABLE reports ADD COLUMN reason VARCHAR(64) DEFAULT 'Other';
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'description') THEN
-                                ALTER TABLE reports ADD COLUMN description TEXT;
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'status') THEN
-                                ALTER TABLE reports ADD COLUMN status VARCHAR(32) DEFAULT 'OPEN';
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'reporter_id') THEN
-                                ALTER TABLE reports ADD COLUMN reporter_id INTEGER;
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'reported_id') THEN
-                                ALTER TABLE reports ADD COLUMN reported_id INTEGER;
-                            END IF;
-
-                            -- Blocks columns
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'blocks' AND column_name = 'blocker_id') THEN
-                                ALTER TABLE blocks ADD COLUMN blocker_id INTEGER;
-                            END IF;
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'blocks' AND column_name = 'blocked_id') THEN
-                                ALTER TABLE blocks ADD COLUMN blocked_id INTEGER;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'premium_until') THEN
+                                ALTER TABLE users ADD COLUMN premium_until TIMESTAMP;
                             END IF;
                         END $$;
                     """))
@@ -1587,6 +1665,10 @@ def create_webapp_app() -> web.Application:
     app.router.add_post("/api/profile/update", handle_profile_update)
     app.router.add_post("/api/account/delete", handle_account_delete)
     
+    # Premium & Received Likes
+    app.router.add_get("/api/likes/received", handle_likes_received)
+    app.router.add_post("/api/premium/activate", handle_premium_activate)
+
     # Notifications & Support Tickets
     app.router.add_get("/api/notifications", handle_notifications_list)
     app.router.add_post("/api/notifications/read", handle_notifications_read)

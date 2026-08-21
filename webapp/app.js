@@ -13,9 +13,10 @@ const I18N = {
         step1Title: "Qadam 1: Tilni tanlash",
         step2Title: "Qadam 2: Yoshni tasdiqlash",
         step3Title: "Qadam 3: Shaxsiy ma'lumotlar",
-        step4Title: "Qadam 4: Profil surati",
-        step5Title: "Qadam 5: Bio va Qiziqishlar",
-        step6Title: "Qadam 6: Anketani tasdiqlash",
+        step4Title: "Qadam 4: Jinsingiz va Qidiruv",
+        step5Title: "Qadam 5: Profil surati",
+        step6Title: "Qadam 6: Bio va Qiziqishlar",
+        step7Title: "Qadam 7: Anketani tasdiqlash",
         reg1Title: "Tilni tanlang / Select Language 🌐",
         reg1Sub: "Ilovadan qaysi tilda foydalanmoqchisiz?",
         reg2Title: "Kairyx-ga xush kelibsiz! 👋",
@@ -26,14 +27,23 @@ const I18N = {
         namePlaceholder: "Ismingizni kiriting",
         lblCity: "Shahringiz *",
         cityPlaceholder: "Masalan: Toshkent",
-        reg4Title: "Profil surati 📸",
-        reg4Sub: "Yuzingiz aniq ko'ringan sifatli rasmingizni yuklang.",
+        reg4Title: "Jinsingiz va Qidiruv 🚻",
+        lblMyGender: "Sizning jinsingiz:",
+        genderMale: "Erkak",
+        genderFemale: "Ayol",
+        genderOther: "Noma'lum",
+        lblTargetGender: "Kimni qidiryapsiz?",
+        targetFemale: "Ayol",
+        targetMale: "Erkak",
+        targetAny: "Noma'lum",
+        reg5Title: "Profil surati 📸",
+        reg5Sub: "Yuzingiz aniq ko'ringan sifatli rasmingizni yuklang.",
         photoPlaceholder: "Rasm tanlash",
-        reg5Title: "Qiziqishlar va Bio 🎨",
+        reg6Title: "Qiziqishlar va Bio 🎨",
         lblBio: "O'zingiz haqingizda",
         bioPlaceholder: "Nimaga qiziqasiz, kimni izlayapsiz...",
         lblInterests: "Qiziqishlaringizni tanlang:",
-        reg6Title: "Anketani tasdiqlash 📋",
+        reg7Title: "Anketani tasdiqlash 📋",
         termsAgree: "Men",
         termsLink: "Foydalanish Qoidalari",
         termsEnd: "ga roziman.",
@@ -52,6 +62,7 @@ const I18N = {
         btnRetry: "Qayta urinish",
         discoverTitle: "Yangi anketalar",
         btnFilter: "⚡ Filtrlash",
+        likesHeader: "Sizga Like bosganlar ⭐",
         matchesHeader: "O'zaro Juftliklar 💖",
         chatsHeader: "Suhbatlar 💬",
         profileActiveBadge: "🟢 Tasdiqlangan (Faol)",
@@ -86,6 +97,7 @@ const I18N = {
         btnUnderstood: "Tushundim",
         noProfiles: "Hozircha anketalar tugadi",
         noProfilesSub: "Yangi a'zolar qo'shilgach bu yerda ko'rinadi.",
+        noLikes: "Hozircha sizga Like bosganlar yo'q.",
         noMatches: "Hozircha juftliklar yo'q. Discover bo'limida Like bosing!",
         noChats: "Suhbatlar mavjud emas.",
         rulesList: [
@@ -101,9 +113,10 @@ const I18N = {
         step1Title: "Шаг 1: Выбор языка",
         step2Title: "Шаг 2: Подтверждение возраста",
         step3Title: "Шаг 3: Личные данные",
-        step4Title: "Шаг 4: Фото профиля",
-        step5Title: "Шаг 5: О себе и интересы",
-        step6Title: "Шаг 6: Подтверждение анкеты",
+        step4Title: "Шаг 4: Пол и предпочтения",
+        step5Title: "Шаг 5: Фото профиля",
+        step6Title: "Шаг 6: О себе и интересы",
+        step7Title: "Шаг 7: Подтверждение анкеты",
         reg1Title: "Выберите язык / Tilni tanlang 🌐",
         reg1Sub: "На каком языке вам удобнее продолжить?",
         reg2Title: "Добро пожаловать в Kairyx! 👋",
@@ -114,14 +127,23 @@ const I18N = {
         namePlaceholder: "Введите ваше имя",
         lblCity: "Ваш город *",
         cityPlaceholder: "Например: Ташкент",
-        reg4Title: "Фото профиля 📸",
-        reg4Sub: "Загрузите качественное фото, где хорошо видно лицо.",
+        reg4Title: "Пол и предпочтения 🚻",
+        lblMyGender: "Ваш пол:",
+        genderMale: "Мужской",
+        genderFemale: "Женский",
+        genderOther: "Другой",
+        lblTargetGender: "Кого вы ищете?",
+        targetFemale: "Девушек",
+        targetMale: "Парней",
+        targetAny: "Не важно",
+        reg5Title: "Фото профиля 📸",
+        reg5Sub: "Загрузите качественное фото, где хорошо видно лицо.",
         photoPlaceholder: "Выбрать фото",
-        reg5Title: "Интересы и О себе 🎨",
+        reg6Title: "Интересы и О себе 🎨",
         lblBio: "О себе",
         bioPlaceholder: "Чем увлекаетесь, кого ищете...",
         lblInterests: "Выберите ваши интересы:",
-        reg6Title: "Подтверждение анкеты 📋",
+        reg7Title: "Подтверждение анкеты 📋",
         termsAgree: "Я принимаю",
         termsLink: "Правила использования",
         termsEnd: ".",
@@ -140,6 +162,7 @@ const I18N = {
         btnRetry: "Повторить попытку",
         discoverTitle: "Новые анкеты",
         btnFilter: "⚡ Фильтры",
+        likesHeader: "Кому вы понравились ⭐",
         matchesHeader: "Взаимные симпатии 💖",
         chatsHeader: "Сообщения 💬",
         profileActiveBadge: "🟢 Подтвержден (Активен)",
@@ -174,6 +197,7 @@ const I18N = {
         btnUnderstood: "Понятно",
         noProfiles: "Анкеты закончились",
         noProfilesSub: "Новые пользователи появятся здесь позже.",
+        noLikes: "Пока никто не поставил вам лайк.",
         noMatches: "Симпатий пока нет. Ставьте Like в разделе Discover!",
         noChats: "Диалогов пока нет.",
         rulesList: [
@@ -189,9 +213,10 @@ const I18N = {
         step1Title: "Step 1: Select Language",
         step2Title: "Step 2: Age Verification",
         step3Title: "Step 3: Personal Information",
-        step4Title: "Step 4: Profile Photo",
-        step5Title: "Step 5: Bio & Interests",
-        step6Title: "Step 6: Confirmation",
+        step4Title: "Step 4: Gender & Preferences",
+        step5Title: "Step 5: Profile Photo",
+        step6Title: "Step 6: Bio & Interests",
+        step7Title: "Step 7: Confirmation",
         reg1Title: "Select Language 🌐",
         reg1Sub: "Which language do you prefer to use?",
         reg2Title: "Welcome to Kairyx! 👋",
@@ -202,14 +227,23 @@ const I18N = {
         namePlaceholder: "Enter your name",
         lblCity: "Your City *",
         cityPlaceholder: "e.g. Tashkent, London",
-        reg4Title: "Profile Photo 📸",
-        reg4Sub: "Upload a clear photo where your face is well visible.",
+        reg4Title: "Gender & Preferences 🚻",
+        lblMyGender: "Your Gender:",
+        genderMale: "Male",
+        genderFemale: "Female",
+        genderOther: "Other",
+        lblTargetGender: "Looking for:",
+        targetFemale: "Women",
+        targetMale: "Men",
+        targetAny: "Anyone",
+        reg5Title: "Profile Photo 📸",
+        reg5Sub: "Upload a clear photo where your face is well visible.",
         photoPlaceholder: "Choose photo",
-        reg5Title: "Bio & Interests 🎨",
+        reg6Title: "Bio & Interests 🎨",
         lblBio: "About You",
         bioPlaceholder: "What are you looking for...",
         lblInterests: "Select your interests:",
-        reg6Title: "Confirm Profile 📋",
+        reg7Title: "Confirm Profile 📋",
         termsAgree: "I agree to the",
         termsLink: "Terms of Service",
         termsEnd: ".",
@@ -228,6 +262,7 @@ const I18N = {
         btnRetry: "Retry",
         discoverTitle: "Discover New People",
         btnFilter: "⚡ Filters",
+        likesHeader: "Who Liked You ⭐",
         matchesHeader: "Mutual Matches 💖",
         chatsHeader: "Conversations 💬",
         profileActiveBadge: "🟢 Verified (Active)",
@@ -262,6 +297,7 @@ const I18N = {
         btnUnderstood: "Understood",
         noProfiles: "No more profiles right now",
         noProfilesSub: "New members will appear here soon.",
+        noLikes: "No likes yet.",
         noMatches: "No matches yet. Swipe and like profiles in Discover!",
         noChats: "No conversations yet.",
         rulesList: [
@@ -300,23 +336,35 @@ function applyTranslations() {
     if (document.getElementById('btnRegNext3')) document.getElementById('btnRegNext3').textContent = t.btnNext;
 
     if (document.getElementById('txtRegStep4Title')) document.getElementById('txtRegStep4Title').textContent = t.reg4Title;
-    if (document.getElementById('txtRegStep4Sub')) document.getElementById('txtRegStep4Sub').textContent = t.reg4Sub;
-    if (document.getElementById('txtPhotoPlaceholder')) document.getElementById('txtPhotoPlaceholder').textContent = t.photoPlaceholder;
+    if (document.getElementById('lblMyGender')) document.getElementById('lblMyGender').textContent = t.lblMyGender;
+    if (document.getElementById('txtGenderMale')) document.getElementById('txtGenderMale').textContent = t.genderMale;
+    if (document.getElementById('txtGenderFemale')) document.getElementById('txtGenderFemale').textContent = t.genderFemale;
+    if (document.getElementById('txtGenderOther')) document.getElementById('txtGenderOther').textContent = t.genderOther;
+    if (document.getElementById('lblTargetGender')) document.getElementById('lblTargetGender').textContent = t.lblTargetGender;
+    if (document.getElementById('txtTargetFemale')) document.getElementById('txtTargetFemale').textContent = t.targetFemale;
+    if (document.getElementById('txtTargetMale')) document.getElementById('txtTargetMale').textContent = t.targetMale;
+    if (document.getElementById('txtTargetAny')) document.getElementById('txtTargetAny').textContent = t.targetAny;
     if (document.getElementById('btnRegBack4')) document.getElementById('btnRegBack4').textContent = t.btnBack;
     if (document.getElementById('btnRegNext4')) document.getElementById('btnRegNext4').textContent = t.btnNext;
 
     if (document.getElementById('txtRegStep5Title')) document.getElementById('txtRegStep5Title').textContent = t.reg5Title;
-    if (document.getElementById('lblRegBio')) document.getElementById('lblRegBio').textContent = t.lblBio;
-    if (document.getElementById('regBio')) document.getElementById('regBio').placeholder = t.bioPlaceholder;
-    if (document.getElementById('lblRegInterests')) document.getElementById('lblRegInterests').textContent = t.lblInterests;
+    if (document.getElementById('txtRegStep5Sub')) document.getElementById('txtRegStep5Sub').textContent = t.reg5Sub;
+    if (document.getElementById('txtPhotoPlaceholder')) document.getElementById('txtPhotoPlaceholder').textContent = t.photoPlaceholder;
     if (document.getElementById('btnRegBack5')) document.getElementById('btnRegBack5').textContent = t.btnBack;
     if (document.getElementById('btnRegNext5')) document.getElementById('btnRegNext5').textContent = t.btnNext;
 
     if (document.getElementById('txtRegStep6Title')) document.getElementById('txtRegStep6Title').textContent = t.reg6Title;
+    if (document.getElementById('lblRegBio')) document.getElementById('lblRegBio').textContent = t.lblBio;
+    if (document.getElementById('regBio')) document.getElementById('regBio').placeholder = t.bioPlaceholder;
+    if (document.getElementById('lblRegInterests')) document.getElementById('lblRegInterests').textContent = t.lblInterests;
+    if (document.getElementById('btnRegBack6')) document.getElementById('btnRegBack6').textContent = t.btnBack;
+    if (document.getElementById('btnRegNext6')) document.getElementById('btnRegNext6').textContent = t.btnNext;
+
+    if (document.getElementById('txtRegStep7Title')) document.getElementById('txtRegStep7Title').textContent = t.reg7Title;
     if (document.getElementById('txtTermsAgree')) document.getElementById('txtTermsAgree').textContent = t.termsAgree;
     if (document.getElementById('txtTermsLink')) document.getElementById('txtTermsLink').textContent = t.termsLink;
     if (document.getElementById('txtTermsEnd')) document.getElementById('txtTermsEnd').textContent = t.termsEnd;
-    if (document.getElementById('btnRegBack6')) document.getElementById('btnRegBack6').textContent = t.btnBack;
+    if (document.getElementById('btnRegBack7')) document.getElementById('btnRegBack7').textContent = t.btnBack;
     if (document.getElementById('btnSubmitReg')) document.getElementById('btnSubmitReg').textContent = t.btnSubmit;
 
     // Statuses
@@ -336,9 +384,9 @@ function applyTranslations() {
     // Main App
     if (document.getElementById('txtDiscoverTitle')) document.getElementById('txtDiscoverTitle').textContent = t.discoverTitle;
     if (document.getElementById('txtBtnFilter')) document.getElementById('txtBtnFilter').textContent = t.btnFilter;
+    if (document.getElementById('txtLikesHeader')) document.getElementById('txtLikesHeader').textContent = t.likesHeader;
     if (document.getElementById('txtMatchesHeader')) document.getElementById('txtMatchesHeader').textContent = t.matchesHeader;
     if (document.getElementById('txtChatsHeader')) document.getElementById('txtChatsHeader').textContent = t.chatsHeader;
-    if (document.getElementById('txtProfileActiveBadge')) document.getElementById('txtProfileActiveBadge').textContent = t.profileActiveBadge;
     if (document.getElementById('txtCompletionLabel')) document.getElementById('txtCompletionLabel').textContent = t.completionLabel;
     if (document.getElementById('lblMyBio')) document.getElementById('lblMyBio').textContent = t.myBioLabel;
     if (document.getElementById('lblMyInterests')) document.getElementById('lblMyInterests').textContent = t.myInterestsLabel;
@@ -396,6 +444,8 @@ let isAdminUser = false;
 let currentView = "";
 let previousViewBeforeAdmin = "";
 let base64Photo = "";
+let selectedRegGender = "MALE";
+let selectedRegTargetGender = "FEMALE";
 let selectedRegInterests = [];
 let selectedEditInterests = [];
 
@@ -468,6 +518,14 @@ async function verifySession() {
                 b.style.display = 'flex';
             }
 
+            if (data.likes_received_count > 0) {
+                const lb = document.getElementById('navLikesBadge');
+                if (lb) {
+                    lb.textContent = data.likes_received_count;
+                    lb.style.display = 'flex';
+                }
+            }
+
             const adminBtn = document.getElementById('btnHeaderAdmin');
             if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 
@@ -531,7 +589,21 @@ function compressImage(file, maxDimension = 800, quality = 0.75) {
     });
 }
 
-// ----------------- REGISTRATION WIZARD -----------------
+// ----------------- REGISTRATION WIZARD (7 STEPS) -----------------
+function selectRegGender(g) {
+    selectedRegGender = g;
+    document.getElementById('regGenderMale').classList.toggle('selected', g === 'MALE');
+    document.getElementById('regGenderFemale').classList.toggle('selected', g === 'FEMALE');
+    document.getElementById('regGenderOther').classList.toggle('selected', g === 'OTHER');
+}
+
+function selectRegTargetGender(tg) {
+    selectedRegTargetGender = tg;
+    document.getElementById('regTargetFemale').classList.toggle('selected', tg === 'FEMALE');
+    document.getElementById('regTargetMale').classList.toggle('selected', tg === 'MALE');
+    document.getElementById('regTargetAny').classList.toggle('selected', tg === 'ANY');
+}
+
 function initRegInterests() {
     const container = document.getElementById('regInterestsContainer');
     container.innerHTML = "";
@@ -576,7 +648,7 @@ document.getElementById('regPhotoInput').addEventListener('change', async functi
 
 function nextRegStep(currStep) {
     if (currStep === 1) {
-        // Language picked
+        // Lang
     } else if (currStep === 2) {
         const age = parseInt(document.getElementById('regAge').value);
         if (!age || age < 18) {
@@ -591,11 +663,13 @@ function nextRegStep(currStep) {
             return;
         }
     } else if (currStep === 4) {
+        // Gender selected
+    } else if (currStep === 5) {
         if (!base64Photo) {
             alert(currentLang === 'ru' ? "Загрузите фото!" : "Profil rasmini yuklang!");
             return;
         }
-    } else if (currStep === 5) {
+    } else if (currStep === 6) {
         const bio = document.getElementById('regBio').value.trim();
         if (!bio) {
             alert(currentLang === 'ru' ? "Напишите о себе!" : "O'zingiz haqingizda yozing!");
@@ -603,7 +677,8 @@ function nextRegStep(currStep) {
         }
         document.getElementById('summaryPhoto').src = base64Photo;
         document.getElementById('summaryNameAge').textContent = `${document.getElementById('regName').value.trim()}, ${document.getElementById('regAge').value}`;
-        document.getElementById('summaryCity').textContent = document.getElementById('regCity').value.trim();
+        const gName = selectedRegGender === 'MALE' ? '👨 Erkak' : (selectedRegGender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
+        document.getElementById('summaryDetails').textContent = `${document.getElementById('regCity').value.trim()} • ${gName}`;
         document.getElementById('summaryBio').textContent = bio;
     }
 
@@ -620,10 +695,10 @@ function prevRegStep(currStep) {
 
 function updateWizardHeader(step) {
     const t = I18N[currentLang] || I18N.uz;
-    const titles = [t.step1Title, t.step2Title, t.step3Title, t.step4Title, t.step5Title, t.step6Title];
+    const titles = [t.step1Title, t.step2Title, t.step3Title, t.step4Title, t.step5Title, t.step6Title, t.step7Title];
     document.getElementById('wizardStepTitle').textContent = titles[step - 1];
-    document.getElementById('wizardStepCount').textContent = `${step} / 6`;
-    document.getElementById('wizardProgressBar').style.width = `${(step / 6) * 100}%`;
+    document.getElementById('wizardStepCount').textContent = `${step} / 7`;
+    document.getElementById('wizardProgressBar').style.width = `${(step / 7) * 100}%`;
 }
 
 async function submitRegistration() {
@@ -649,6 +724,8 @@ async function submitRegistration() {
             body: JSON.stringify({
                 name: document.getElementById('regName').value.trim(),
                 age: parseInt(document.getElementById('regAge').value),
+                gender: selectedRegGender,
+                target_gender: selectedRegTargetGender,
                 city: document.getElementById('regCity').value.trim(),
                 photo: base64Photo,
                 bio: document.getElementById('regBio').value.trim(),
@@ -671,152 +748,9 @@ async function submitRegistration() {
     }
 }
 
-// ----------------- HEADER & ADMIN SCREEN -----------------
-function openAdminScreen() {
-    previousViewBeforeAdmin = currentView;
-    showView('adminScreen');
-    loadAdminData();
-}
-
-function closeAdminScreen() {
-    if (previousViewBeforeAdmin) showView(previousViewBeforeAdmin);
-    else verifySession();
-}
-
-function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
-function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
-
-function openLanguageModal() {
-    closeSettingsModal();
-    document.getElementById('modalLangUz').classList.toggle('selected', currentLang === 'uz');
-    document.getElementById('modalLangRu').classList.toggle('selected', currentLang === 'ru');
-    document.getElementById('modalLangEn').classList.toggle('selected', currentLang === 'en');
-    document.getElementById('modalLangCheckUz').style.display = currentLang === 'uz' ? 'block' : 'none';
-    document.getElementById('modalLangCheckRu').style.display = currentLang === 'ru' ? 'block' : 'none';
-    document.getElementById('modalLangCheckEn').style.display = currentLang === 'en' ? 'block' : 'none';
-    document.getElementById('languageModal').style.display = 'flex';
-}
-function closeLanguageModal() { document.getElementById('languageModal').style.display = 'none'; }
-
-// ----------------- NOTIFICATIONS MODAL -----------------
-async function openNotificationsModal() {
-    document.getElementById('notificationsModal').style.display = 'flex';
-    const container = document.getElementById('notificationsList');
-    container.innerHTML = "<p style='color:var(--text-muted);'>Yuklanmoqda...</p>";
-
-    try {
-        const res = await fetch(`${API_URL}/api/notifications?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
-        const data = await res.json();
-        if (data.success) {
-            const notifs = data.notifications;
-            if (notifs.length === 0) {
-                container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>Yangi bildirishnomalar yo'q.</p>";
-                return;
-            }
-            container.innerHTML = "";
-            notifs.forEach(n => {
-                const item = document.createElement('div');
-                item.className = "glass-panel";
-                item.style.padding = "10px 12px";
-                item.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <h4 style="margin:0; font-size:13px; color:${n.is_read ? '#fff' : 'var(--primary)'};">${n.title}</h4>
-                        <span style="font-size:10px; color:var(--text-muted);">${new Date(n.created_at).toLocaleDateString()}</span>
-                    </div>
-                    <p style="margin:0; font-size:12px; color:var(--text-sub); line-height:1.4;">${n.body}</p>
-                `;
-                container.appendChild(item);
-            });
-            document.getElementById('notifBadge').style.display = 'none';
-        }
-    } catch(e) { container.innerHTML = e.message; }
-}
-
-function closeNotificationsModal() { document.getElementById('notificationsModal').style.display = 'none'; }
-
-async function markAllNotificationsRead() {
-    try {
-        await fetch(`${API_URL}/api/notifications/read?${getQueryParams()}`, { method: "POST", headers: getHeaders(), body: "{}" });
-        openNotificationsModal();
-    } catch(e) {}
-}
-
-// ----------------- SUPPORT TICKETS MODAL -----------------
-function openSupportTicketsModal() {
-    closeSettingsModal();
-    document.getElementById('supportTicketsModal').style.display = 'flex';
-    loadUserTickets();
-}
-function closeSupportTicketsModal() { document.getElementById('supportTicketsModal').style.display = 'none'; }
-
-async function loadUserTickets() {
-    const container = document.getElementById('userTicketsList');
-    container.innerHTML = "<p style='color:var(--text-muted);'>Murojaatlar yuklanmoqda...</p>";
-
-    try {
-        const res = await fetch(`${API_URL}/api/tickets?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
-        const data = await res.json();
-        if (data.success) {
-            const tickets = data.tickets;
-            if (tickets.length === 0) {
-                container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>Hozircha murojaatlar yo'q.</p>";
-                return;
-            }
-            container.innerHTML = "";
-            tickets.forEach(t => {
-                const item = document.createElement('div');
-                item.className = "glass-panel";
-                item.style.padding = "10px";
-                item.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <span style="font-weight:bold; font-size:13px; color:var(--primary);">${t.subject}</span>
-                        <span style="font-size:11px; color:${t.status === 'ANSWERED' ? 'var(--accent-green)' : 'var(--accent-gold)'};">${t.status}</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-                        ${t.messages.map(m => `
-                            <div style="background:${m.is_admin ? 'rgba(255,183,0,0.1)' : 'rgba(255,255,255,0.04)'}; padding:6px 10px; border-radius:6px; font-size:12px;">
-                                <b>${m.is_admin ? '🛡️ Support' : 'Siz'}:</b> ${m.text}
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                container.appendChild(item);
-            });
-        }
-    } catch(e) { container.innerHTML = e.message; }
-}
-
-function openNewTicketForm() { document.getElementById('newTicketModal').style.display = 'flex'; }
-function closeNewTicketForm() { document.getElementById('newTicketModal').style.display = 'none'; }
-
-async function submitNewSupportTicket() {
-    const subject = document.getElementById('newTicketSubject').value.trim();
-    const category = document.getElementById('newTicketCategory').value;
-    const message = document.getElementById('newTicketMessage').value.trim();
-
-    if (!subject || !message) {
-        alert("Mavzu va xabarni kiriting!");
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_URL}/api/tickets/create?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({ subject, category, message })
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert("Murojaatingiz qabul qilindi!");
-            closeNewTicketForm();
-            loadUserTickets();
-        }
-    } catch(e) { alert(e.message); }
-}
-
 // ----------------- TAB NAVIGATION -----------------
 function switchTab(tabId) {
-    const tabs = ['viewDiscover', 'viewMatches', 'viewChats', 'viewProfile'];
+    const tabs = ['viewDiscover', 'viewLikes', 'viewMatches', 'viewChats', 'viewProfile'];
     tabs.forEach(t => {
         const el = document.getElementById(t);
         if (el) el.style.display = (t === tabId) ? 'block' : 'none';
@@ -824,6 +758,7 @@ function switchTab(tabId) {
 
     const navBtns = {
         'viewDiscover': 'btnNavDiscover',
+        'viewLikes': 'btnNavLikes',
         'viewMatches': 'btnNavMatches',
         'viewChats': 'btnNavChats',
         'viewProfile': 'btnNavProfile'
@@ -838,6 +773,7 @@ function switchTab(tabId) {
     });
 
     if (tabId === 'viewDiscover') loadDiscoverProfiles();
+    if (tabId === 'viewLikes') loadReceivedLikes();
     if (tabId === 'viewMatches') loadMatchesList();
     if (tabId === 'viewChats') loadChatsList();
     if (tabId === 'viewProfile') populateMyProfile();
@@ -851,11 +787,13 @@ async function loadDiscoverProfiles() {
     const minAge = document.getElementById('filterMinAge').value;
     const maxAge = document.getElementById('filterMaxAge').value;
     const city = document.getElementById('filterCity').value;
+    const gender = document.getElementById('filterGender').value;
 
     const q = new URLSearchParams(getQueryParams());
     if (minAge) q.append("min_age", minAge);
     if (maxAge) q.append("max_age", maxAge);
     if (city) q.append("city", city);
+    if (gender && gender !== "ANY") q.append("gender", gender);
 
     try {
         const res = await fetch(`${API_URL}/api/profiles?${q.toString()}`, { method: "GET", headers: getHeaders() });
@@ -887,6 +825,7 @@ function renderDiscoverCard() {
 
     const p = discoverProfiles[currentDiscoverIndex];
     activeTargetUser = p;
+    const gIcon = p.gender === 'MALE' ? '👨' : (p.gender === 'FEMALE' ? '👩' : '🌈');
 
     container.innerHTML = `
         <div class="dating-card">
@@ -894,14 +833,16 @@ function renderDiscoverCard() {
                 <img src="${p.photo}">
                 <div class="card-overlay-info">
                     <h2 style="margin: 0; font-size: 24px; color: #fff;">${p.name}, ${p.age}</h2>
-                    <p style="margin: 4px 0 8px 0; color: var(--primary); font-size: 13px; font-weight: bold;">📍 ${p.city}</p>
+                    <p style="margin: 4px 0 8px 0; color: var(--primary); font-size: 13px; font-weight: bold;">📍 ${p.city} • ${gIcon}</p>
                     <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.bio}</p>
                 </div>
             </div>
-            <div style="padding: 12px 20px 16px 20px; background: #121226; display: flex; justify-content: space-between; align-items: center;">
-                <button class="btn-action-circle btn-pass" onclick="handleSwipe(${p.id}, false)">👎</button>
-                <button class="btn-action-circle btn-info" onclick="openProfileDetailModal(${p.id})">ℹ️</button>
-                <button class="btn-action-circle btn-like" onclick="handleSwipe(${p.id}, true)">💖</button>
+            <!-- Action Row under Card -->
+            <div class="card-actions-row">
+                <button class="btn-action-circle btn-pass" title="Dislike" onclick="handleSwipe(${p.id}, false)">👎</button>
+                <button class="btn-action-circle btn-report" title="Shikoyat" onclick="openReportModal(${p.id})">⚠️</button>
+                <button class="btn-action-circle btn-info" title="Batafsil" onclick="openProfileDetailModal(${p.id})">ℹ️</button>
+                <button class="btn-action-circle btn-like" title="Like" onclick="handleSwipe(${p.id}, true)">💖</button>
             </div>
         </div>
     `;
@@ -940,6 +881,89 @@ function showMatchModal(partner, matchId) {
 }
 function closeMatchModal() { document.getElementById('matchModal').style.display = 'none'; }
 
+// ----------------- LIKES RECEIVED (WHO LIKED ME) -----------------
+async function loadReceivedLikes() {
+    const t = I18N[currentLang] || I18N.uz;
+    const container = document.getElementById('likesList');
+    const promo = document.getElementById('likesPremiumPromo');
+    const badge = document.getElementById('likesReceivedBadge');
+    container.innerHTML = "<p style='color:var(--text-muted); grid-column:span 2; text-align:center;'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/likes/received?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+
+        if (data.success) {
+            badge.textContent = data.count;
+            const isPrem = !!data.is_premium;
+            promo.style.display = isPrem ? 'none' : 'block';
+
+            if (data.profiles.length === 0) {
+                container.innerHTML = `<p style='color:var(--text-muted); grid-column:span 2; text-align:center; padding:30px 0;'>${t.noLikes}</p>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            data.profiles.forEach(p => {
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.cssText = "padding: 10px; text-align: center; position: relative; overflow: hidden;";
+
+                if (!isPrem) {
+                    // Blurred teaser for non-premium
+                    card.innerHTML = `
+                        <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; position: relative;">
+                            <img src="${p.photo}" class="blurred-photo" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3);">
+                                <span style="font-size: 26px;">⭐</span>
+                            </div>
+                        </div>
+                        <h4 style="margin: 0; font-size: 13px; color: #fff;">${p.name}, ${p.age}</h4>
+                        <p style="margin: 2px 0 6px 0; font-size: 11px; color: var(--text-muted);">${p.city}</p>
+                        <button onclick="openPremiumModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 5px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
+                    `;
+                } else {
+                    // Clear profile for Premium members
+                    card.innerHTML = `
+                        <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; cursor: pointer;" onclick="openProfileDetailModal(${p.id})">
+                            <img src="${p.photo}" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <h4 style="margin: 0; font-size: 13px; color: #fff;">${p.name}, ${p.age}</h4>
+                        <p style="margin: 2px 0 8px 0; font-size: 11px; color: var(--primary); font-weight: bold;">📍 ${p.city}</p>
+                        <button onclick="handleSwipe(${p.id}, true)" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 6px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">💖 Like / Match</button>
+                    `;
+                }
+                container.appendChild(card);
+            });
+        }
+    } catch(e) {
+        container.innerHTML = `<p style='color:var(--primary); grid-column:span 2; text-align:center;'>${e.message}</p>`;
+    }
+}
+
+// ----------------- PREMIUM MODAL -----------------
+function openPremiumModal() {
+    document.getElementById('premiumModal').style.display = 'flex';
+}
+function closePremiumModal() {
+    document.getElementById('premiumModal').style.display = 'none';
+}
+
+async function activatePremiumNow() {
+    try {
+        const res = await fetch(`${API_URL}/api/premium/activate?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Tabriklaymiz! Kairyx Premium muvaffaqiyatli faollashtirildi ⭐");
+            closePremiumModal();
+            verifySession();
+        }
+    } catch(e) { alert(e.message); }
+}
+
 // ----------------- FILTERS & DETAIL MODALS -----------------
 function openFilterModal() { document.getElementById('filterModal').style.display = 'flex'; }
 function closeFilterModal() { document.getElementById('filterModal').style.display = 'none'; }
@@ -948,6 +972,7 @@ function resetFilters() {
     document.getElementById('filterMinAge').value = "";
     document.getElementById('filterMaxAge').value = "";
     document.getElementById('filterCity').value = "";
+    document.getElementById('filterGender').value = "ANY";
     closeFilterModal();
     loadDiscoverProfiles();
 }
@@ -958,7 +983,8 @@ function openProfileDetailModal(userId) {
 
     document.getElementById('detailPhoto').src = user.photo;
     document.getElementById('detailNameAge').textContent = `${user.name}, ${user.age}`;
-    document.getElementById('detailCity').textContent = `📍 ${user.city}`;
+    const gName = user.gender === 'MALE' ? '👨 Erkak' : (user.gender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
+    document.getElementById('detailCity').textContent = `📍 ${user.city} • ${gName}`;
     document.getElementById('detailBio').textContent = user.bio;
 
     const intContainer = document.getElementById('detailInterests');
@@ -1182,7 +1208,8 @@ function populateMyProfile() {
     if (!currentUser) return;
     document.getElementById('myPhoto').src = currentUser.photo || "";
     document.getElementById('myNameAge').textContent = `${currentUser.name}, ${currentUser.age}`;
-    document.getElementById('myCity').textContent = `📍 ${currentUser.city}`;
+    const gName = currentUser.gender === 'MALE' ? '👨 Erkak' : (currentUser.gender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
+    document.getElementById('myCityGender').textContent = `📍 ${currentUser.city} • ${gName}`;
     document.getElementById('myBio').textContent = currentUser.bio || "Mavjud emas";
     document.getElementById('myBalance').textContent = `${currentUser.balance || 0} UZS`;
     document.getElementById('myBonusPoints').textContent = `${currentUser.bonus_points || 0} pts`;
@@ -1205,6 +1232,8 @@ function openEditProfileModal() {
     if (!currentUser) return;
     document.getElementById('editName').value = currentUser.name;
     document.getElementById('editCity').value = currentUser.city;
+    document.getElementById('editGender').value = currentUser.gender || "OTHER";
+    document.getElementById('editTargetGender').value = currentUser.target_gender || "ANY";
     document.getElementById('editBio').value = currentUser.bio;
 
     selectedEditInterests = [...(currentUser.interests || [])];
@@ -1233,13 +1262,15 @@ function closeEditProfileModal() { document.getElementById('editProfileModal').s
 async function saveProfileEdit() {
     const name = document.getElementById('editName').value.trim();
     const city = document.getElementById('editCity').value.trim();
+    const gender = document.getElementById('editGender').value;
+    const target_gender = document.getElementById('editTargetGender').value;
     const bio = document.getElementById('editBio').value.trim();
 
     try {
         const res = await fetch(`${API_URL}/api/profile/update?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ name, city, bio, interests: selectedEditInterests })
+            body: JSON.stringify({ name, city, gender, target_gender, bio, interests: selectedEditInterests })
         });
         const data = await res.json();
         if (data.success) {
@@ -1314,7 +1345,151 @@ function openRulesModal() {
 }
 function closeRulesModal() { document.getElementById('rulesModal').style.display = 'none'; }
 
-// ----------------- ADMIN DASHBOARD (RBAC) -----------------
+// ----------------- ADMIN DASHBOARD -----------------
+function openAdminScreen() {
+    previousViewBeforeAdmin = currentView;
+    showView('adminScreen');
+    loadAdminData();
+}
+
+function closeAdminScreen() {
+    if (previousViewBeforeAdmin) showView(previousViewBeforeAdmin);
+    else verifySession();
+}
+
+function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
+function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
+
+function openLanguageModal() {
+    closeSettingsModal();
+    document.getElementById('modalLangUz').classList.toggle('selected', currentLang === 'uz');
+    document.getElementById('modalLangRu').classList.toggle('selected', currentLang === 'ru');
+    document.getElementById('modalLangEn').classList.toggle('selected', currentLang === 'en');
+    document.getElementById('modalLangCheckUz').style.display = currentLang === 'uz' ? 'block' : 'none';
+    document.getElementById('modalLangCheckRu').style.display = currentLang === 'ru' ? 'block' : 'none';
+    document.getElementById('modalLangCheckEn').style.display = currentLang === 'en' ? 'block' : 'none';
+    document.getElementById('languageModal').style.display = 'flex';
+}
+function closeLanguageModal() { document.getElementById('languageModal').style.display = 'none'; }
+
+async function openNotificationsModal() {
+    document.getElementById('notificationsModal').style.display = 'flex';
+    const container = document.getElementById('notificationsList');
+    container.innerHTML = "<p style='color:var(--text-muted);'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/notifications?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const notifs = data.notifications;
+            if (notifs.length === 0) {
+                container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>Yangi bildirishnomalar yo'q.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            notifs.forEach(n => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.padding = "10px 12px";
+                item.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <h4 style="margin:0; font-size:13px; color:${n.is_read ? '#fff' : 'var(--primary)'};">${n.title}</h4>
+                        <span style="font-size:10px; color:var(--text-muted);">${new Date(n.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p style="margin:0; font-size:12px; color:var(--text-sub); line-height:1.4;">${n.body}</p>
+                `;
+                if (n.deep_link === 'viewLikes') {
+                    item.style.cursor = 'pointer';
+                    item.onclick = () => { closeNotificationsModal(); switchTab('viewLikes'); };
+                }
+                container.appendChild(item);
+            });
+            document.getElementById('notifBadge').style.display = 'none';
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeNotificationsModal() { document.getElementById('notificationsModal').style.display = 'none'; }
+
+async function markAllNotificationsRead() {
+    try {
+        await fetch(`${API_URL}/api/notifications/read?${getQueryParams()}`, { method: "POST", headers: getHeaders(), body: "{}" });
+        openNotificationsModal();
+    } catch(e) {}
+}
+
+function openSupportTicketsModal() {
+    closeSettingsModal();
+    document.getElementById('supportTicketsModal').style.display = 'flex';
+    loadUserTickets();
+}
+function closeSupportTicketsModal() { document.getElementById('supportTicketsModal').style.display = 'none'; }
+
+async function loadUserTickets() {
+    const container = document.getElementById('userTicketsList');
+    container.innerHTML = "<p style='color:var(--text-muted);'>Murojaatlar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/tickets?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const tickets = data.tickets;
+            if (tickets.length === 0) {
+                container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>Hozircha murojaatlar yo'q.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            tickets.forEach(t => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.padding = "10px";
+                item.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span style="font-weight:bold; font-size:13px; color:var(--primary);">${t.subject}</span>
+                        <span style="font-size:11px; color:${t.status === 'ANSWERED' ? 'var(--accent-green)' : 'var(--accent-gold)'};">${t.status}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                        ${t.messages.map(m => `
+                            <div style="background:${m.is_admin ? 'rgba(255,183,0,0.1)' : 'rgba(255,255,255,0.04)'}; padding:6px 10px; border-radius:6px; font-size:12px;">
+                                <b>${m.is_admin ? '🛡️ Support' : 'Siz'}:</b> ${m.text}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function openNewTicketForm() { document.getElementById('newTicketModal').style.display = 'flex'; }
+function closeNewTicketForm() { document.getElementById('newTicketModal').style.display = 'none'; }
+
+async function submitNewSupportTicket() {
+    const subject = document.getElementById('newTicketSubject').value.trim();
+    const category = document.getElementById('newTicketCategory').value;
+    const message = document.getElementById('newTicketMessage').value.trim();
+
+    if (!subject || !message) {
+        alert("Mavzu va xabarni kiriting!");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/tickets/create?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ subject, category, message })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Murojaatingiz qabul qilindi!");
+            closeNewTicketForm();
+            loadUserTickets();
+        }
+    } catch(e) { alert(e.message); }
+}
+
 let currentAdminTab = "pending";
 
 function switchAdminTab(tab) {
@@ -1377,7 +1552,7 @@ async function loadAdminPending() {
                         <img src="${u.photo}" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);">
                         <div>
                             <h4 style="margin: 0; color: var(--primary);">${u.name}, ${u.age}</h4>
-                            <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">${u.city}</p>
+                            <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">${u.city} • ${u.gender}</p>
                         </div>
                     </div>
                     <p style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-sub);">${u.bio}</p>
@@ -1595,9 +1770,9 @@ async function openAdminUserDetail(userId) {
                 </div>
 
                 <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; font-size: 12px;">
-                    <p style="margin: 0 0 4px 0;"><b>Shahar:</b> ${u.city || '—'}</p>
+                    <p style="margin: 0 0 4px 0;"><b>Shahar:</b> ${u.city || '—'} • <b>Jinsi:</b> ${u.gender} (Qidiruv: ${u.target_gender})</p>
                     <p style="margin: 0 0 4px 0;"><b>Bio:</b> ${u.bio || '—'}</p>
-                    <p style="margin: 0;"><b>Balans:</b> ${u.balance} UZS (${u.bonus_points} pts)</p>
+                    <p style="margin: 0;"><b>Balans:</b> ${u.balance} UZS (${u.bonus_points} pts) • <b>Premium:</b> ${u.is_premium ? 'HA ⭐' : 'YO`Q'}</p>
                 </div>
 
                 <h4 style="margin: 10px 0 4px 0; color: var(--accent-gold);">Statusni o'zgartirish:</h4>

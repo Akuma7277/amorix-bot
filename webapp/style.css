@@ -1,4 +1,4 @@
-/* KAIRYX ENTERPRISE DATING & PLATFORM - DESIGN SYSTEM v2.9.0 */
+/* KAIRYX ENTERPRISE DATING & PLATFORM - DESIGN SYSTEM v2.10.0 */
 :root {
     --bg-main: #050510;
     --bg-card: rgba(255, 255, 255, 0.03);
@@ -7,13 +7,15 @@
     --primary: #ff4785;
     --primary-gradient: linear-gradient(135deg, #ff4785 0%, #b624ff 100%);
     --primary-glow: rgba(255, 71, 133, 0.35);
+    --premium-gradient: linear-gradient(135deg, #ffb700 0%, #ff8800 100%);
+    --premium-glow: rgba(255, 183, 0, 0.4);
     --secondary: #b624ff;
     --accent-gold: #ffb700;
     --accent-green: #24ff8a;
     --accent-blue: #00b4d8;
     --text-main: #ffffff;
     --text-muted: rgba(255, 255, 255, 0.6);
-    --text-sub: rgba(255, 255, 255, 0.8);
+    --text-sub: rgba(255, 255, 255, 0.85);
     --border-color: rgba(255, 71, 133, 0.15);
     --border-subtle: rgba(255, 255, 255, 0.08);
     --radius-sm: 8px;
@@ -51,6 +53,35 @@ input, textarea, button, select {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: var(--radius-md);
+}
+
+/* Gender Selection Cards */
+.gender-pill {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gender-pill.selected {
+    border-color: var(--primary);
+    background: rgba(255, 71, 133, 0.12);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.gender-pill span:first-child {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.gender-pill span:last-child {
+    font-size: 13px;
+    font-weight: bold;
 }
 
 /* Language Selection Cards */
@@ -94,7 +125,7 @@ input, textarea, button, select {
     background: none;
     border: none;
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
@@ -102,7 +133,7 @@ input, textarea, button, select {
     align-items: center;
     gap: 3px;
     transition: all 0.2s ease;
-    padding: 6px 12px;
+    padding: 6px 10px;
     border-radius: var(--radius-sm);
     position: relative;
 }
@@ -116,14 +147,14 @@ input, textarea, button, select {
     filter: drop-shadow(0 0 8px var(--primary-glow));
 }
 
-/* Notification badge */
+/* Badges */
 .badge-dot {
     position: absolute;
     top: 4px;
-    right: 14px;
+    right: 10px;
     background: var(--primary);
     color: #fff;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: bold;
     border-radius: var(--radius-full);
     min-width: 16px;
@@ -135,11 +166,17 @@ input, textarea, button, select {
     box-shadow: 0 0 6px var(--primary-glow);
 }
 
+.badge-gold {
+    background: var(--accent-gold);
+    color: #000;
+    box-shadow: 0 0 6px var(--premium-glow);
+}
+
 /* Card Swiper */
 .card-stack {
     position: relative;
     max-width: 360px;
-    height: 480px;
+    height: 490px;
     margin: 15px auto;
     perspective: 1000px;
 }
@@ -155,7 +192,6 @@ input, textarea, button, select {
     box-shadow: 0 12px 35px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .card-image-wrap {
@@ -181,10 +217,20 @@ input, textarea, button, select {
     padding-top: 50px;
 }
 
-/* Floating Actions on Card */
+/* Action Buttons Under Card */
+.card-actions-row {
+    padding: 12px 18px 16px 18px;
+    background: #121226;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid var(--border-subtle);
+}
+
 .btn-action-circle {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     border-radius: var(--radius-full);
     display: flex;
     align-items: center;
@@ -196,31 +242,63 @@ input, textarea, button, select {
 }
 
 .btn-action-circle:active {
-    transform: scale(0.9);
+    transform: scale(0.88);
 }
 
 .btn-pass {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #ff6b6b;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 71, 71, 0.3);
+    color: #ff4747;
 }
 
-.btn-like {
-    background: var(--primary-gradient);
-    color: #ffffff;
-    box-shadow: 0 0 15px var(--primary-glow);
+.btn-pass:active {
+    box-shadow: 0 0 14px rgba(255, 71, 71, 0.4);
+}
+
+.btn-report {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 183, 0, 0.3);
+    color: var(--accent-gold);
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
 }
 
 .btn-info {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
     color: var(--text-main);
     width: 44px;
     height: 44px;
     font-size: 18px;
 }
 
-/* Tags & Interests */
+.btn-like {
+    background: var(--primary-gradient);
+    color: #ffffff;
+    box-shadow: 0 0 18px var(--primary-glow);
+    font-size: 24px;
+}
+
+/* Premium Card & Blurred Preview */
+.blurred-photo {
+    filter: blur(16px);
+    transform: scale(1.1);
+    transition: filter 0.3s ease;
+}
+
+.premium-banner {
+    background: linear-gradient(135deg, rgba(255, 183, 0, 0.15) 0%, rgba(255, 136, 0, 0.25) 100%);
+    border: 1px solid var(--accent-gold);
+    box-shadow: 0 0 20px var(--premium-glow);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Tags */
 .tag-badge {
     display: inline-flex;
     align-items: center;
@@ -253,7 +331,7 @@ input, textarea, button, select {
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.78);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 300;
