@@ -42,10 +42,15 @@ async def cmd_start(message: Message, bot: Bot):
     except Exception as e:
         logger.warning(f"Error setting chat menu button: {e}")
 
+    # Remove any persistent reply keyboard from the Telegram client
+    await message.answer(
+        "👋 Assalomu alaykum!",
+        reply_markup=ReplyKeyboardRemove()
+    )
+
     welcome_text = (
-        "👋 Assalomu alaykum!\n\n"
         "💖 <b>Kairyx</b> — premium tanishuv ilovasiga xush kelibsiz.\n\n"
-        "Barcha xizmatlar (tanishuv, profil, juftliklar, chat va admin boshqaruvi) to'liq Mini App ichida jamlangan.\n\n"
+        "Barcha xizmatlar (tanishuv, profil, juftliklar, chat va admin boshqaruvi) to'liq Mini App ichida ishlaydi.\n\n"
         "Ilovani ishga tushirish uchun quyidagi tugmani bosing: 👇"
     )
 
@@ -73,12 +78,18 @@ async def all_other_messages(message: Message, bot: Bot):
         pass
 
     inline_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📱 Mini App ni ochish", web_app=WebAppInfo(url=get_webapp_url()))]
+        [InlineKeyboardButton(text="📱 Kairyx Mini App ni ochish", web_app=WebAppInfo(url=get_webapp_url()))]
     ])
+
+    # Remove reply keyboard if any old button was clicked
     await message.answer(
-        "Kairyx faqat Mini App orqali ishlaydi. Ilovani ochish uchun tugmani bosing:",
-        reply_markup=inline_kb,
+        "Kairyx faqat Mini App orqali ishlaydi. Ilovani ochish uchun quyidagi tugmani bosing: 👇",
+        reply_markup=ReplyKeyboardRemove(),
         parse_mode=ParseMode.HTML
+    )
+    await message.answer(
+        "✨",
+        reply_markup=inline_kb
     )
 
 async def main() -> None:
