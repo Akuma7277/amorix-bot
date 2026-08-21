@@ -968,7 +968,7 @@ def create_webapp_app() -> web.Application:
         try:
             async with engine_module.engine.begin() as conn:
                 try:
-                    # Auto-alter all user-defined enum columns to VARCHAR in PostgreSQL
+                    # Auto-alter all user-defined enum columns to VARCHAR in PostgreSQL and ensure all columns exist
                     await conn.execute(text("""
                         DO $$
                         DECLARE
@@ -982,20 +982,43 @@ def create_webapp_app() -> web.Application:
                                 EXECUTE format('ALTER TABLE %I ALTER COLUMN %I TYPE VARCHAR(64) USING %I::text;', r.table_name, r.column_name, r.column_name);
                             END LOOP;
 
+                            -- Users columns
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'interests') THEN
                                 ALTER TABLE users ADD COLUMN interests TEXT;
                             END IF;
-                            
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_verified') THEN
                                 ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT FALSE;
                             END IF;
-                            
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_deleted') THEN
                                 ALTER TABLE users ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE;
                             END IF;
-                            
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'last_active_at') THEN
                                 ALTER TABLE users ADD COLUMN last_active_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+                            END IF;
+
+                            -- Reports columns
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'reason') THEN
+                                ALTER TABLE reports ADD COLUMN reason VARCHAR(64) DEFAULT 'Other';
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'description') THEN
+                                ALTER TABLE reports ADD COLUMN description TEXT;
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'status') THEN
+                                ALTER TABLE reports ADD COLUMN status VARCHAR(32) DEFAULT 'OPEN';
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'reporter_id') THEN
+                                ALTER TABLE reports ADD COLUMN reporter_id INTEGER;
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reports' AND column_name = 'reported_id') THEN
+                                ALTER TABLE reports ADD COLUMN reported_id INTEGER;
+                            END IF;
+
+                            -- Blocks columns
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'blocks' AND column_name = 'blocker_id') THEN
+                                ALTER TABLE blocks ADD COLUMN blocker_id INTEGER;
+                            END IF;
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'blocks' AND column_name = 'blocked_id') THEN
+                                ALTER TABLE blocks ADD COLUMN blocked_id INTEGER;
                             END IF;
                         END $$;
                     """))
