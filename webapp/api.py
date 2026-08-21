@@ -968,17 +968,20 @@ def create_webapp_app() -> web.Application:
         try:
             async with engine_module.engine.begin() as conn:
                 try:
-                    # Auto-alter PostgreSQL columns to VARCHAR and add new columns if missing
+                    # Auto-alter all user-defined enum columns to VARCHAR in PostgreSQL
                     await conn.execute(text("""
                         DO $$
+                        DECLARE
+                            r RECORD;
                         BEGIN
-                            IF EXISTS (
-                                SELECT 1 FROM information_schema.columns 
-                                WHERE table_name = 'users' AND column_name = 'status' AND udt_name = 'userstatus'
-                            ) THEN
-                                ALTER TABLE users ALTER COLUMN status TYPE VARCHAR(32) USING status::text;
-                            END IF;
-                            
+                            FOR r IN (
+                                SELECT table_name, column_name 
+                                FROM information_schema.columns 
+                                WHERE data_type = 'USER-DEFINED' AND table_schema = 'public'
+                            ) LOOP
+                                EXECUTE format('ALTER TABLE %I ALTER COLUMN %I TYPE VARCHAR(64) USING %I::text;', r.table_name, r.column_name, r.column_name);
+                            END LOOP;
+
                             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'interests') THEN
                                 ALTER TABLE users ADD COLUMN interests TEXT;
                             END IF;
