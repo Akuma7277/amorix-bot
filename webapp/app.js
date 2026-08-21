@@ -3,6 +3,304 @@ const API_URL = (window.location.origin.includes("localhost") || window.location
     ? window.location.origin
     : "https://amorix-bot-production.up.railway.app";
 
+// ----------------- I18N DICTIONARY -----------------
+let currentLang = localStorage.getItem("kairyx_lang") || "uz";
+
+const I18N = {
+    uz: {
+        loadingTitle: "Kairyx yuklanmoqda...",
+        loadingSub: "Xavfsiz sessiya tekshirilmoqda",
+        step1Title: "Qadam 1: Tilni tanlash",
+        step2Title: "Qadam 2: Yoshni tasdiqlash",
+        step3Title: "Qadam 3: Shaxsiy ma'lumotlar",
+        step4Title: "Qadam 4: Profil surati",
+        step5Title: "Qadam 5: Bio va Qiziqishlar",
+        step6Title: "Qadam 6: Anketani tasdiqlash",
+        reg1Title: "Tilni tanlang / Выберите язык 🌐",
+        reg1Sub: "Ilovadan qaysi tilda foydalanmoqchisiz?",
+        reg2Title: "Kairyx-ga xush kelibsiz! 👋",
+        reg2Sub: "Platformamiz faqat voyaga yetgan (18+) foydalanuvchilar uchun mo'ljallangan.",
+        lblAge: "Tug'ilgan yoshingiz *",
+        reg3Title: "O'zingizni tanishtiring ✨",
+        lblName: "Ismingiz *",
+        namePlaceholder: "Ismingizni kiriting",
+        lblCity: "Shahringiz *",
+        cityPlaceholder: "Masalan: Toshkent",
+        reg4Title: "Profil surati 📸",
+        reg4Sub: "Yuzingiz aniq ko'ringan sifatli rasmingizni yuklang.",
+        photoPlaceholder: "Rasm tanlash",
+        reg5Title: "Qiziqishlar va Bio 🎨",
+        lblBio: "O'zingiz haqingizda",
+        bioPlaceholder: "Nimaga qiziqasiz, kimni izlayapsiz...",
+        lblInterests: "Qiziqishlaringizni tanlang:",
+        reg6Title: "Anketani tasdiqlash 📋",
+        termsAgree: "Men",
+        termsLink: "Foydalanish Qoidalari",
+        termsEnd: "ga roziman.",
+        btnSubmit: "Arizani yuborish 🚀",
+        btnSubmitting: "Yuborilmoqda...",
+        btnNext: "Davom etish ➔",
+        btnBack: "Orqaga",
+        pendingTitle: "Arizangiz ko'rib chiqilmoqda",
+        pendingSub: "Profilingiz moderatorlar tekshiruvida. Tasdiqlangach sizga to'liq kirish ochiladi.",
+        btnPendingRefresh: "🔄 Qayta tekshirish",
+        rejectedTitle: "Arizangiz rad etildi",
+        rejectedSub: "Anketangiz Kairyx standartlariga mos kelmadi.",
+        bannedTitle: "Profil bloklangan",
+        bannedSub: "Qoidalarni buzganlik sababli ushbu hisob muzlatilgan.",
+        errorTitle: "Aloqa uzildi",
+        btnRetry: "Qayta urinish",
+        discoverTitle: "Yangi anketalar",
+        btnFilter: "⚡ Filtrlash",
+        matchesHeader: "O'zaro Juftliklar 💖",
+        chatsHeader: "Suhbatlar 💬",
+        profileActiveBadge: "🟢 Tasdiqlangan (Faol)",
+        completionLabel: "Profil to'liqligi:",
+        myBioLabel: "O'zim haqimda:",
+        myInterestsLabel: "Qiziqishlarim:",
+        btnEditProfile: "✏️ Profilni tahrirlash",
+        menuLang: "🌐 Tilni o'zgartirish",
+        menuBlocked: "🚫 Bloklangan foydalanuvchilar",
+        menuRules: "ℹ️ Qoidalar va Xavfsizlik",
+        menuDelete: "🗑️ Hisobni o'chirish",
+        settingsTitle: "Sozlamalar ⚙️",
+        settingLang: "🌐 Tilni tanlash",
+        settingRules: "ℹ️ Qoidalar va Yordam",
+        settingBlocked: "🚫 Bloklanganlar",
+        filterTitle: "Qidiruv filtrlari ⚡",
+        lblFilterAge: "Yosh chegarasi:",
+        lblFilterCity: "Shahar:",
+        btnFilterReset: "Tozalash",
+        btnFilterApply: "Qo'llash",
+        matchYou: "Siz va",
+        matchLiked: "bir-biringizga yoqdingiz!",
+        btnMatchChat: "💬 Suhbatni boshlash",
+        btnMatchContinue: "Davom etish ➔",
+        detailBlock: "🚫 Bloklash",
+        detailReport: "⚠️ Shikoyat",
+        reportTitle: "Foydalanuvchi ustidan shikoyat ⚠️",
+        reportSub: "Qanday qoidabuzarlikni aniqladingiz?",
+        btnCancel: "Bekor qilish",
+        btnSend: "Yuborish",
+        btnSave: "Saqlash",
+        btnUnderstood: "Tushundim",
+        noProfiles: "Hozircha anketalar tugadi",
+        noProfilesSub: "Yangi a'zolar qo'shilgach bu yerda ko'rinadi.",
+        noMatches: "Hozircha juftliklar yo'q. Discover bo'limida Like bosing!",
+        noChats: "Suhbatlar mavjud emas.",
+        rulesList: [
+            "Faqat 18 yoshdan oshganlar foydalanishi mumkin.",
+            "Haqiqiy fotosurat va ism kiritilishi talab etiladi.",
+            "Spam, reklama, firibgarlik va nojo'ya xatti-harakatlar uchun akkaunt doimiy bloklanadi.",
+            "Ikkala tomon ham Like bossagina shaxsiy chat ochiladi."
+        ]
+    },
+    ru: {
+        loadingTitle: "Загрузка Kairyx...",
+        loadingSub: "Проверка защищенной сессии",
+        step1Title: "Шаг 1: Выбор языка",
+        step2Title: "Шаг 2: Подтверждение возраста",
+        step3Title: "Шаг 3: Личные данные",
+        step4Title: "Шаг 4: Фото профиля",
+        step5Title: "Шаг 5: О себе и интересы",
+        step6Title: "Шаг 6: Подтверждение анкеты",
+        reg1Title: "Выберите язык / Tilni tanlang 🌐",
+        reg1Sub: "На каком языке вам удобнее продолжить?",
+        reg2Title: "Добро пожаловать в Kairyx! 👋",
+        reg2Sub: "Наша платформа предназначена только для совершеннолетних (18+).",
+        lblAge: "Ваш возраст *",
+        reg3Title: "Расскажите о себе ✨",
+        lblName: "Ваше имя *",
+        namePlaceholder: "Введите ваше имя",
+        lblCity: "Ваш город *",
+        cityPlaceholder: "Например: Ташкент",
+        reg4Title: "Фото профиля 📸",
+        reg4Sub: "Загрузите качественное фото, где хорошо видно лицо.",
+        photoPlaceholder: "Выбрать фото",
+        reg5Title: "Интересы и О себе 🎨",
+        lblBio: "О себе",
+        bioPlaceholder: "Чем увлекаетесь, кого ищете...",
+        lblInterests: "Выберите ваши интересы:",
+        reg6Title: "Подтверждение анкеты 📋",
+        termsAgree: "Я принимаю",
+        termsLink: "Правила использования",
+        termsEnd: ".",
+        btnSubmit: "Отправить анкету 🚀",
+        btnSubmitting: "Отправка...",
+        btnNext: "Продолжить ➔",
+        btnBack: "Назад",
+        pendingTitle: "Ваша анкета на проверке",
+        pendingSub: "Профиль находится на модерации. После одобрения вам откроется полный доступ.",
+        btnPendingRefresh: "🔄 Проверить статус",
+        rejectedTitle: "Анкета отклонена",
+        rejectedSub: "Ваша анкета не соответствует стандартам качества Kairyx.",
+        bannedTitle: "Профиль заблокирован",
+        bannedSub: "Аккаунт заблокирован за нарушение правил сообщества.",
+        errorTitle: "Связь потеряна",
+        btnRetry: "Повторить попытку",
+        discoverTitle: "Новые анкеты",
+        btnFilter: "⚡ Фильтры",
+        matchesHeader: "Взаимные симпатии 💖",
+        chatsHeader: "Сообщения 💬",
+        profileActiveBadge: "🟢 Подтвержден (Активен)",
+        completionLabel: "Заполненность профиля:",
+        myBioLabel: "О себе:",
+        myInterestsLabel: "Мои интересы:",
+        btnEditProfile: "✏️ Редактировать профиль",
+        menuLang: "🌐 Сменить язык",
+        menuBlocked: "🚫 Заблокированные пользователи",
+        menuRules: "ℹ️ Правила и безопасность",
+        menuDelete: "🗑️ Удалить аккаунт",
+        settingsTitle: "Настройки ⚙️",
+        settingLang: "🌐 Выбор языка",
+        settingRules: "ℹ️ Правила и Помощь",
+        settingBlocked: "🚫 Черный список",
+        filterTitle: "Фильтры поиска ⚡",
+        lblFilterAge: "Возраст:",
+        lblFilterCity: "Город:",
+        btnFilterReset: "Сбросить",
+        btnFilterApply: "Применить",
+        matchYou: "Вы и",
+        matchLiked: "понравились друг другу!",
+        btnMatchChat: "💬 Начать общение",
+        btnMatchContinue: "Продолжить ➔",
+        detailBlock: "🚫 Заблокировать",
+        detailReport: "⚠️ Пожаловаться",
+        reportTitle: "Жалоба на пользователя ⚠️",
+        reportSub: "Какое нарушение вы обнаружили?",
+        btnCancel: "Отмена",
+        btnSend: "Отправить",
+        btnSave: "Сохранить",
+        btnUnderstood: "Понятно",
+        noProfiles: "Анкеты закончились",
+        noProfilesSub: "Новые пользователи появятся здесь позже.",
+        noMatches: "Симпатий пока нет. Ставьте Like в разделе Discover!",
+        noChats: "Диалогов пока нет.",
+        rulesList: [
+            "Сервис доступен только для лиц старше 18 лет.",
+            "Требуется настоящее фото и реальное имя.",
+            "Спам, оскорбления, мошенничество и непристойное поведение караются вечным баном.",
+            "Личный чат открывается только при взаимной симпатии."
+        ]
+    }
+};
+
+function applyTranslations() {
+    const t = I18N[currentLang] || I18N.uz;
+    
+    // Header & Loading
+    if (document.getElementById('txtLoadingTitle')) document.getElementById('txtLoadingTitle').textContent = t.loadingTitle;
+    if (document.getElementById('txtLoadingSub')) document.getElementById('txtLoadingSub').textContent = t.loadingSub;
+
+    // Wizard
+    if (document.getElementById('txtRegStep1Title')) document.getElementById('txtRegStep1Title').textContent = t.reg1Title;
+    if (document.getElementById('txtRegStep1Sub')) document.getElementById('txtRegStep1Sub').textContent = t.reg1Sub;
+    if (document.getElementById('btnRegNext1')) document.getElementById('btnRegNext1').textContent = t.btnNext;
+
+    if (document.getElementById('txtRegStep2Title')) document.getElementById('txtRegStep2Title').textContent = t.reg2Title;
+    if (document.getElementById('txtRegStep2Sub')) document.getElementById('txtRegStep2Sub').textContent = t.reg2Sub;
+    if (document.getElementById('lblRegAge')) document.getElementById('lblRegAge').textContent = t.lblAge;
+    if (document.getElementById('btnRegBack2')) document.getElementById('btnRegBack2').textContent = t.btnBack;
+    if (document.getElementById('btnRegNext2')) document.getElementById('btnRegNext2').textContent = t.btnNext;
+
+    if (document.getElementById('txtRegStep3Title')) document.getElementById('txtRegStep3Title').textContent = t.reg3Title;
+    if (document.getElementById('lblRegName')) document.getElementById('lblRegName').textContent = t.lblName;
+    if (document.getElementById('regName')) document.getElementById('regName').placeholder = t.namePlaceholder;
+    if (document.getElementById('lblRegCity')) document.getElementById('lblRegCity').textContent = t.lblCity;
+    if (document.getElementById('regCity')) document.getElementById('regCity').placeholder = t.cityPlaceholder;
+    if (document.getElementById('btnRegBack3')) document.getElementById('btnRegBack3').textContent = t.btnBack;
+    if (document.getElementById('btnRegNext3')) document.getElementById('btnRegNext3').textContent = t.btnNext;
+
+    if (document.getElementById('txtRegStep4Title')) document.getElementById('txtRegStep4Title').textContent = t.reg4Title;
+    if (document.getElementById('txtRegStep4Sub')) document.getElementById('txtRegStep4Sub').textContent = t.reg4Sub;
+    if (document.getElementById('txtPhotoPlaceholder')) document.getElementById('txtPhotoPlaceholder').textContent = t.photoPlaceholder;
+    if (document.getElementById('btnRegBack4')) document.getElementById('btnRegBack4').textContent = t.btnBack;
+    if (document.getElementById('btnRegNext4')) document.getElementById('btnRegNext4').textContent = t.btnNext;
+
+    if (document.getElementById('txtRegStep5Title')) document.getElementById('txtRegStep5Title').textContent = t.reg5Title;
+    if (document.getElementById('lblRegBio')) document.getElementById('lblRegBio').textContent = t.lblBio;
+    if (document.getElementById('regBio')) document.getElementById('regBio').placeholder = t.bioPlaceholder;
+    if (document.getElementById('lblRegInterests')) document.getElementById('lblRegInterests').textContent = t.lblInterests;
+    if (document.getElementById('btnRegBack5')) document.getElementById('btnRegBack5').textContent = t.btnBack;
+    if (document.getElementById('btnRegNext5')) document.getElementById('btnRegNext5').textContent = t.btnNext;
+
+    if (document.getElementById('txtRegStep6Title')) document.getElementById('txtRegStep6Title').textContent = t.reg6Title;
+    if (document.getElementById('txtTermsAgree')) document.getElementById('txtTermsAgree').textContent = t.termsAgree;
+    if (document.getElementById('txtTermsLink')) document.getElementById('txtTermsLink').textContent = t.termsLink;
+    if (document.getElementById('txtTermsEnd')) document.getElementById('txtTermsEnd').textContent = t.termsEnd;
+    if (document.getElementById('btnRegBack6')) document.getElementById('btnRegBack6').textContent = t.btnBack;
+    if (document.getElementById('btnSubmitReg')) document.getElementById('btnSubmitReg').textContent = t.btnSubmit;
+
+    // Statuses
+    if (document.getElementById('txtPendingTitle')) document.getElementById('txtPendingTitle').textContent = t.pendingTitle;
+    if (document.getElementById('txtPendingSub')) document.getElementById('txtPendingSub').textContent = t.pendingSub;
+    if (document.getElementById('btnPendingRefresh')) document.getElementById('btnPendingRefresh').textContent = t.btnPendingRefresh;
+
+    if (document.getElementById('txtRejectedTitle')) document.getElementById('txtRejectedTitle').textContent = t.rejectedTitle;
+    if (document.getElementById('txtRejectedSub')) document.getElementById('txtRejectedSub').textContent = t.rejectedSub;
+
+    if (document.getElementById('txtBannedTitle')) document.getElementById('txtBannedTitle').textContent = t.bannedTitle;
+    if (document.getElementById('txtBannedSub')) document.getElementById('txtBannedSub').textContent = t.bannedSub;
+
+    if (document.getElementById('txtErrorTitle')) document.getElementById('txtErrorTitle').textContent = t.errorTitle;
+    if (document.getElementById('btnRetry')) document.getElementById('btnRetry').textContent = t.btnRetry;
+
+    // Main App
+    if (document.getElementById('txtDiscoverTitle')) document.getElementById('txtDiscoverTitle').textContent = t.discoverTitle;
+    if (document.getElementById('txtBtnFilter')) document.getElementById('txtBtnFilter').textContent = t.btnFilter;
+    if (document.getElementById('txtMatchesHeader')) document.getElementById('txtMatchesHeader').textContent = t.matchesHeader;
+    if (document.getElementById('txtChatsHeader')) document.getElementById('txtChatsHeader').textContent = t.chatsHeader;
+    if (document.getElementById('txtProfileActiveBadge')) document.getElementById('txtProfileActiveBadge').textContent = t.profileActiveBadge;
+    if (document.getElementById('txtCompletionLabel')) document.getElementById('txtCompletionLabel').textContent = t.completionLabel;
+    if (document.getElementById('lblMyBio')) document.getElementById('lblMyBio').textContent = t.myBioLabel;
+    if (document.getElementById('lblMyInterests')) document.getElementById('lblMyInterests').textContent = t.myInterestsLabel;
+    if (document.getElementById('btnEditProfile')) document.getElementById('btnEditProfile').textContent = t.btnEditProfile;
+    if (document.getElementById('txtMenuLang')) document.getElementById('txtMenuLang').textContent = t.menuLang;
+    if (document.getElementById('txtMenuBlocked')) document.getElementById('txtMenuBlocked').textContent = t.menuBlocked;
+    if (document.getElementById('txtMenuRules')) document.getElementById('txtMenuRules').textContent = t.menuRules;
+    if (document.getElementById('txtMenuDelete')) document.getElementById('txtMenuDelete').textContent = t.menuDelete;
+
+    // Current Lang labels
+    const langName = currentLang === 'uz' ? "O'zbekcha" : "Русский";
+    if (document.getElementById('currentLangLabel')) document.getElementById('currentLangLabel').textContent = langName;
+    if (document.getElementById('modalSettingLangVal')) document.getElementById('modalSettingLangVal').textContent = langName;
+
+    // Rules modal list
+    const rulesUl = document.getElementById('rulesListContent');
+    if (rulesUl) {
+        rulesUl.innerHTML = "";
+        t.rulesList.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            rulesUl.appendChild(li);
+        });
+    }
+
+    if (document.getElementById('btnRulesUnderstood')) document.getElementById('btnRulesUnderstood').textContent = t.btnUnderstood;
+}
+
+function selectRegLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("kairyx_lang", lang);
+    document.getElementById('optLangUz').classList.toggle('selected', lang === 'uz');
+    document.getElementById('optLangRu').classList.toggle('selected', lang === 'ru');
+    document.getElementById('langCheckUz').style.display = lang === 'uz' ? 'block' : 'none';
+    document.getElementById('langCheckRu').style.display = lang === 'ru' ? 'block' : 'none';
+    applyTranslations();
+}
+
+function setAppLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("kairyx_lang", lang);
+    document.getElementById('modalLangUz').classList.toggle('selected', lang === 'uz');
+    document.getElementById('modalLangRu').classList.toggle('selected', lang === 'ru');
+    document.getElementById('modalLangCheckUz').style.display = lang === 'uz' ? 'block' : 'none';
+    document.getElementById('modalLangCheckRu').style.display = lang === 'ru' ? 'block' : 'none';
+    applyTranslations();
+    closeLanguageModal();
+}
+
+// ----------------- GLOBAL STATE & AUTH -----------------
 const AVAILABLE_INTERESTS = [
     "🎮 Gaming", "🎵 Music", "🏋️ Fitness", "✈️ Travel", 
     "📚 Books", "🎬 Movies", "⚽ Sport", "💻 Technology", 
@@ -12,6 +310,7 @@ const AVAILABLE_INTERESTS = [
 let currentUser = null;
 let isAdminUser = false;
 let currentView = "";
+let previousViewBeforeAdmin = "";
 let base64Photo = "";
 let selectedRegInterests = [];
 let selectedEditInterests = [];
@@ -19,7 +318,6 @@ let selectedEditInterests = [];
 let discoverProfiles = [];
 let currentDiscoverIndex = 0;
 let activeTargetUser = null;
-
 let activeMatchId = null;
 let chatPollInterval = null;
 
@@ -47,7 +345,7 @@ function getQueryParams() {
 
 function showView(viewId) {
     currentView = viewId;
-    const views = ['verifyingScreen', 'registrationScreen', 'pendingScreen', 'approvedScreen', 'rejectedScreen', 'bannedScreen', 'errorScreen'];
+    const views = ['verifyingScreen', 'registrationScreen', 'pendingScreen', 'approvedScreen', 'adminScreen', 'rejectedScreen', 'bannedScreen', 'errorScreen'];
     views.forEach(v => {
         const el = document.getElementById(v);
         if (el) el.style.display = (v === viewId) ? 'block' : 'none';
@@ -59,6 +357,8 @@ function showView(viewId) {
 
 async function verifySession() {
     showView('verifyingScreen');
+    applyTranslations();
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
 
@@ -77,6 +377,9 @@ async function verifySession() {
             isAdminUser = !!data.is_admin;
             currentUser = data.user;
             const status = data.user_status;
+
+            const adminBtn = document.getElementById('btnHeaderAdmin');
+            if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 
             if (status === 'DRAFT') {
                 showView('registrationScreen');
@@ -100,6 +403,42 @@ async function verifySession() {
         showView('errorScreen');
         document.getElementById('errorText').textContent = `Xatolik: ${e.message}`;
     }
+}
+
+// ----------------- IMAGE COMPRESSION -----------------
+function compressImage(file, maxDimension = 800, quality = 0.75) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                    if (width > maxDimension) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    }
+                } else {
+                    if (height > maxDimension) {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressedBase64);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 // ----------------- REGISTRATION WIZARD -----------------
@@ -130,47 +469,49 @@ document.getElementById('regBio').addEventListener('input', (e) => {
     document.getElementById('bioCounter').textContent = `${e.target.value.length}/200`;
 });
 
-document.getElementById('regPhotoInput').addEventListener('change', function(e) {
+document.getElementById('regPhotoInput').addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-            alert("Rasm hajmi 5MB dan oshmasligi kerak!");
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            base64Photo = evt.target.result;
+        try {
+            document.getElementById('photoPlaceholderText').innerHTML = "<span style='font-size:12px; color:var(--primary);'>Siqilmoqda...</span>";
+            base64Photo = await compressImage(file, 800, 0.75);
             document.getElementById('regPhotoPreview').src = base64Photo;
             document.getElementById('regPhotoPreview').style.display = 'block';
             document.getElementById('photoPlaceholderText').style.display = 'none';
-        };
-        reader.readAsDataURL(file);
+        } catch(err) {
+            alert("Rasmni qayta ishlashda xatolik: " + err.message);
+            document.getElementById('photoPlaceholderText').innerHTML = "<span style='font-size: 28px;'>📷</span><p style='font-size: 11px; color: var(--text-muted); margin: 5px 0 0 0;'>Rasm tanlash</p>";
+        }
     }
 });
 
 function nextRegStep(currStep) {
+    const t = I18N[currentLang] || I18N.uz;
+
     if (currStep === 1) {
+        // Lang chosen, proceed to age
+    } else if (currStep === 2) {
         const age = parseInt(document.getElementById('regAge').value);
         if (!age || age < 18) {
-            alert("Kairyx-dan foydalanish uchun yoshingiz 18 yoki undan katta bo'lishi shart!");
-            return;
-        }
-    } else if (currStep === 2) {
-        const name = document.getElementById('regName').value.trim();
-        const city = document.getElementById('regCity').value.trim();
-        if (!name || !city) {
-            alert("Ism va shaharingizni to'ldiring!");
+            alert(currentLang === 'ru' ? "Сервис доступен только для лиц старше 18 лет!" : "Kairyx-dan foydalanish uchun yoshingiz 18 yoki undan katta bo'lishi shart!");
             return;
         }
     } else if (currStep === 3) {
-        if (!base64Photo) {
-            alert("Iltimos, profilingiz uchun rasm yuklang!");
+        const name = document.getElementById('regName').value.trim();
+        const city = document.getElementById('regCity').value.trim();
+        if (!name || !city) {
+            alert(currentLang === 'ru' ? "Заполните имя и город!" : "Ism va shahringizni to'ldiring!");
             return;
         }
     } else if (currStep === 4) {
+        if (!base64Photo) {
+            alert(currentLang === 'ru' ? "Пожалуйста, загрузите фото профиля!" : "Iltimos, profilingiz uchun rasm yuklang!");
+            return;
+        }
+    } else if (currStep === 5) {
         const bio = document.getElementById('regBio').value.trim();
         if (!bio) {
-            alert("O'zingiz haqingizda qisqacha ma'lumot yozing!");
+            alert(currentLang === 'ru' ? "Напишите немного о себе!" : "O'zingiz haqingizda qisqacha ma'lumot yozing!");
             return;
         }
         // Prepare summary
@@ -192,46 +533,51 @@ function prevRegStep(currStep) {
 }
 
 function updateWizardHeader(step) {
+    const t = I18N[currentLang] || I18N.uz;
     const titles = [
-        "Qadam 1: Yoshni tasdiqlash",
-        "Qadam 2: Shaxsiy ma'lumotlar",
-        "Qadam 3: Profil surati",
-        "Qadam 4: Bio va Qiziqishlar",
-        "Qadam 5: Anketani tasdiqlash"
+        t.step1Title,
+        t.step2Title,
+        t.step3Title,
+        t.step4Title,
+        t.step5Title,
+        t.step6Title
     ];
     document.getElementById('wizardStepTitle').textContent = titles[step - 1];
-    document.getElementById('wizardStepCount').textContent = `${step} / 5`;
-    document.getElementById('wizardProgressBar').style.width = `${step * 20}%`;
+    document.getElementById('wizardStepCount').textContent = `${step} / 6`;
+    document.getElementById('wizardProgressBar').style.width = `${(step / 6) * 100}%`;
 }
 
 async function submitRegistration() {
+    const t = I18N[currentLang] || I18N.uz;
     const terms = document.getElementById('regTerms').checked;
     const errText = document.getElementById('regError');
     errText.style.display = 'none';
 
     if (!terms) {
-        errText.textContent = "Foydalanish qoidalariga rozilik belgilanishi shart.";
+        errText.textContent = currentLang === 'ru' ? "Необходимо принять правила использования." : "Foydalanish qoidalariga rozilik belgilanishi shart.";
         errText.style.display = 'block';
         return;
     }
 
     const btn = document.getElementById('btnSubmitReg');
     btn.disabled = true;
-    btn.textContent = "Yuborilmoqda...";
+    btn.textContent = t.btnSubmitting;
 
     try {
+        const payload = {
+            name: document.getElementById('regName').value.trim(),
+            age: parseInt(document.getElementById('regAge').value),
+            city: document.getElementById('regCity').value.trim(),
+            photo: base64Photo,
+            bio: document.getElementById('regBio').value.trim(),
+            interests: selectedRegInterests,
+            terms_accepted: true
+        };
+
         const res = await fetch(`${API_URL}/api/register?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({
-                name: document.getElementById('regName').value.trim(),
-                age: parseInt(document.getElementById('regAge').value),
-                city: document.getElementById('regCity').value.trim(),
-                photo: base64Photo,
-                bio: document.getElementById('regBio').value.trim(),
-                interests: selectedRegInterests,
-                terms_accepted: true
-            })
+            body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.success) {
@@ -241,15 +587,49 @@ async function submitRegistration() {
         }
     } catch (e) {
         btn.disabled = false;
-        btn.textContent = "Arizani yuborish 🚀";
+        btn.textContent = t.btnSubmit;
         errText.textContent = e.message;
         errText.style.display = 'block';
     }
 }
 
+// ----------------- ADMIN & SETTINGS HEADER CONTROLS -----------------
+function openAdminScreen() {
+    previousViewBeforeAdmin = currentView;
+    showView('adminScreen');
+    loadAdminData();
+}
+
+function closeAdminScreen() {
+    if (previousViewBeforeAdmin) {
+        showView(previousViewBeforeAdmin);
+    } else {
+        verifySession();
+    }
+}
+
+function openSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+function openLanguageModal() {
+    closeSettingsModal();
+    document.getElementById('modalLangUz').classList.toggle('selected', currentLang === 'uz');
+    document.getElementById('modalLangRu').classList.toggle('selected', currentLang === 'ru');
+    document.getElementById('modalLangCheckUz').style.display = currentLang === 'uz' ? 'block' : 'none';
+    document.getElementById('modalLangCheckRu').style.display = currentLang === 'ru' ? 'block' : 'none';
+    document.getElementById('languageModal').style.display = 'flex';
+}
+function closeLanguageModal() {
+    document.getElementById('languageModal').style.display = 'none';
+}
+
 // ----------------- TAB NAVIGATION -----------------
 function switchTab(tabId) {
-    const tabs = ['viewDiscover', 'viewMatches', 'viewChats', 'viewProfile', 'viewAdmin'];
+    const tabs = ['viewDiscover', 'viewMatches', 'viewChats', 'viewProfile'];
     tabs.forEach(t => {
         const el = document.getElementById(t);
         if (el) el.style.display = (t === tabId) ? 'block' : 'none';
@@ -274,11 +654,7 @@ function switchTab(tabId) {
     if (tabId === 'viewMatches') loadMatchesList();
     if (tabId === 'viewChats') loadChatsList();
     if (tabId === 'viewProfile') populateMyProfile();
-    if (tabId === 'viewAdmin') loadAdminData();
 }
-
-document.getElementById('btnHeaderAdmin').addEventListener('click', () => switchTab('viewAdmin'));
-document.getElementById('btnHeaderSettings').addEventListener('click', () => switchTab('viewProfile'));
 
 // ----------------- DISCOVERY & SWIPE -----------------
 async function loadDiscoverProfiles() {
@@ -308,14 +684,15 @@ async function loadDiscoverProfiles() {
 }
 
 function renderDiscoverCard() {
+    const t = I18N[currentLang] || I18N.uz;
     const container = document.getElementById('cardStackContainer');
     if (!discoverProfiles || discoverProfiles.length === 0 || currentDiscoverIndex >= discoverProfiles.length) {
         container.innerHTML = `
             <div class="glass-panel" style="padding: 40px 20px; text-align: center; margin-top: 50px;">
                 <div style="font-size: 40px; margin-bottom: 10px;">💫</div>
-                <h3 style="color: var(--primary); margin-top: 0;">Hozircha anketalar tugadi</h3>
-                <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">Yangi a'zolar qo'shilgach bu yerda ko'rinadi. Filtrlarni o'zgartirib qayta qidirishingiz mumkin.</p>
-                <button onclick="loadDiscoverProfiles()" style="background: var(--primary-gradient); color: #fff; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; margin-top: 10px;">🔄 Qayta yuklash</button>
+                <h3 style="color: var(--primary); margin-top: 0;">${t.noProfiles}</h3>
+                <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">${t.noProfilesSub}</p>
+                <button onclick="loadDiscoverProfiles()" style="background: var(--primary-gradient); color: #fff; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; margin-top: 10px;">🔄 ${t.btnRetry}</button>
             </div>
         `;
         return;
@@ -422,7 +799,8 @@ function closeProfileDetailModal() { document.getElementById('profileDetailModal
 
 // ----------------- BLOCK & REPORT -----------------
 async function blockUser(targetId) {
-    if (!confirm("Ushbu foydalanuvchini bloklamoqchimisiz? U boshqa profilingizni ko'ra olmaydi.")) return;
+    const msg = currentLang === 'ru' ? "Заблокировать этого пользователя? Он больше не сможет видеть ваш профиль." : "Ushbu foydalanuvchini bloklamoqchimisiz? U boshqa profilingizni ko'ra olmaydi.";
+    if (!confirm(msg)) return;
     try {
         const res = await fetch(`${API_URL}/api/user/block?${getQueryParams()}`, {
             method: "POST",
@@ -431,7 +809,7 @@ async function blockUser(targetId) {
         });
         const data = await res.json();
         if (data.success) {
-            alert("Foydalanuvchi bloklandi.");
+            alert(currentLang === 'ru' ? "Пользователь заблокирован." : "Foydalanuvchi bloklandi.");
             closeProfileDetailModal();
             loadDiscoverProfiles();
             loadMatchesList();
@@ -459,7 +837,7 @@ async function submitUserReport() {
         });
         const data = await res.json();
         if (data.success) {
-            alert("Shikoyatingiz moderatorlarga yuborildi. Rahmat!");
+            alert(currentLang === 'ru' ? "Жалоба отправлена модераторам. Спасибо!" : "Shikoyatingiz moderatorlarga yuborildi. Rahmat!");
             closeReportModal();
             closeProfileDetailModal();
         }
@@ -468,6 +846,7 @@ async function submitUserReport() {
 
 // ----------------- MATCHES & CHAT -----------------
 async function loadMatchesList() {
+    const t = I18N[currentLang] || I18N.uz;
     const container = document.getElementById('matchesList');
     container.innerHTML = "<p style='color: var(--text-muted); grid-column: span 2; text-align: center;'>Yuklanmoqda...</p>";
 
@@ -477,7 +856,7 @@ async function loadMatchesList() {
         if (data.success) {
             const matches = data.matches;
             if (matches.length === 0) {
-                container.innerHTML = "<p style='color: var(--text-muted); grid-column: span 2; text-align: center; padding: 40px 0;'>Hozircha juftliklar yo'q. Discover bo'limida Like bosing!</p>";
+                container.innerHTML = `<p style='color: var(--text-muted); grid-column: span 2; text-align: center; padding: 40px 0;'>${t.noMatches}</p>`;
                 return;
             }
             container.innerHTML = "";
@@ -500,6 +879,7 @@ async function loadMatchesList() {
 }
 
 async function loadChatsList() {
+    const t = I18N[currentLang] || I18N.uz;
     const container = document.getElementById('chatsList');
     container.innerHTML = "<p style='color: var(--text-muted); text-align: center;'>Suhbatlar yuklanmoqda...</p>";
 
@@ -509,7 +889,7 @@ async function loadChatsList() {
         if (data.success) {
             const matches = data.matches;
             if (matches.length === 0) {
-                container.innerHTML = "<p style='color: var(--text-muted); text-align: center; padding: 40px 0;'>Suhbatlar mavjud emas.</p>";
+                container.innerHTML = `<p style='color: var(--text-muted); text-align: center; padding: 40px 0;'>${t.noChats}</p>`;
                 return;
             }
             container.innerHTML = "";
@@ -518,7 +898,7 @@ async function loadChatsList() {
                 item.className = "glass-panel";
                 item.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;";
                 item.onclick = () => openChatWindow(m.match_id, m.partner);
-                const lastTxt = m.last_message ? m.last_message.text : "Yangi juftlik! Suhbatni boshlang.";
+                const lastTxt = m.last_message ? m.last_message.text : (currentLang === 'ru' ? "Новая симпатия! Начните диалог." : "Yangi juftlik! Suhbatni boshlang.");
                 item.innerHTML = `
                     <img src="${m.partner.photo}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary);">
                     <div style="flex: 1; min-width: 0;">
@@ -617,7 +997,8 @@ document.getElementById('chatInput').addEventListener('keypress', (e) => {
 
 function openChatOptionsMenu() {
     if (!activeTargetUser) return;
-    const action = confirm("Foydalanuvchi ustidan shikoyat qilish yoki bloklashni xohlaysizmi?");
+    const msg = currentLang === 'ru' ? "Пожаловаться или заблокировать пользователя?" : "Foydalanuvchi ustidan shikoyat qilish yoki bloklashni xohlaysizmi?";
+    const action = confirm(msg);
     if (action) {
         openReportModal(activeTargetUser.id);
     }
@@ -695,6 +1076,7 @@ async function saveProfileEdit() {
 }
 
 async function openBlockedUsersModal() {
+    closeSettingsModal();
     const container = document.getElementById('blockedUsersList');
     container.innerHTML = "<p style='color: var(--text-muted);'>Yuklanmoqda...</p>";
     document.getElementById('blockedUsersModal').style.display = 'flex';
@@ -738,7 +1120,8 @@ async function unblockUser(targetId) {
 }
 
 async function confirmDeleteAccount() {
-    if (!confirm("DIQQAT: Hisobingizni o'chirmoqchimisiz? Bu amal profilingizni to'xtatadi.")) return;
+    const msg = currentLang === 'ru' ? "ВНИМАНИЕ: Вы действительно хотите удалить аккаунт? Это действие деактивирует ваш профиль." : "DIQQAT: Hisobingizni o'chirmoqchimisiz? Bu amal profilingizni to'xtatadi.";
+    if (!confirm(msg)) return;
     try {
         const res = await fetch(`${API_URL}/api/account/delete?${getQueryParams()}`, {
             method: "POST",
@@ -746,13 +1129,16 @@ async function confirmDeleteAccount() {
         });
         const data = await res.json();
         if (data.success) {
-            alert("Hisobingiz o'chirildi.");
+            alert(currentLang === 'ru' ? "Аккаунт удален." : "Hisobingiz o'chirildi.");
             verifySession();
         }
     } catch (e) { alert(e.message); }
 }
 
-function openRulesModal() { document.getElementById('rulesModal').style.display = 'flex'; }
+function openRulesModal() {
+    closeSettingsModal();
+    document.getElementById('rulesModal').style.display = 'flex';
+}
 function closeRulesModal() { document.getElementById('rulesModal').style.display = 'none'; }
 
 // ----------------- ADMIN DASHBOARD -----------------

@@ -1,4 +1,4 @@
-/* KAIRYX PREMIUM DATING - DESIGN SYSTEM v2.7.0 */
+/* KAIRYX PREMIUM DATING - DESIGN SYSTEM v2.8.0 */
 :root {
     --bg-main: #050510;
     --bg-card: rgba(255, 255, 255, 0.03);
@@ -50,6 +50,26 @@ input, textarea, button, select {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: var(--radius-md);
+}
+
+/* Language Selection Cards */
+.lang-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+}
+
+.lang-card:active, .lang-card.selected {
+    border-color: var(--primary);
+    background: rgba(255, 71, 133, 0.08);
+    box-shadow: 0 0 12px var(--primary-glow);
 }
 
 /* Bottom Navigation Bar */
@@ -276,6 +296,18 @@ input, textarea, button, select {
 }
 
 /* Chat Styles */
+.chat-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #050510;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+}
+
 .chat-bubble {
     padding: 10px 14px;
     border-radius: var(--radius-md);

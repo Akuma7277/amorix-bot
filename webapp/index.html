@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kairyx Premium Dating</title>
+    <title>Kairyx Dating</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=2.7.0">
+    <link rel="stylesheet" href="style.css?v=2.8.0">
 </head>
 <body>
 
@@ -16,16 +16,16 @@
             <span style="font-weight: 800; font-size: 18px; letter-spacing: 0.5px; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KAIRYX</span>
         </div>
         <div id="headerActions" style="display: flex; gap: 10px; align-items: center;">
-            <button id="btnHeaderAdmin" style="display: none; background: rgba(255,183,0,0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 5px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold; cursor: pointer;">🛡️ Admin</button>
-            <button id="btnHeaderSettings" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted);">⚙️</button>
+            <button id="btnHeaderAdmin" onclick="openAdminScreen()" style="display: none; background: rgba(255,183,0,0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 5px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold; cursor: pointer;">🛡️ Admin</button>
+            <button id="btnHeaderSettings" onclick="openSettingsModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted);">⚙️</button>
         </div>
     </header>
 
     <!-- 1. LOADING SCREEN -->
     <div id="verifyingScreen" style="padding-top: 140px; text-align: center;">
         <div style="font-size: 48px; animation: pulse 1.5s infinite;">💖</div>
-        <h3 style="color: var(--primary); margin-top: 15px;">Kairyx yuklanmoqda...</h3>
-        <p style="color: var(--text-muted); font-size: 13px;">Xavfsiz sessiya tekshirilmoqda</p>
+        <h3 id="txtLoadingTitle" style="color: var(--primary); margin-top: 15px;">Kairyx yuklanmoqda...</h3>
+        <p id="txtLoadingSub" style="color: var(--text-muted); font-size: 13px;">Xavfsiz sessiya tekshirilmoqda</p>
     </div>
 
     <!-- 2. REGISTRATION WIZARD -->
@@ -33,90 +33,120 @@
         <!-- Progress bar -->
         <div style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
-                <span id="wizardStepTitle">Qadam 1: Yoshni tasdiqlash</span>
-                <span id="wizardStepCount">1 / 5</span>
+                <span id="wizardStepTitle">Qadam 1: Tilni tanlash</span>
+                <span id="wizardStepCount">1 / 6</span>
             </div>
             <div class="progress-bar-bg">
-                <div id="wizardProgressBar" class="progress-bar-fill" style="width: 20%;"></div>
+                <div id="wizardProgressBar" class="progress-bar-fill" style="width: 16.6%;"></div>
             </div>
         </div>
 
         <div class="glass-panel" style="padding: 22px;">
-            <!-- Step 1: Age & Welcome -->
+            
+            <!-- Step 1: Language Selection -->
             <div id="regStep1">
-                <h3 style="margin-top: 0; color: var(--primary);">Kairyx-ga xush kelibsiz! 👋</h3>
-                <p style="font-size: 14px; color: var(--text-sub); line-height: 1.5;">Platformamiz faqat voyaga yetgan (18+) foydalanuvchilar uchun mo'ljallangan.</p>
+                <h3 id="txtRegStep1Title" style="margin-top: 0; color: var(--primary);">Tilni tanlang / Выберите язык 🌐</h3>
+                <p id="txtRegStep1Sub" style="font-size: 14px; color: var(--text-sub); line-height: 1.5;">Ilovadan qaysi tilda foydalanmoqchisiz?</p>
+                
                 <div style="margin: 20px 0;">
-                    <label style="display: block; font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 8px;">Tug'ilgan yoshingiz *</label>
-                    <input type="number" id="regAge" placeholder="Masalan: 22" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; color: #fff; font-size: 15px;">
+                    <div id="optLangUz" class="lang-card selected" onclick="selectRegLanguage('uz')">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 24px;">🇺🇿</span>
+                            <span style="font-weight: bold; font-size: 15px;">O'zbekcha</span>
+                        </div>
+                        <span id="langCheckUz" style="color: var(--primary); font-weight: bold;">✓</span>
+                    </div>
+
+                    <div id="optLangRu" class="lang-card" onclick="selectRegLanguage('ru')">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 24px;">🇷🇺</span>
+                            <span style="font-weight: bold; font-size: 15px;">Русский</span>
+                        </div>
+                        <span id="langCheckRu" style="display: none; color: var(--primary); font-weight: bold;">✓</span>
+                    </div>
                 </div>
-                <button onclick="nextRegStep(1)" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; font-size: 15px;">Davom etish ➔</button>
+
+                <button id="btnRegNext1" onclick="nextRegStep(1)" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; font-size: 15px;">Davom etish ➔</button>
             </div>
 
-            <!-- Step 2: Name & City -->
+            <!-- Step 2: 18+ Verification -->
             <div id="regStep2" style="display: none;">
-                <h3 style="margin-top: 0; color: var(--primary);">O'zingizni tanishtiring ✨</h3>
+                <h3 id="txtRegStep2Title" style="margin-top: 0; color: var(--primary);">Kairyx-ga xush kelibsiz! 👋</h3>
+                <p id="txtRegStep2Sub" style="font-size: 14px; color: var(--text-sub); line-height: 1.5;">Platformamiz faqat voyaga yetgan (18+) foydalanuvchilar uchun mo'ljallangan.</p>
+                <div style="margin: 20px 0;">
+                    <label id="lblRegAge" style="display: block; font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 8px;">Tug'ilgan yoshingiz *</label>
+                    <input type="number" id="regAge" placeholder="Masalan: 22" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; color: #fff; font-size: 15px;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btnRegBack2" onclick="prevRegStep(2)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
+                    <button id="btnRegNext2" onclick="nextRegStep(2)" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Name & City -->
+            <div id="regStep3" style="display: none;">
+                <h3 id="txtRegStep3Title" style="margin-top: 0; color: var(--primary);">O'zingizni tanishtiring ✨</h3>
                 <div style="margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <label style="font-size: 13px; font-weight: bold; color: var(--primary);">Ismingiz *</label>
+                        <label id="lblRegName" style="font-size: 13px; font-weight: bold; color: var(--primary);">Ismingiz *</label>
                         <span id="nameCounter" style="font-size: 11px; color: var(--text-muted);">0/30</span>
                     </div>
                     <input type="text" id="regName" maxlength="30" placeholder="Ismingizni kiriting" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; color: #fff; font-size: 15px;">
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 6px;">Shahringiz *</label>
+                    <label id="lblRegCity" style="display: block; font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 6px;">Shahringiz *</label>
                     <input type="text" id="regCity" placeholder="Masalan: Toshkent" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; color: #fff; font-size: 15px;">
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="prevRegStep(2)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
-                    <button onclick="nextRegStep(2)" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
+                    <button id="btnRegBack3" onclick="prevRegStep(3)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
+                    <button id="btnRegNext3" onclick="nextRegStep(3)" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
                 </div>
             </div>
 
-            <!-- Step 3: Photo Upload -->
-            <div id="regStep3" style="display: none;">
-                <h3 style="margin-top: 0; color: var(--primary);">Profil surati 📸</h3>
-                <p style="font-size: 13px; color: var(--text-sub);">Yuzingiz aniq ko'ringan sifatli rasmingizni yuklang.</p>
+            <!-- Step 4: Photo Upload -->
+            <div id="regStep4" style="display: none;">
+                <h3 id="txtRegStep4Title" style="margin-top: 0; color: var(--primary);">Profil surati 📸</h3>
+                <p id="txtRegStep4Sub" style="font-size: 13px; color: var(--text-sub);">Yuzingiz aniq ko'ringan sifatli rasmingizni yuklang.</p>
                 <div style="margin: 20px 0; text-align: center;">
                     <input type="file" id="regPhotoInput" accept="image/*" style="display: none;">
                     <div id="photoUploadBox" onclick="document.getElementById('regPhotoInput').click()" style="width: 140px; height: 140px; border-radius: var(--radius-md); border: 2px dashed var(--primary); margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: rgba(255,71,133,0.04); overflow: hidden; position: relative;">
                         <img id="regPhotoPreview" src="" style="display: none; width: 100%; height: 100%; object-fit: cover;">
                         <div id="photoPlaceholderText">
                             <span style="font-size: 28px;">📷</span>
-                            <p style="font-size: 11px; color: var(--text-muted); margin: 5px 0 0 0;">Rasm tanlash</p>
+                            <p id="txtPhotoPlaceholder" style="font-size: 11px; color: var(--text-muted); margin: 5px 0 0 0;">Rasm tanlash</p>
                         </div>
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="prevRegStep(3)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
-                    <button onclick="nextRegStep(3)" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
+                    <button id="btnRegBack4" onclick="prevRegStep(4)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
+                    <button id="btnRegNext4" onclick="nextRegStep(4)" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
                 </div>
             </div>
 
-            <!-- Step 4: Bio & Interests -->
-            <div id="regStep4" style="display: none;">
-                <h3 style="margin-top: 0; color: var(--primary);">Qiziqishlar va Bio 🎨</h3>
+            <!-- Step 5: Bio & Interests -->
+            <div id="regStep5" style="display: none;">
+                <h3 id="txtRegStep5Title" style="margin-top: 0; color: var(--primary);">Qiziqishlar va Bio 🎨</h3>
                 <div style="margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <label style="font-size: 13px; font-weight: bold; color: var(--primary);">O'zingiz haqingizda</label>
+                        <label id="lblRegBio" style="font-size: 13px; font-weight: bold; color: var(--primary);">O'zingiz haqingizda</label>
                         <span id="bioCounter" style="font-size: 11px; color: var(--text-muted);">0/200</span>
                     </div>
                     <textarea id="regBio" maxlength="200" rows="3" placeholder="Nimaga qiziqasiz, kimni izlayapsiz..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; color: #fff; font-size: 14px; resize: none;"></textarea>
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 8px;">Qiziqishlaringizni tanlang:</label>
+                    <label id="lblRegInterests" style="display: block; font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 8px;">Qiziqishlaringizni tanlang:</label>
                     <div id="regInterestsContainer" style="display: flex; flex-wrap: wrap; gap: 8px;">
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="prevRegStep(4)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
-                    <button onclick="nextRegStep(4)" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
+                    <button id="btnRegBack5" onclick="prevRegStep(5)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
+                    <button id="btnRegNext5" onclick="nextRegStep(5)" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
                 </div>
             </div>
 
-            <!-- Step 5: Confirmation & Terms -->
-            <div id="regStep5" style="display: none;">
-                <h3 style="margin-top: 0; color: var(--primary);">Anketani tasdiqlash 📋</h3>
+            <!-- Step 6: Confirmation & Terms -->
+            <div id="regStep6" style="display: none;">
+                <h3 id="txtRegStep6Title" style="margin-top: 0; color: var(--primary);">Anketani tasdiqlash 📋</h3>
                 <div style="background: rgba(255,255,255,0.02); border-radius: var(--radius-md); padding: 15px; margin-bottom: 18px;">
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <img id="summaryPhoto" src="" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
@@ -129,11 +159,11 @@
                 </div>
                 <div style="margin-bottom: 20px; font-size: 13px; line-height: 1.4;">
                     <input type="checkbox" id="regTerms" style="margin-right: 8px; cursor: pointer;">
-                    <label for="regTerms" style="cursor: pointer; color: var(--text-sub);">Men <span onclick="openRulesModal()" style="color: var(--primary); text-decoration: underline; cursor: pointer;">Foydalanish Qoidalari</span>ga roziman.</label>
+                    <label for="regTerms" style="cursor: pointer; color: var(--text-sub);"><span id="txtTermsAgree">Men</span> <span onclick="openRulesModal()" style="color: var(--primary); text-decoration: underline; cursor: pointer;" id="txtTermsLink">Foydalanish Qoidalari</span><span id="txtTermsEnd">ga roziman.</span></label>
                 </div>
                 <p id="regError" style="display: none; color: var(--primary); font-size: 13px; text-align: center; font-weight: bold; margin-bottom: 15px;"></p>
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="prevRegStep(5)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
+                    <button id="btnRegBack6" onclick="prevRegStep(6)" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Orqaga</button>
                     <button id="btnSubmitReg" onclick="submitRegistration()" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Arizani yuborish 🚀</button>
                 </div>
             </div>
@@ -143,26 +173,26 @@
     <!-- 3. STATUS SCREENS -->
     <div id="pendingScreen" style="display: none; max-width: 400px; margin: 60px auto; padding: 30px; text-align: center;" class="glass-panel">
         <div style="font-size: 44px; margin-bottom: 10px;">⌛</div>
-        <h2 style="color: var(--accent-gold); margin-top: 0;">Arizangiz ko'rib chiqilmoqda</h2>
-        <p style="color: var(--text-sub); line-height: 1.5; font-size: 14px;">Profilingiz moderatorlar tekshiruvida. Tasdiqlangach sizga to'liq kirish ochiladi.</p>
-        <button onclick="verifySession()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); color: #fff; padding: 10px 20px; border-radius: var(--radius-sm); margin-top: 15px; cursor: pointer; font-weight: bold;">🔄 Qayta tekshirish</button>
+        <h2 id="txtPendingTitle" style="color: var(--accent-gold); margin-top: 0;">Arizangiz ko'rib chiqilmoqda</h2>
+        <p id="txtPendingSub" style="color: var(--text-sub); line-height: 1.5; font-size: 14px;">Profilingiz moderatorlar tekshiruvida. Tasdiqlangach sizga to'liq kirish ochiladi.</p>
+        <button id="btnPendingRefresh" onclick="verifySession()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); color: #fff; padding: 10px 20px; border-radius: var(--radius-sm); margin-top: 15px; cursor: pointer; font-weight: bold;">🔄 Qayta tekshirish</button>
     </div>
 
     <div id="rejectedScreen" style="display: none; max-width: 400px; margin: 60px auto; padding: 30px; text-align: center;" class="glass-panel">
         <div style="font-size: 44px; margin-bottom: 10px;">❌</div>
-        <h2 style="color: var(--primary); margin-top: 0;">Arizangiz rad etildi</h2>
-        <p style="color: var(--text-sub); line-height: 1.5; font-size: 14px;">Anketangiz Kairyx sifat standartlariga mos kelmadi.</p>
+        <h2 id="txtRejectedTitle" style="color: var(--primary); margin-top: 0;">Arizangiz rad etildi</h2>
+        <p id="txtRejectedSub" style="color: var(--text-sub); line-height: 1.5; font-size: 14px;">Anketangiz Kairyx sifat standartlariga mos kelmadi.</p>
     </div>
 
     <div id="bannedScreen" style="display: none; max-width: 400px; margin: 60px auto; padding: 30px; text-align: center;" class="glass-panel">
         <div style="font-size: 44px; margin-bottom: 10px;">⛔</div>
-        <h2 style="color: #ff4747; margin-top: 0;">Profil bloklangan</h2>
-        <p style="color: var(--text-sub); line-height: 1.5; font-size: 14px;">Qoidalarni buzganlik sababli ushbu hisob muzlatilgan.</p>
+        <h2 id="txtBannedTitle" style="color: #ff4747; margin-top: 0;">Profil bloklangan</h2>
+        <p id="txtBannedSub" style="color: var(--text-sub); line-height: 1.5; font-size: 14px;">Qoidalarni buzganlik sababli ushbu hisob muzlatilgan.</p>
     </div>
 
     <div id="errorScreen" style="display: none; max-width: 340px; margin: 60px auto; padding: 25px; text-align: center;" class="glass-panel">
         <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
-        <h3 style="color: var(--primary); margin-top: 0;">Aloqa uzildi</h3>
+        <h3 id="txtErrorTitle" style="color: var(--primary); margin-top: 0;">Aloqa uzildi</h3>
         <p id="errorText" style="font-size: 13px; color: var(--text-sub); margin-bottom: 20px;">Server bilan bog'lanishda xatolik yuz berdi.</p>
         <button id="btnRetry" onclick="verifySession()" style="background: var(--primary-gradient); color: #fff; border: none; padding: 11px 20px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; width: 100%;">Qayta urinish</button>
     </div>
@@ -173,9 +203,9 @@
         <!-- TAB 1: 🏠 DISCOVER (SWIPE CARDS) -->
         <section id="viewDiscover">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-size: 14px; font-weight: bold; color: var(--text-muted);">Yangi anketalar</span>
+                <span id="txtDiscoverTitle" style="font-size: 14px; font-weight: bold; color: var(--text-muted);">Yangi anketalar</span>
                 <button onclick="openFilterModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: var(--text-sub); padding: 6px 12px; border-radius: var(--radius-full); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                    <span>⚡ Filtrlash</span>
+                    <span id="txtBtnFilter">⚡ Filtrlash</span>
                 </button>
             </div>
 
@@ -186,32 +216,32 @@
 
         <!-- TAB 2: ❤️ MATCHES -->
         <section id="viewMatches" style="display: none;">
-            <h3 style="color: var(--primary); margin-top: 5px; margin-bottom: 15px;">O'zaro Juftliklar 💖</h3>
+            <h3 id="txtMatchesHeader" style="color: var(--primary); margin-top: 5px; margin-bottom: 15px;">O'zaro Juftliklar 💖</h3>
             <div id="matchesList" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
             </div>
         </section>
 
         <!-- TAB 3: 💬 CHATS -->
         <section id="viewChats" style="display: none;">
-            <h3 style="color: var(--primary); margin-top: 5px; margin-bottom: 15px;">Suhbatlar 💬</h3>
+            <h3 id="txtChatsHeader" style="color: var(--primary); margin-top: 5px; margin-bottom: 15px;">Suhbatlar 💬</h3>
             <div id="chatsList" style="display: flex; flex-direction: column; gap: 10px;">
             </div>
         </section>
 
-        <!-- TAB 4: 👤 PROFILE & SETTINGS -->
+        <!-- TAB 4: 👤 PROFILE -->
         <section id="viewProfile" style="display: none; padding-bottom: 30px;">
             <div class="glass-panel" style="padding: 20px; text-align: center; margin-bottom: 18px;">
                 <img id="myPhoto" src="" style="width: 105px; height: 105px; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary); box-shadow: 0 0 20px var(--primary-glow); margin: 0 auto;">
                 <h2 id="myNameAge" style="margin: 12px 0 4px 0;">—</h2>
                 <p id="myCity" style="margin: 0 0 12px 0; color: var(--text-muted); font-size: 13px;">—</p>
                 <div style="margin-bottom: 15px;">
-                    <span style="background: rgba(36,255,138,0.12); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold;">🟢 Tasdiqlangan (Faol)</span>
+                    <span id="txtProfileActiveBadge" style="background: rgba(36,255,138,0.12); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold;">🟢 Tasdiqlangan (Faol)</span>
                 </div>
 
                 <!-- Profile Completion -->
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px; margin-bottom: 15px; text-align: left;">
                     <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
-                        <span>Profil to'liqligi:</span>
+                        <span id="txtCompletionLabel">Profil to'liqligi:</span>
                         <span id="myCompletionPct" style="color: var(--primary); font-weight: bold;">100%</span>
                     </div>
                     <div class="progress-bar-bg">
@@ -220,80 +250,37 @@
                 </div>
 
                 <div style="text-align: left; margin-bottom: 15px;">
-                    <p style="font-size: 12px; font-weight: bold; color: var(--primary); margin: 0 0 4px 0;">O'zim haqimda:</p>
+                    <p id="lblMyBio" style="font-size: 12px; font-weight: bold; color: var(--primary); margin: 0 0 4px 0;">O'zim haqimda:</p>
                     <p id="myBio" style="margin: 0; font-size: 14px; color: var(--text-sub); line-height: 1.4;">—</p>
                 </div>
 
                 <div style="text-align: left; margin-bottom: 15px;">
-                    <p style="font-size: 12px; font-weight: bold; color: var(--primary); margin: 0 0 6px 0;">Qiziqishlarim:</p>
+                    <p id="lblMyInterests" style="font-size: 12px; font-weight: bold; color: var(--primary); margin: 0 0 6px 0;">Qiziqishlarim:</p>
                     <div id="myInterestsList" style="display: flex; flex-wrap: wrap; gap: 6px;">
                     </div>
                 </div>
 
-                <button onclick="openEditProfileModal()" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; font-size: 13px;">✏️ Profilni tahrirlash</button>
+                <button id="btnEditProfile" onclick="openEditProfileModal()" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; font-size: 13px;">✏️ Profilni tahrirlash</button>
             </div>
 
-            <!-- Settings Menu List -->
+            <!-- Settings Menu List in Profile -->
             <div class="glass-panel" style="padding: 10px 15px;">
+                <div onclick="openLanguageModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                    <span id="txtMenuLang">🌐 Tilni o'zgartirish</span>
+                    <span id="currentLangLabel" style="color: var(--primary); font-weight: bold; font-size: 12px;">O'zbekcha</span>
+                </div>
                 <div onclick="openBlockedUsersModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                    <span>🚫 Bloklangan foydalanuvchilar</span>
+                    <span id="txtMenuBlocked">🚫 Bloklangan foydalanuvchilar</span>
                     <span style="color: var(--text-muted);">➔</span>
                 </div>
                 <div onclick="openRulesModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                    <span>ℹ️ Qoidalar va Xavfsizlik</span>
+                    <span id="txtMenuRules">ℹ️ Qoidalar va Xavfsizlik</span>
                     <span style="color: var(--text-muted);">➔</span>
                 </div>
                 <div onclick="confirmDeleteAccount()" style="padding: 12px 0; display: flex; justify-content: space-between; align-items: center; color: #ff4747; cursor: pointer;">
-                    <span>🗑️ Hisobni o'chirish</span>
+                    <span id="txtMenuDelete">🗑️ Hisobni o'chirish</span>
                     <span style="color: #ff4747;">➔</span>
                 </div>
-            </div>
-        </section>
-
-        <!-- TAB 5: 🛡️ ADMIN DASHBOARD -->
-        <section id="viewAdmin" style="display: none; padding-bottom: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="color: var(--accent-gold); margin: 0;">🛡️ Admin Dashboard</h3>
-                <button onclick="switchTab('viewDiscover')" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 5px 10px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer;">Ilovaga qaytish</button>
-            </div>
-
-            <!-- Stats Grid -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
-                <div class="glass-panel" style="padding: 12px; text-align: center;">
-                    <div style="font-size: 11px; color: var(--text-muted);">Kutilmoqda</div>
-                    <div id="admStatPending" style="font-size: 18px; font-weight: bold; color: var(--accent-gold); margin-top: 4px;">0</div>
-                </div>
-                <div class="glass-panel" style="padding: 12px; text-align: center;">
-                    <div style="font-size: 11px; color: var(--text-muted);">Tasdiqlangan</div>
-                    <div id="admStatApproved" style="font-size: 18px; font-weight: bold; color: var(--accent-green); margin-top: 4px;">0</div>
-                </div>
-                <div class="glass-panel" style="padding: 12px; text-align: center;">
-                    <div style="font-size: 11px; color: var(--text-muted);">Jami a'zolar</div>
-                    <div id="admStatTotal" style="font-size: 18px; font-weight: bold; color: #fff; margin-top: 4px;">0</div>
-                </div>
-            </div>
-
-            <!-- Admin Sub-navigation -->
-            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                <button id="btnAdmTabPending" onclick="switchAdminTab('pending')" style="flex: 1; background: var(--primary-gradient); color: #fff; border: none; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Arizalar</button>
-                <button id="btnAdmTabReports" onclick="switchAdminTab('reports')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Shikoyatlar</button>
-                <button id="btnAdmTabUsers" onclick="switchAdminTab('users')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Foydalanuvchilar</button>
-            </div>
-
-            <!-- Admin Content Sections -->
-            <div id="admSecPending">
-                <div id="admPendingList" style="display: flex; flex-direction: column; gap: 12px;"></div>
-            </div>
-
-            <div id="admSecReports" style="display: none;">
-                <div id="admReportsList" style="display: flex; flex-direction: column; gap: 12px;"></div>
-            </div>
-
-            <div id="admSecUsers" style="display: none;">
-                <div style="margin-bottom: 12px;">
-                    <input type="text" id="admUserSearch" oninput="debounceUserSearch()" placeholder="Ism yoki shahar bo'yicha qidirish..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff; font-size: 13px;">
-                </div>
-                <div id="admUsersList" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
         </section>
 
@@ -301,24 +288,71 @@
         <nav class="bottom-nav">
             <button id="btnNavDiscover" class="nav-btn active" onclick="switchTab('viewDiscover')">
                 <span style="font-size: 18px;">🏠</span>
-                <span>Discover</span>
+                <span id="txtNavDiscover">Discover</span>
             </button>
             <button id="btnNavMatches" class="nav-btn" onclick="switchTab('viewMatches')">
                 <span style="font-size: 18px;">❤️</span>
-                <span>Matches</span>
+                <span id="txtNavMatches">Matches</span>
             </button>
             <button id="btnNavChats" class="nav-btn" onclick="switchTab('viewChats')">
                 <span style="font-size: 18px;">💬</span>
-                <span>Chats</span>
+                <span id="txtNavChats">Chats</span>
             </button>
             <button id="btnNavProfile" class="nav-btn" onclick="switchTab('viewProfile')">
                 <span style="font-size: 18px;">👤</span>
-                <span>Profile</span>
+                <span id="txtNavProfile">Profile</span>
             </button>
         </nav>
     </main>
 
-    <!-- 5. CHAT WINDOW OVERLAY -->
+    <!-- 5. STANDALONE ADMIN DASHBOARD SCREEN -->
+    <div id="adminScreen" style="display: none; max-width: 500px; margin: 0 auto; padding: 15px; padding-bottom: 50px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="color: var(--accent-gold); margin: 0;">🛡️ Admin Dashboard</h3>
+            <button onclick="closeAdminScreen()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;">✕ Yopish</button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+            <div class="glass-panel" style="padding: 12px; text-align: center;">
+                <div id="txtAdmStatPendingLbl" style="font-size: 11px; color: var(--text-muted);">Kutilmoqda</div>
+                <div id="admStatPending" style="font-size: 18px; font-weight: bold; color: var(--accent-gold); margin-top: 4px;">0</div>
+            </div>
+            <div class="glass-panel" style="padding: 12px; text-align: center;">
+                <div id="txtAdmStatApprovedLbl" style="font-size: 11px; color: var(--text-muted);">Tasdiqlangan</div>
+                <div id="admStatApproved" style="font-size: 18px; font-weight: bold; color: var(--accent-green); margin-top: 4px;">0</div>
+            </div>
+            <div class="glass-panel" style="padding: 12px; text-align: center;">
+                <div id="txtAdmStatTotalLbl" style="font-size: 11px; color: var(--text-muted);">Jami a'zolar</div>
+                <div id="admStatTotal" style="font-size: 18px; font-weight: bold; color: #fff; margin-top: 4px;">0</div>
+            </div>
+        </div>
+
+        <!-- Admin Sub-navigation -->
+        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+            <button id="btnAdmTabPending" onclick="switchAdminTab('pending')" style="flex: 1; background: var(--primary-gradient); color: #fff; border: none; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Arizalar</button>
+            <button id="btnAdmTabReports" onclick="switchAdminTab('reports')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Shikoyatlar</button>
+            <button id="btnAdmTabUsers" onclick="switchAdminTab('users')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Foydalanuvchilar</button>
+        </div>
+
+        <!-- Admin Content Sections -->
+        <div id="admSecPending">
+            <div id="admPendingList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+
+        <div id="admSecReports" style="display: none;">
+            <div id="admReportsList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+
+        <div id="admSecUsers" style="display: none;">
+            <div style="margin-bottom: 12px;">
+                <input type="text" id="admUserSearch" oninput="debounceUserSearch()" placeholder="Ism yoki shahar bo'yicha qidirish..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff; font-size: 13px;">
+            </div>
+            <div id="admUsersList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- 6. CHAT WINDOW OVERLAY -->
     <div id="chatOverlay" style="display: none;" class="chat-overlay">
         <div style="background: #090918; border-bottom: 1px solid var(--border-color); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -343,13 +377,62 @@
         </div>
     </div>
 
-    <!-- 6. MODALS -->
+    <!-- 7. MODALS -->
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 id="txtSettingsModalTitle" style="margin: 0; color: var(--primary);">Sozlamalar ⚙️</h3>
+                <button onclick="closeSettingsModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div onclick="openLanguageModal()" style="padding: 12px; background: rgba(255,255,255,0.04); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                    <span id="txtModalSettingLang">🌐 Tilni tanlash</span>
+                    <span id="modalSettingLangVal" style="color: var(--primary); font-weight: bold;">O'zbekcha</span>
+                </div>
+                <div onclick="openRulesModal()" style="padding: 12px; background: rgba(255,255,255,0.04); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                    <span id="txtModalSettingRules">ℹ️ Qoidalar va Yordam</span>
+                    <span style="color: var(--text-muted);">➔</span>
+                </div>
+                <div onclick="openBlockedUsersModal()" style="padding: 12px; background: rgba(255,255,255,0.04); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                    <span id="txtModalSettingBlocked">🚫 Bloklanganlar</span>
+                    <span style="color: var(--text-muted);">➔</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Language Switch Modal -->
+    <div id="languageModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--primary);">Tilni tanlang 🌐</h3>
+                <button onclick="closeLanguageModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+            <div id="modalLangUz" class="lang-card" onclick="setAppLanguage('uz')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">🇺🇿</span>
+                    <span style="font-weight: bold; font-size: 15px;">O'zbekcha</span>
+                </div>
+                <span id="modalLangCheckUz" style="color: var(--primary); font-weight: bold;">✓</span>
+            </div>
+            <div id="modalLangRu" class="lang-card" onclick="setAppLanguage('ru')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">🇷🇺</span>
+                    <span style="font-weight: bold; font-size: 15px;">Русский</span>
+                </div>
+                <span id="modalLangCheckRu" style="display: none; color: var(--primary); font-weight: bold;">✓</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Filter Modal -->
     <div id="filterModal" class="modal-backdrop" style="display: none;">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: var(--primary);">Qidiruv filtrlari ⚡</h3>
+            <h3 id="txtFilterModalTitle" style="margin-top: 0; color: var(--primary);">Qidiruv filtrlari ⚡</h3>
             <div style="margin: 15px 0;">
-                <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 6px;">Yosh chegarasi:</label>
+                <label id="lblFilterAge" style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 6px;">Yosh chegarasi:</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <input type="number" id="filterMinAge" placeholder="Min" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff;">
                     <span>—</span>
@@ -357,12 +440,12 @@
                 </div>
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 6px;">Shahar:</label>
+                <label id="lblFilterCity" style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 6px;">Shahar:</label>
                 <input type="text" id="filterCity" placeholder="Shahar nomi..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff;">
             </div>
             <div style="display: flex; gap: 10px;">
-                <button onclick="resetFilters()" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 11px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Tozalash</button>
-                <button onclick="applyFilters()" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 11px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Qo'llash</button>
+                <button id="btnFilterReset" onclick="resetFilters()" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 11px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Tozalash</button>
+                <button id="btnFilterApply" onclick="applyFilters()" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 11px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Qo'llash</button>
             </div>
         </div>
     </div>
@@ -371,7 +454,7 @@
     <div id="matchModal" class="modal-backdrop" style="display: none;">
         <div class="modal-content match-popup" style="border-color: var(--primary);">
             <h2 style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 0; font-size: 26px;">IT'S A MATCH! ❤️</h2>
-            <p style="color: var(--text-sub); font-size: 14px;">Siz va <b id="matchPartnerName" style="color: #fff;">—</b> bir-biringizga yoqdingiz!</p>
+            <p style="color: var(--text-sub); font-size: 14px;"><span id="txtMatchYou">Siz va</span> <b id="matchPartnerName" style="color: #fff;">—</b> <span id="txtMatchLiked">bir-biringizga yoqdingiz!</span></p>
             
             <div class="dual-avatar-wrap">
                 <img id="matchMyAvatar" src="" class="dual-avatar">
@@ -379,7 +462,7 @@
             </div>
 
             <button id="btnMatchChat" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; font-size: 15px; margin-bottom: 10px;">💬 Suhbatni boshlash</button>
-            <button onclick="closeMatchModal()" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 11px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
+            <button id="btnMatchContinue" onclick="closeMatchModal()" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 11px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Davom etish ➔</button>
         </div>
     </div>
 
@@ -406,8 +489,8 @@
     <!-- Report Modal -->
     <div id="reportModal" class="modal-backdrop" style="display: none;">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: var(--primary);">Foydalanuvchi ustidan shikoyat ⚠️</h3>
-            <p style="font-size: 13px; color: var(--text-sub);">Qanday qoidabuzarlikni aniqladingiz?</p>
+            <h3 id="txtReportModalTitle" style="margin-top: 0; color: var(--primary);">Foydalanuvchi ustidan shikoyat ⚠️</h3>
+            <p id="txtReportModalSub" style="font-size: 13px; color: var(--text-sub);">Qanday qoidabuzarlikni aniqladingiz?</p>
             <div style="margin: 15px 0;">
                 <select id="reportReason" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff;">
                     <option value="Spam">Spam / Reklama</option>
@@ -422,8 +505,8 @@
                 <textarea id="reportDesc" placeholder="Qo'shimcha izoh (ixtiyoriy)..." rows="3" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff; font-size: 13px; resize: none;"></textarea>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button onclick="closeReportModal()" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Bekor qilish</button>
-                <button onclick="submitUserReport()" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Yuborish</button>
+                <button id="btnReportCancel" onclick="closeReportModal()" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Bekor qilish</button>
+                <button id="btnReportSubmit" onclick="submitUserReport()" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Yuborish</button>
             </div>
         </div>
     </div>
@@ -431,26 +514,26 @@
     <!-- Edit Profile Modal -->
     <div id="editProfileModal" class="modal-backdrop" style="display: none;">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: var(--primary);">Profilni tahrirlash ✏️</h3>
+            <h3 id="txtEditModalTitle" style="margin-top: 0; color: var(--primary);">Profilni tahrirlash ✏️</h3>
             <div style="margin-bottom: 12px;">
-                <label style="font-size: 12px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px;">Ism</label>
+                <label id="lblEditName" style="font-size: 12px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px;">Ism</label>
                 <input type="text" id="editName" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff;">
             </div>
             <div style="margin-bottom: 12px;">
-                <label style="font-size: 12px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px;">Shahar</label>
+                <label id="lblEditCity" style="font-size: 12px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px;">Shahar</label>
                 <input type="text" id="editCity" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff;">
             </div>
             <div style="margin-bottom: 12px;">
-                <label style="font-size: 12px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px;">Bio</label>
+                <label id="lblEditBio" style="font-size: 12px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px;">Bio</label>
                 <textarea id="editBio" rows="3" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff; resize: none;"></textarea>
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="font-size: 12px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 6px;">Qiziqishlar</label>
+                <label id="lblEditInterests" style="font-size: 12px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 6px;">Qiziqishlar</label>
                 <div id="editInterestsContainer" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button onclick="closeEditProfileModal()" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Bekor qilish</button>
-                <button onclick="saveProfileEdit()" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Saqlash</button>
+                <button id="btnEditCancel" onclick="closeEditProfileModal()" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Bekor qilish</button>
+                <button id="btnEditSave" onclick="saveProfileEdit()" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Saqlash</button>
             </div>
         </div>
     </div>
@@ -459,7 +542,7 @@
     <div id="blockedUsersModal" class="modal-backdrop" style="display: none;">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0; color: var(--primary);">Bloklanganlar 🚫</h3>
+                <h3 id="txtBlockedModalTitle" style="margin: 0; color: var(--primary);">Bloklanganlar 🚫</h3>
                 <button onclick="closeBlockedUsersModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
             </div>
             <div id="blockedUsersList" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
@@ -470,17 +553,17 @@
     <!-- Rules Modal -->
     <div id="rulesModal" class="modal-backdrop" style="display: none;">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: var(--primary);">Kairyx Qoidalari ℹ️</h3>
-            <ul style="padding-left: 20px; font-size: 13px; color: var(--text-sub); line-height: 1.6;">
+            <h3 id="txtRulesModalTitle" style="margin-top: 0; color: var(--primary);">Kairyx Qoidalari ℹ️</h3>
+            <ul id="rulesListContent" style="padding-left: 20px; font-size: 13px; color: var(--text-sub); line-height: 1.6;">
                 <li>Faqat 18 yoshdan oshganlar foydalanishi mumkin.</li>
                 <li>Haqiqiy fotosurat va ism kiritilishi talab etiladi.</li>
                 <li>Spam, reklama, firibgarlik va nojo'ya xatti-harakatlar uchun akkaunt doimiy bloklanadi.</li>
                 <li>Ikkala tomon ham Like bossagina shaxsiy chat ochiladi.</li>
             </ul>
-            <button onclick="closeRulesModal()" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; margin-top: 10px;">Tushundim</button>
+            <button id="btnRulesUnderstood" onclick="closeRulesModal()" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; margin-top: 10px;">Tushundim</button>
         </div>
     </div>
 
-    <script src="app.js?v=2.7.0"></script>
+    <script src="app.js?v=2.8.0"></script>
 </body>
 </html>

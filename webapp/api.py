@@ -937,7 +937,7 @@ async def serve_app(request):
     return web.Response(text="// app.js", content_type="application/javascript")
 
 def create_webapp_app() -> web.Application:
-    app = web.Application()
+    app = web.Application(client_max_size=30 * 1024 * 1024)
 
     async def cors_middleware(app, handler):
         async def middleware_handler(request):
