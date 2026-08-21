@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kairyx Dating</title>
+    <title>Kairyx Platform</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=2.8.0">
+    <link rel="stylesheet" href="style.css?v=2.9.0">
 </head>
 <body>
 
     <!-- Header bar -->
     <header style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); background: rgba(5,5,16,0.8); backdrop-filter: blur(10px); position: sticky; top:0; z-index:90;">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="switchTab('viewDiscover')">
             <span style="font-size: 20px;">💖</span>
             <span style="font-weight: 800; font-size: 18px; letter-spacing: 0.5px; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KAIRYX</span>
         </div>
         <div id="headerActions" style="display: flex; gap: 10px; align-items: center;">
+            <button id="btnHeaderNotif" onclick="openNotificationsModal()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); font-size: 16px; cursor: pointer; color: var(--text-main); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;">
+                🔔
+                <span id="notifBadge" class="badge-dot" style="display: none;">0</span>
+            </button>
             <button id="btnHeaderAdmin" onclick="openAdminScreen()" style="display: none; background: rgba(255,183,0,0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 5px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold; cursor: pointer;">🛡️ Admin</button>
             <button id="btnHeaderSettings" onclick="openSettingsModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted);">⚙️</button>
         </div>
@@ -30,7 +34,6 @@
 
     <!-- 2. REGISTRATION WIZARD -->
     <div id="registrationScreen" style="display: none; max-width: 420px; margin: 20px auto; padding: 20px;">
-        <!-- Progress bar -->
         <div style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
                 <span id="wizardStepTitle">Qadam 1: Tilni tanlash</span>
@@ -42,10 +45,9 @@
         </div>
 
         <div class="glass-panel" style="padding: 22px;">
-            
             <!-- Step 1: Language Selection -->
             <div id="regStep1">
-                <h3 id="txtRegStep1Title" style="margin-top: 0; color: var(--primary);">Tilni tanlang / Выберите язык 🌐</h3>
+                <h3 id="txtRegStep1Title" style="margin-top: 0; color: var(--primary);">Tilni tanlang / Select Language 🌐</h3>
                 <p id="txtRegStep1Sub" style="font-size: 14px; color: var(--text-sub); line-height: 1.5;">Ilovadan qaysi tilda foydalanmoqchisiz?</p>
                 
                 <div style="margin: 20px 0;">
@@ -63,6 +65,14 @@
                             <span style="font-weight: bold; font-size: 15px;">Русский</span>
                         </div>
                         <span id="langCheckRu" style="display: none; color: var(--primary); font-weight: bold;">✓</span>
+                    </div>
+
+                    <div id="optLangEn" class="lang-card" onclick="selectRegLanguage('en')">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 24px;">🇬🇧</span>
+                            <span style="font-weight: bold; font-size: 15px;">English</span>
+                        </div>
+                        <span id="langCheckEn" style="display: none; color: var(--primary); font-weight: bold;">✓</span>
                     </div>
                 </div>
 
@@ -181,7 +191,7 @@
     <div id="rejectedScreen" style="display: none; max-width: 400px; margin: 60px auto; padding: 30px; text-align: center;" class="glass-panel">
         <div style="font-size: 44px; margin-bottom: 10px;">❌</div>
         <h2 id="txtRejectedTitle" style="color: var(--primary); margin-top: 0;">Arizangiz rad etildi</h2>
-        <p id="txtRejectedSub" style="color: var(--text-sub); line-height: 1.5; font-size: 14px;">Anketangiz Kairyx sifat standartlariga mos kelmadi.</p>
+        <p id="txtRejectedSub" style="color: var(--text-sub); line-height: 1.5; font-size: 14px;">Anketangiz Kairyx standartlariga mos kelmadi.</p>
     </div>
 
     <div id="bannedScreen" style="display: none; max-width: 400px; margin: 60px auto; padding: 30px; text-align: center;" class="glass-panel">
@@ -228,12 +238,25 @@
             </div>
         </section>
 
-        <!-- TAB 4: 👤 PROFILE -->
+        <!-- TAB 4: 👤 PROFILE & DASHBOARD -->
         <section id="viewProfile" style="display: none; padding-bottom: 30px;">
             <div class="glass-panel" style="padding: 20px; text-align: center; margin-bottom: 18px;">
                 <img id="myPhoto" src="" style="width: 105px; height: 105px; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary); box-shadow: 0 0 20px var(--primary-glow); margin: 0 auto;">
                 <h2 id="myNameAge" style="margin: 12px 0 4px 0;">—</h2>
                 <p id="myCity" style="margin: 0 0 12px 0; color: var(--text-muted); font-size: 13px;">—</p>
+                
+                <!-- Balance & Points Card -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px;">
+                        <div style="font-size: 11px; color: var(--text-muted);">Balans</div>
+                        <div id="myBalance" style="font-size: 15px; font-weight: bold; color: var(--accent-green);">0 UZS</div>
+                    </div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px;">
+                        <div style="font-size: 11px; color: var(--text-muted);">Bonus ballar</div>
+                        <div id="myBonusPoints" style="font-size: 15px; font-weight: bold; color: var(--accent-gold);">0 pts</div>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 15px;">
                     <span id="txtProfileActiveBadge" style="background: rgba(36,255,138,0.12); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: bold;">🟢 Tasdiqlangan (Faol)</span>
                 </div>
@@ -268,6 +291,10 @@
                 <div onclick="openLanguageModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
                     <span id="txtMenuLang">🌐 Tilni o'zgartirish</span>
                     <span id="currentLangLabel" style="color: var(--primary); font-weight: bold; font-size: 12px;">O'zbekcha</span>
+                </div>
+                <div onclick="openSupportTicketsModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                    <span>💬 Qo'llab-quvvatlash xizmati</span>
+                    <span style="color: var(--text-muted);">➔</span>
                 </div>
                 <div onclick="openBlockedUsersModal()" style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
                     <span id="txtMenuBlocked">🚫 Bloklangan foydalanuvchilar</span>
@@ -308,31 +335,34 @@
     <!-- 5. STANDALONE ADMIN DASHBOARD SCREEN -->
     <div id="adminScreen" style="display: none; max-width: 500px; margin: 0 auto; padding: 15px; padding-bottom: 50px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="color: var(--accent-gold); margin: 0;">🛡️ Admin Dashboard</h3>
+            <h3 style="color: var(--accent-gold); margin: 0;">🛡️ Kairyx Enterprise Admin</h3>
             <button onclick="closeAdminScreen()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;">✕ Yopish</button>
         </div>
 
         <!-- Stats Grid -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
-            <div class="glass-panel" style="padding: 12px; text-align: center;">
-                <div id="txtAdmStatPendingLbl" style="font-size: 11px; color: var(--text-muted);">Kutilmoqda</div>
-                <div id="admStatPending" style="font-size: 18px; font-weight: bold; color: var(--accent-gold); margin-top: 4px;">0</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+            <div class="glass-panel" style="padding: 10px; text-align: center;">
+                <div style="font-size: 10px; color: var(--text-muted);">Kutilmoqda</div>
+                <div id="admStatPending" style="font-size: 16px; font-weight: bold; color: var(--accent-gold); margin-top: 3px;">0</div>
             </div>
-            <div class="glass-panel" style="padding: 12px; text-align: center;">
-                <div id="txtAdmStatApprovedLbl" style="font-size: 11px; color: var(--text-muted);">Tasdiqlangan</div>
-                <div id="admStatApproved" style="font-size: 18px; font-weight: bold; color: var(--accent-green); margin-top: 4px;">0</div>
+            <div class="glass-panel" style="padding: 10px; text-align: center;">
+                <div style="font-size: 10px; color: var(--text-muted);">Tasdiqlangan</div>
+                <div id="admStatApproved" style="font-size: 16px; font-weight: bold; color: var(--accent-green); margin-top: 3px;">0</div>
             </div>
-            <div class="glass-panel" style="padding: 12px; text-align: center;">
-                <div id="txtAdmStatTotalLbl" style="font-size: 11px; color: var(--text-muted);">Jami a'zolar</div>
-                <div id="admStatTotal" style="font-size: 18px; font-weight: bold; color: #fff; margin-top: 4px;">0</div>
+            <div class="glass-panel" style="padding: 10px; text-align: center;">
+                <div style="font-size: 10px; color: var(--text-muted);">Jami a'zolar</div>
+                <div id="admStatTotal" style="font-size: 16px; font-weight: bold; color: #fff; margin-top: 3px;">0</div>
             </div>
         </div>
 
         <!-- Admin Sub-navigation -->
-        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-            <button id="btnAdmTabPending" onclick="switchAdminTab('pending')" style="flex: 1; background: var(--primary-gradient); color: #fff; border: none; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Arizalar</button>
-            <button id="btnAdmTabReports" onclick="switchAdminTab('reports')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Shikoyatlar</button>
-            <button id="btnAdmTabUsers" onclick="switchAdminTab('users')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Foydalanuvchilar</button>
+        <div style="display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 4px;">
+            <button id="btnAdmTabPending" onclick="switchAdminTab('pending')" style="flex: 1; background: var(--primary-gradient); color: #fff; border: none; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Arizalar</button>
+            <button id="btnAdmTabReports" onclick="switchAdminTab('reports')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Shikoyatlar</button>
+            <button id="btnAdmTabTickets" onclick="switchAdminTab('tickets')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Tiketlar</button>
+            <button id="btnAdmTabUsers" onclick="switchAdminTab('users')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">A'zolar</button>
+            <button id="btnAdmTabBroadcast" onclick="switchAdminTab('broadcast')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Xabar</button>
+            <button id="btnAdmTabAudit" onclick="switchAdminTab('audit')" style="flex: 1; background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-subtle); padding: 8px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;">Audit</button>
         </div>
 
         <!-- Admin Content Sections -->
@@ -344,11 +374,34 @@
             <div id="admReportsList" style="display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
 
+        <div id="admSecTickets" style="display: none;">
+            <div id="admTicketsList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+
         <div id="admSecUsers" style="display: none;">
             <div style="margin-bottom: 12px;">
                 <input type="text" id="admUserSearch" oninput="debounceUserSearch()" placeholder="Ism yoki shahar bo'yicha qidirish..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff; font-size: 13px;">
             </div>
             <div id="admUsersList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <div id="admSecBroadcast" style="display: none;">
+            <div class="glass-panel" style="padding: 15px;">
+                <h4 style="margin-top: 0; color: var(--accent-gold);">Barcha a'zolarga xabar yuborish 📢</h4>
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Sarlavha</label>
+                    <input type="text" id="broadcastTitle" placeholder="Masalan: Yangi tanishuv funksiyalari!" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Xabar matni</label>
+                    <textarea id="broadcastBody" rows="4" placeholder="Xabar matnini kiriting..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff; resize: none;"></textarea>
+                </div>
+                <button onclick="sendAdminBroadcast()" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 11px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Yuborish 🚀</button>
+            </div>
+        </div>
+
+        <div id="admSecAudit" style="display: none;">
+            <div id="admAuditLogsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
     </div>
 
@@ -378,6 +431,76 @@
     </div>
 
     <!-- 7. MODALS -->
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--primary);">Bildirishnomalar 🔔</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="markAllNotificationsRead()" style="background: none; border: none; color: var(--text-muted); font-size: 11px; cursor: pointer; text-decoration: underline;">Hammasi o'qildi</button>
+                    <button onclick="closeNotificationsModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
+                </div>
+            </div>
+            <div id="notificationsList" style="display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Tickets Modal -->
+    <div id="supportTicketsModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--primary);">Qo'llab-quvvatlash 💬</h3>
+                <button onclick="closeSupportTicketsModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+            
+            <button onclick="openNewTicketForm()" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 9px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; margin-bottom: 15px;">+ Yangi murojaat yaratish</button>
+            
+            <div id="userTicketsList" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- New Ticket Form Modal -->
+    <div id="newTicketModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: var(--primary);">Murojaat yaratish ✍️</h3>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Mavzu</label>
+                <input type="text" id="newTicketSubject" placeholder="Masalan: To'lov yoki profil xatosi" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Kategoriya</label>
+                <select id="newTicketCategory" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff;">
+                    <option value="General">Umumiy savol</option>
+                    <option value="Account">Profil / Hisob</option>
+                    <option value="Billing">To'lov / Balans</option>
+                    <option value="Safety">Xavfsizlik / Shikoyat</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Xabar</label>
+                <textarea id="newTicketMessage" rows="3" placeholder="Muammoni batafsil tasvirlab bering..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; color: #fff; resize: none;"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeNewTicketForm()" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Bekor qilish</button>
+                <button onclick="submitNewSupportTicket()" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer;">Yuborish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin User Detail 360 Modal -->
+    <div id="adminUserDetailModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content" style="max-width: 480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 id="admDetailHeader" style="margin: 0; color: var(--accent-gold);">Foydalanuvchi Profili</h3>
+                <button onclick="closeAdminUserDetailModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+            
+            <div id="admDetailContent" style="display: flex; flex-direction: column; gap: 12px; max-height: 450px; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
     <div id="settingsModal" class="modal-backdrop" style="display: none;">
         <div class="modal-content">
@@ -423,6 +546,13 @@
                     <span style="font-weight: bold; font-size: 15px;">Русский</span>
                 </div>
                 <span id="modalLangCheckRu" style="display: none; color: var(--primary); font-weight: bold;">✓</span>
+            </div>
+            <div id="modalLangEn" class="lang-card" onclick="setAppLanguage('en')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">🇬🇧</span>
+                    <span style="font-weight: bold; font-size: 15px;">English</span>
+                </div>
+                <span id="modalLangCheckEn" style="display: none; color: var(--primary); font-weight: bold;">✓</span>
             </div>
         </div>
     </div>
@@ -555,15 +685,11 @@
         <div class="modal-content">
             <h3 id="txtRulesModalTitle" style="margin-top: 0; color: var(--primary);">Kairyx Qoidalari ℹ️</h3>
             <ul id="rulesListContent" style="padding-left: 20px; font-size: 13px; color: var(--text-sub); line-height: 1.6;">
-                <li>Faqat 18 yoshdan oshganlar foydalanishi mumkin.</li>
-                <li>Haqiqiy fotosurat va ism kiritilishi talab etiladi.</li>
-                <li>Spam, reklama, firibgarlik va nojo'ya xatti-harakatlar uchun akkaunt doimiy bloklanadi.</li>
-                <li>Ikkala tomon ham Like bossagina shaxsiy chat ochiladi.</li>
             </ul>
             <button id="btnRulesUnderstood" onclick="closeRulesModal()" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 10px; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; margin-top: 10px;">Tushundim</button>
         </div>
     </div>
 
-    <script src="app.js?v=2.8.0"></script>
+    <script src="app.js?v=2.9.0"></script>
 </body>
 </html>

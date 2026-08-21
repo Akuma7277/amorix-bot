@@ -3,7 +3,7 @@ const API_URL = (window.location.origin.includes("localhost") || window.location
     ? window.location.origin
     : "https://amorix-bot-production.up.railway.app";
 
-// ----------------- I18N DICTIONARY -----------------
+// ----------------- MULTI-LANGUAGE I18N (UZ, RU, EN) -----------------
 let currentLang = localStorage.getItem("kairyx_lang") || "uz";
 
 const I18N = {
@@ -16,7 +16,7 @@ const I18N = {
         step4Title: "Qadam 4: Profil surati",
         step5Title: "Qadam 5: Bio va Qiziqishlar",
         step6Title: "Qadam 6: Anketani tasdiqlash",
-        reg1Title: "Tilni tanlang / Выберите язык 🌐",
+        reg1Title: "Tilni tanlang / Select Language 🌐",
         reg1Sub: "Ilovadan qaysi tilda foydalanmoqchisiz?",
         reg2Title: "Kairyx-ga xush kelibsiz! 👋",
         reg2Sub: "Platformamiz faqat voyaga yetgan (18+) foydalanuvchilar uchun mo'ljallangan.",
@@ -182,6 +182,94 @@ const I18N = {
             "Спам, оскорбления, мошенничество и непристойное поведение караются вечным баном.",
             "Личный чат открывается только при взаимной симпатии."
         ]
+    },
+    en: {
+        loadingTitle: "Loading Kairyx...",
+        loadingSub: "Verifying secure session",
+        step1Title: "Step 1: Select Language",
+        step2Title: "Step 2: Age Verification",
+        step3Title: "Step 3: Personal Information",
+        step4Title: "Step 4: Profile Photo",
+        step5Title: "Step 5: Bio & Interests",
+        step6Title: "Step 6: Confirmation",
+        reg1Title: "Select Language 🌐",
+        reg1Sub: "Which language do you prefer to use?",
+        reg2Title: "Welcome to Kairyx! 👋",
+        reg2Sub: "Our platform is exclusively for adults (18+).",
+        lblAge: "Your Age *",
+        reg3Title: "Introduce Yourself ✨",
+        lblName: "Your Name *",
+        namePlaceholder: "Enter your name",
+        lblCity: "Your City *",
+        cityPlaceholder: "e.g. Tashkent, London",
+        reg4Title: "Profile Photo 📸",
+        reg4Sub: "Upload a clear photo where your face is well visible.",
+        photoPlaceholder: "Choose photo",
+        reg5Title: "Bio & Interests 🎨",
+        lblBio: "About You",
+        bioPlaceholder: "What are you looking for...",
+        lblInterests: "Select your interests:",
+        reg6Title: "Confirm Profile 📋",
+        termsAgree: "I agree to the",
+        termsLink: "Terms of Service",
+        termsEnd: ".",
+        btnSubmit: "Submit Profile 🚀",
+        btnSubmitting: "Submitting...",
+        btnNext: "Continue ➔",
+        btnBack: "Back",
+        pendingTitle: "Profile Under Review",
+        pendingSub: "Your profile is being reviewed by moderators. Full access will unlock upon approval.",
+        btnPendingRefresh: "🔄 Check Status",
+        rejectedTitle: "Application Rejected",
+        rejectedSub: "Your profile did not meet Kairyx quality standards.",
+        bannedTitle: "Profile Suspended",
+        bannedSub: "This account has been suspended for rule violations.",
+        errorTitle: "Connection Lost",
+        btnRetry: "Retry",
+        discoverTitle: "Discover New People",
+        btnFilter: "⚡ Filters",
+        matchesHeader: "Mutual Matches 💖",
+        chatsHeader: "Conversations 💬",
+        profileActiveBadge: "🟢 Verified (Active)",
+        completionLabel: "Profile Completeness:",
+        myBioLabel: "About Me:",
+        myInterestsLabel: "My Interests:",
+        btnEditProfile: "✏️ Edit Profile",
+        menuLang: "🌐 Change Language",
+        menuBlocked: "🚫 Blocked Users",
+        menuRules: "ℹ️ Rules & Safety",
+        menuDelete: "🗑️ Deactivate Account",
+        settingsTitle: "Settings ⚙️",
+        settingLang: "🌐 Language",
+        settingRules: "ℹ️ Rules & Support",
+        settingBlocked: "🚫 Blocked List",
+        filterTitle: "Search Filters ⚡",
+        lblFilterAge: "Age range:",
+        lblFilterCity: "City:",
+        btnFilterReset: "Reset",
+        btnFilterApply: "Apply",
+        matchYou: "You and",
+        matchLiked: "liked each other!",
+        btnMatchChat: "💬 Start Chat",
+        btnMatchContinue: "Continue ➔",
+        detailBlock: "🚫 Block",
+        detailReport: "⚠️ Report",
+        reportTitle: "Report User ⚠️",
+        reportSub: "What violation did you observe?",
+        btnCancel: "Cancel",
+        btnSend: "Send",
+        btnSave: "Save",
+        btnUnderstood: "Understood",
+        noProfiles: "No more profiles right now",
+        noProfilesSub: "New members will appear here soon.",
+        noMatches: "No matches yet. Swipe and like profiles in Discover!",
+        noChats: "No conversations yet.",
+        rulesList: [
+            "You must be 18 years or older to use Kairyx.",
+            "Real photo and genuine identity are strictly required.",
+            "Spam, harassment, scams, and illicit behavior result in a permanent ban.",
+            "Private chat unlocks only upon mutual like."
+        ]
     }
 };
 
@@ -192,7 +280,7 @@ function applyTranslations() {
     if (document.getElementById('txtLoadingTitle')) document.getElementById('txtLoadingTitle').textContent = t.loadingTitle;
     if (document.getElementById('txtLoadingSub')) document.getElementById('txtLoadingSub').textContent = t.loadingSub;
 
-    // Wizard
+    // Wizard Steps
     if (document.getElementById('txtRegStep1Title')) document.getElementById('txtRegStep1Title').textContent = t.reg1Title;
     if (document.getElementById('txtRegStep1Sub')) document.getElementById('txtRegStep1Sub').textContent = t.reg1Sub;
     if (document.getElementById('btnRegNext1')) document.getElementById('btnRegNext1').textContent = t.btnNext;
@@ -260,12 +348,10 @@ function applyTranslations() {
     if (document.getElementById('txtMenuRules')) document.getElementById('txtMenuRules').textContent = t.menuRules;
     if (document.getElementById('txtMenuDelete')) document.getElementById('txtMenuDelete').textContent = t.menuDelete;
 
-    // Current Lang labels
-    const langName = currentLang === 'uz' ? "O'zbekcha" : "Русский";
-    if (document.getElementById('currentLangLabel')) document.getElementById('currentLangLabel').textContent = langName;
-    if (document.getElementById('modalSettingLangVal')) document.getElementById('modalSettingLangVal').textContent = langName;
+    const langNames = { uz: "O'zbekcha", ru: "Русский", en: "English" };
+    if (document.getElementById('currentLangLabel')) document.getElementById('currentLangLabel').textContent = langNames[currentLang];
+    if (document.getElementById('modalSettingLangVal')) document.getElementById('modalSettingLangVal').textContent = langNames[currentLang];
 
-    // Rules modal list
     const rulesUl = document.getElementById('rulesListContent');
     if (rulesUl) {
         rulesUl.innerHTML = "";
@@ -284,18 +370,16 @@ function selectRegLanguage(lang) {
     localStorage.setItem("kairyx_lang", lang);
     document.getElementById('optLangUz').classList.toggle('selected', lang === 'uz');
     document.getElementById('optLangRu').classList.toggle('selected', lang === 'ru');
+    document.getElementById('optLangEn').classList.toggle('selected', lang === 'en');
     document.getElementById('langCheckUz').style.display = lang === 'uz' ? 'block' : 'none';
     document.getElementById('langCheckRu').style.display = lang === 'ru' ? 'block' : 'none';
+    document.getElementById('langCheckEn').style.display = lang === 'en' ? 'block' : 'none';
     applyTranslations();
 }
 
 function setAppLanguage(lang) {
     currentLang = lang;
     localStorage.setItem("kairyx_lang", lang);
-    document.getElementById('modalLangUz').classList.toggle('selected', lang === 'uz');
-    document.getElementById('modalLangRu').classList.toggle('selected', lang === 'ru');
-    document.getElementById('modalLangCheckUz').style.display = lang === 'uz' ? 'block' : 'none';
-    document.getElementById('modalLangCheckRu').style.display = lang === 'ru' ? 'block' : 'none';
     applyTranslations();
     closeLanguageModal();
 }
@@ -378,6 +462,12 @@ async function verifySession() {
             currentUser = data.user;
             const status = data.user_status;
 
+            if (data.unread_notifications > 0) {
+                const b = document.getElementById('notifBadge');
+                b.textContent = data.unread_notifications;
+                b.style.display = 'flex';
+            }
+
             const adminBtn = document.getElementById('btnHeaderAdmin');
             if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 
@@ -405,7 +495,7 @@ async function verifySession() {
     }
 }
 
-// ----------------- IMAGE COMPRESSION -----------------
+// ----------------- IMAGE COMPRESSION (CANVAS) -----------------
 function compressImage(file, maxDimension = 800, quality = 0.75) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -479,21 +569,18 @@ document.getElementById('regPhotoInput').addEventListener('change', async functi
             document.getElementById('regPhotoPreview').style.display = 'block';
             document.getElementById('photoPlaceholderText').style.display = 'none';
         } catch(err) {
-            alert("Rasmni qayta ishlashda xatolik: " + err.message);
-            document.getElementById('photoPlaceholderText').innerHTML = "<span style='font-size: 28px;'>📷</span><p style='font-size: 11px; color: var(--text-muted); margin: 5px 0 0 0;'>Rasm tanlash</p>";
+            alert("Rasm xatosi: " + err.message);
         }
     }
 });
 
 function nextRegStep(currStep) {
-    const t = I18N[currentLang] || I18N.uz;
-
     if (currStep === 1) {
-        // Lang chosen, proceed to age
+        // Language picked
     } else if (currStep === 2) {
         const age = parseInt(document.getElementById('regAge').value);
         if (!age || age < 18) {
-            alert(currentLang === 'ru' ? "Сервис доступен только для лиц старше 18 лет!" : "Kairyx-dan foydalanish uchun yoshingiz 18 yoki undan katta bo'lishi shart!");
+            alert(currentLang === 'ru' ? "Сервис доступен только для 18+!" : "18 yoshdan katta bo'lish shart!");
             return;
         }
     } else if (currStep === 3) {
@@ -505,16 +592,15 @@ function nextRegStep(currStep) {
         }
     } else if (currStep === 4) {
         if (!base64Photo) {
-            alert(currentLang === 'ru' ? "Пожалуйста, загрузите фото профиля!" : "Iltimos, profilingiz uchun rasm yuklang!");
+            alert(currentLang === 'ru' ? "Загрузите фото!" : "Profil rasmini yuklang!");
             return;
         }
     } else if (currStep === 5) {
         const bio = document.getElementById('regBio').value.trim();
         if (!bio) {
-            alert(currentLang === 'ru' ? "Напишите немного о себе!" : "O'zingiz haqingizda qisqacha ma'lumot yozing!");
+            alert(currentLang === 'ru' ? "Напишите о себе!" : "O'zingiz haqingizda yozing!");
             return;
         }
-        // Prepare summary
         document.getElementById('summaryPhoto').src = base64Photo;
         document.getElementById('summaryNameAge').textContent = `${document.getElementById('regName').value.trim()}, ${document.getElementById('regAge').value}`;
         document.getElementById('summaryCity').textContent = document.getElementById('regCity').value.trim();
@@ -534,14 +620,7 @@ function prevRegStep(currStep) {
 
 function updateWizardHeader(step) {
     const t = I18N[currentLang] || I18N.uz;
-    const titles = [
-        t.step1Title,
-        t.step2Title,
-        t.step3Title,
-        t.step4Title,
-        t.step5Title,
-        t.step6Title
-    ];
+    const titles = [t.step1Title, t.step2Title, t.step3Title, t.step4Title, t.step5Title, t.step6Title];
     document.getElementById('wizardStepTitle').textContent = titles[step - 1];
     document.getElementById('wizardStepCount').textContent = `${step} / 6`;
     document.getElementById('wizardProgressBar').style.width = `${(step / 6) * 100}%`;
@@ -554,7 +633,7 @@ async function submitRegistration() {
     errText.style.display = 'none';
 
     if (!terms) {
-        errText.textContent = currentLang === 'ru' ? "Необходимо принять правила использования." : "Foydalanish qoidalariga rozilik belgilanishi shart.";
+        errText.textContent = "Foydalanish qoidalariga rozilik belgilanishi shart.";
         errText.style.display = 'block';
         return;
     }
@@ -564,20 +643,19 @@ async function submitRegistration() {
     btn.textContent = t.btnSubmitting;
 
     try {
-        const payload = {
-            name: document.getElementById('regName').value.trim(),
-            age: parseInt(document.getElementById('regAge').value),
-            city: document.getElementById('regCity').value.trim(),
-            photo: base64Photo,
-            bio: document.getElementById('regBio').value.trim(),
-            interests: selectedRegInterests,
-            terms_accepted: true
-        };
-
         const res = await fetch(`${API_URL}/api/register?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                name: document.getElementById('regName').value.trim(),
+                age: parseInt(document.getElementById('regAge').value),
+                city: document.getElementById('regCity').value.trim(),
+                photo: base64Photo,
+                bio: document.getElementById('regBio').value.trim(),
+                interests: selectedRegInterests,
+                language: currentLang,
+                terms_accepted: true
+            })
         });
         const data = await res.json();
         if (data.success) {
@@ -593,7 +671,7 @@ async function submitRegistration() {
     }
 }
 
-// ----------------- ADMIN & SETTINGS HEADER CONTROLS -----------------
+// ----------------- HEADER & ADMIN SCREEN -----------------
 function openAdminScreen() {
     previousViewBeforeAdmin = currentView;
     showView('adminScreen');
@@ -601,30 +679,139 @@ function openAdminScreen() {
 }
 
 function closeAdminScreen() {
-    if (previousViewBeforeAdmin) {
-        showView(previousViewBeforeAdmin);
-    } else {
-        verifySession();
-    }
+    if (previousViewBeforeAdmin) showView(previousViewBeforeAdmin);
+    else verifySession();
 }
 
-function openSettingsModal() {
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-function closeSettingsModal() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
+function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
+function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
 
 function openLanguageModal() {
     closeSettingsModal();
     document.getElementById('modalLangUz').classList.toggle('selected', currentLang === 'uz');
     document.getElementById('modalLangRu').classList.toggle('selected', currentLang === 'ru');
+    document.getElementById('modalLangEn').classList.toggle('selected', currentLang === 'en');
     document.getElementById('modalLangCheckUz').style.display = currentLang === 'uz' ? 'block' : 'none';
     document.getElementById('modalLangCheckRu').style.display = currentLang === 'ru' ? 'block' : 'none';
+    document.getElementById('modalLangCheckEn').style.display = currentLang === 'en' ? 'block' : 'none';
     document.getElementById('languageModal').style.display = 'flex';
 }
-function closeLanguageModal() {
-    document.getElementById('languageModal').style.display = 'none';
+function closeLanguageModal() { document.getElementById('languageModal').style.display = 'none'; }
+
+// ----------------- NOTIFICATIONS MODAL -----------------
+async function openNotificationsModal() {
+    document.getElementById('notificationsModal').style.display = 'flex';
+    const container = document.getElementById('notificationsList');
+    container.innerHTML = "<p style='color:var(--text-muted);'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/notifications?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const notifs = data.notifications;
+            if (notifs.length === 0) {
+                container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>Yangi bildirishnomalar yo'q.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            notifs.forEach(n => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.padding = "10px 12px";
+                item.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <h4 style="margin:0; font-size:13px; color:${n.is_read ? '#fff' : 'var(--primary)'};">${n.title}</h4>
+                        <span style="font-size:10px; color:var(--text-muted);">${new Date(n.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p style="margin:0; font-size:12px; color:var(--text-sub); line-height:1.4;">${n.body}</p>
+                `;
+                container.appendChild(item);
+            });
+            document.getElementById('notifBadge').style.display = 'none';
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeNotificationsModal() { document.getElementById('notificationsModal').style.display = 'none'; }
+
+async function markAllNotificationsRead() {
+    try {
+        await fetch(`${API_URL}/api/notifications/read?${getQueryParams()}`, { method: "POST", headers: getHeaders(), body: "{}" });
+        openNotificationsModal();
+    } catch(e) {}
+}
+
+// ----------------- SUPPORT TICKETS MODAL -----------------
+function openSupportTicketsModal() {
+    closeSettingsModal();
+    document.getElementById('supportTicketsModal').style.display = 'flex';
+    loadUserTickets();
+}
+function closeSupportTicketsModal() { document.getElementById('supportTicketsModal').style.display = 'none'; }
+
+async function loadUserTickets() {
+    const container = document.getElementById('userTicketsList');
+    container.innerHTML = "<p style='color:var(--text-muted);'>Murojaatlar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/tickets?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const tickets = data.tickets;
+            if (tickets.length === 0) {
+                container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>Hozircha murojaatlar yo'q.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            tickets.forEach(t => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.padding = "10px";
+                item.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span style="font-weight:bold; font-size:13px; color:var(--primary);">${t.subject}</span>
+                        <span style="font-size:11px; color:${t.status === 'ANSWERED' ? 'var(--accent-green)' : 'var(--accent-gold)'};">${t.status}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                        ${t.messages.map(m => `
+                            <div style="background:${m.is_admin ? 'rgba(255,183,0,0.1)' : 'rgba(255,255,255,0.04)'}; padding:6px 10px; border-radius:6px; font-size:12px;">
+                                <b>${m.is_admin ? '🛡️ Support' : 'Siz'}:</b> ${m.text}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function openNewTicketForm() { document.getElementById('newTicketModal').style.display = 'flex'; }
+function closeNewTicketForm() { document.getElementById('newTicketModal').style.display = 'none'; }
+
+async function submitNewSupportTicket() {
+    const subject = document.getElementById('newTicketSubject').value.trim();
+    const category = document.getElementById('newTicketCategory').value;
+    const message = document.getElementById('newTicketMessage').value.trim();
+
+    if (!subject || !message) {
+        alert("Mavzu va xabarni kiriting!");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/tickets/create?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ subject, category, message })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Murojaatingiz qabul qilindi!");
+            closeNewTicketForm();
+            loadUserTickets();
+        }
+    } catch(e) { alert(e.message); }
 }
 
 // ----------------- TAB NAVIGATION -----------------
@@ -656,7 +843,7 @@ function switchTab(tabId) {
     if (tabId === 'viewProfile') populateMyProfile();
 }
 
-// ----------------- DISCOVERY & SWIPE -----------------
+// ----------------- DISCOVERY & SWIPING -----------------
 async function loadDiscoverProfiles() {
     const container = document.getElementById('cardStackContainer');
     container.innerHTML = "<p style='color: var(--text-muted); text-align: center; padding-top: 150px; font-style: italic;'>Qidirilmoqda...</p>";
@@ -751,18 +938,12 @@ function showMatchModal(partner, matchId) {
     };
     document.getElementById('matchModal').style.display = 'flex';
 }
+function closeMatchModal() { document.getElementById('matchModal').style.display = 'none'; }
 
-function closeMatchModal() {
-    document.getElementById('matchModal').style.display = 'none';
-}
-
-// ----------------- FILTERS MODAL -----------------
+// ----------------- FILTERS & DETAIL MODALS -----------------
 function openFilterModal() { document.getElementById('filterModal').style.display = 'flex'; }
 function closeFilterModal() { document.getElementById('filterModal').style.display = 'none'; }
-function applyFilters() {
-    closeFilterModal();
-    loadDiscoverProfiles();
-}
+function applyFilters() { closeFilterModal(); loadDiscoverProfiles(); }
 function resetFilters() {
     document.getElementById('filterMinAge').value = "";
     document.getElementById('filterMaxAge').value = "";
@@ -771,7 +952,6 @@ function resetFilters() {
     loadDiscoverProfiles();
 }
 
-// ----------------- PROFILE DETAIL MODAL -----------------
 function openProfileDetailModal(userId) {
     const user = discoverProfiles.find(u => u.id === userId) || activeTargetUser;
     if (!user) return;
@@ -797,24 +977,20 @@ function openProfileDetailModal(userId) {
 }
 function closeProfileDetailModal() { document.getElementById('profileDetailModal').style.display = 'none'; }
 
-// ----------------- BLOCK & REPORT -----------------
 async function blockUser(targetId) {
-    const msg = currentLang === 'ru' ? "Заблокировать этого пользователя? Он больше не сможет видеть ваш профиль." : "Ushbu foydalanuvchini bloklamoqchimisiz? U boshqa profilingizni ko'ra olmaydi.";
-    if (!confirm(msg)) return;
+    if (!confirm("Foydalanuvchini bloklamoqchimisiz?")) return;
     try {
         const res = await fetch(`${API_URL}/api/user/block?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify({ target_id: targetId })
         });
-        const data = await res.json();
-        if (data.success) {
-            alert(currentLang === 'ru' ? "Пользователь заблокирован." : "Foydalanuvchi bloklandi.");
+        if (res.ok) {
+            alert("Foydalanuvchi bloklandi.");
             closeProfileDetailModal();
             loadDiscoverProfiles();
-            loadMatchesList();
         }
-    } catch (e) { alert(e.message); }
+    } catch(e) { alert(e.message); }
 }
 
 let reportTargetId = null;
@@ -835,13 +1011,12 @@ async function submitUserReport() {
             headers: getHeaders(),
             body: JSON.stringify({ target_id: reportTargetId, reason: reason, description: desc })
         });
-        const data = await res.json();
-        if (data.success) {
-            alert(currentLang === 'ru' ? "Жалоба отправлена модераторам. Спасибо!" : "Shikoyatingiz moderatorlarga yuborildi. Rahmat!");
+        if (res.ok) {
+            alert("Shikoyatingiz yuborildi!");
             closeReportModal();
             closeProfileDetailModal();
         }
-    } catch (e) { alert(e.message); }
+    } catch(e) { alert(e.message); }
 }
 
 // ----------------- MATCHES & CHAT -----------------
@@ -898,7 +1073,7 @@ async function loadChatsList() {
                 item.className = "glass-panel";
                 item.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;";
                 item.onclick = () => openChatWindow(m.match_id, m.partner);
-                const lastTxt = m.last_message ? m.last_message.text : (currentLang === 'ru' ? "Новая симпатия! Начните диалог." : "Yangi juftlik! Suhbatni boshlang.");
+                const lastTxt = m.last_message ? m.last_message.text : "Yangi juftlik! Suhbatni boshlang.";
                 item.innerHTML = `
                     <img src="${m.partner.photo}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary);">
                     <div style="flex: 1; min-width: 0;">
@@ -997,20 +1172,20 @@ document.getElementById('chatInput').addEventListener('keypress', (e) => {
 
 function openChatOptionsMenu() {
     if (!activeTargetUser) return;
-    const msg = currentLang === 'ru' ? "Пожаловаться или заблокировать пользователя?" : "Foydalanuvchi ustidan shikoyat qilish yoki bloklashni xohlaysizmi?";
-    const action = confirm(msg);
-    if (action) {
+    if (confirm("Shikoyat qilishni xohlaysizmi?")) {
         openReportModal(activeTargetUser.id);
     }
 }
 
-// ----------------- PROFILE & SETTINGS -----------------
+// ----------------- USER PROFILE & DASHBOARD -----------------
 function populateMyProfile() {
     if (!currentUser) return;
     document.getElementById('myPhoto').src = currentUser.photo || "";
     document.getElementById('myNameAge').textContent = `${currentUser.name}, ${currentUser.age}`;
     document.getElementById('myCity').textContent = `📍 ${currentUser.city}`;
     document.getElementById('myBio').textContent = currentUser.bio || "Mavjud emas";
+    document.getElementById('myBalance').textContent = `${currentUser.balance || 0} UZS`;
+    document.getElementById('myBonusPoints').textContent = `${currentUser.bonus_points || 0} pts`;
 
     const pct = currentUser.completion_percentage || 100;
     document.getElementById('myCompletionPct').textContent = `${pct}%`;
@@ -1120,16 +1295,14 @@ async function unblockUser(targetId) {
 }
 
 async function confirmDeleteAccount() {
-    const msg = currentLang === 'ru' ? "ВНИМАНИЕ: Вы действительно хотите удалить аккаунт? Это действие деактивирует ваш профиль." : "DIQQAT: Hisobingizni o'chirmoqchimisiz? Bu amal profilingizni to'xtatadi.";
-    if (!confirm(msg)) return;
+    if (!confirm("DIQQAT: Hisobingizni o'chirmoqchimisiz?")) return;
     try {
         const res = await fetch(`${API_URL}/api/account/delete?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders()
         });
-        const data = await res.json();
-        if (data.success) {
-            alert(currentLang === 'ru' ? "Аккаунт удален." : "Hisobingiz o'chirildi.");
+        if (res.ok) {
+            alert("Hisobingiz o'chirildi.");
             verifySession();
         }
     } catch (e) { alert(e.message); }
@@ -1141,22 +1314,31 @@ function openRulesModal() {
 }
 function closeRulesModal() { document.getElementById('rulesModal').style.display = 'none'; }
 
-// ----------------- ADMIN DASHBOARD -----------------
+// ----------------- ADMIN DASHBOARD (RBAC) -----------------
 let currentAdminTab = "pending";
 
 function switchAdminTab(tab) {
     currentAdminTab = tab;
-    document.getElementById('admSecPending').style.display = (tab === 'pending') ? 'block' : 'none';
-    document.getElementById('admSecReports').style.display = (tab === 'reports') ? 'block' : 'none';
-    document.getElementById('admSecUsers').style.display = (tab === 'users') ? 'block' : 'none';
+    const sections = ['admSecPending', 'admSecReports', 'admSecTickets', 'admSecUsers', 'admSecBroadcast', 'admSecAudit'];
+    sections.forEach(s => {
+        const el = document.getElementById(s);
+        if (el) el.style.display = (s === `admSec${tab.charAt(0).toUpperCase() + tab.slice(1)}`) ? 'block' : 'none';
+    });
 
-    document.getElementById('btnAdmTabPending').style.background = (tab === 'pending') ? "var(--primary-gradient)" : "rgba(255,255,255,0.06)";
-    document.getElementById('btnAdmTabReports').style.background = (tab === 'reports') ? "var(--primary-gradient)" : "rgba(255,255,255,0.06)";
-    document.getElementById('btnAdmTabUsers').style.background = (tab === 'users') ? "var(--primary-gradient)" : "rgba(255,255,255,0.06)";
+    const btns = ['btnAdmTabPending', 'btnAdmTabReports', 'btnAdmTabTickets', 'btnAdmTabUsers', 'btnAdmTabBroadcast', 'btnAdmTabAudit'];
+    btns.forEach(b => {
+        const el = document.getElementById(b);
+        if (el) {
+            el.style.background = (b === `btnAdmTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`) ? "var(--primary-gradient)" : "rgba(255,255,255,0.06)";
+            el.style.color = (b === `btnAdmTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`) ? "#fff" : "var(--text-muted)";
+        }
+    });
 
     if (tab === 'pending') loadAdminPending();
     if (tab === 'reports') loadAdminReports();
+    if (tab === 'tickets') loadAdminTickets();
     if (tab === 'users') loadAdminUsers();
+    if (tab === 'audit') loadAdminAuditLogs();
 }
 
 async function loadAdminData() {
@@ -1222,11 +1404,13 @@ async function adminApproveUser(id) {
 }
 
 async function adminRejectUser(id) {
+    const reason = prompt("Rad etish sababini kiriting:", "Anketa talablarga javob bermaydi");
+    if (!reason) return;
     try {
         const res = await fetch(`${API_URL}/api/admin/reject?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ user_id: id })
+            body: JSON.stringify({ user_id: id, reason: reason })
         });
         if (res.ok) loadAdminData();
     } catch (e) { alert(e.message); }
@@ -1281,6 +1465,72 @@ async function adminResolveReport(id, action) {
     } catch (e) { alert(e.message); }
 }
 
+async function loadAdminTickets() {
+    const container = document.getElementById('admTicketsList');
+    container.innerHTML = "<p style='color: var(--text-muted);'>Tiketlar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/tickets?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const tickets = data.tickets;
+            if (tickets.length === 0) {
+                container.innerHTML = "<p style='color: var(--accent-green); text-align: center;'>Murojaatlar yo'q!</p>";
+                return;
+            }
+            container.innerHTML = "";
+            tickets.forEach(t => {
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.padding = "14px";
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: var(--primary); font-weight: bold; font-size: 13px;">${t.subject}</span>
+                        <span style="font-size: 11px; color: ${t.status === 'OPEN' ? 'var(--accent-gold)' : 'var(--accent-green)'};">${t.status}</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 8px 0;">Mijoz: ${t.user ? t.user.name : 'User'}</p>
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px;">
+                        ${t.messages.map(m => `
+                            <div style="background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px; font-size: 11px;">
+                                <b>${m.is_admin ? '🛡️ Siz' : 'Mijoz'}:</b> ${m.text}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="adminReplyTicketPrompt(${t.id})" style="flex: 2; background: var(--primary-gradient); color: #fff; border: none; padding: 6px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">Javob yozish</button>
+                        <button onclick="adminCloseTicket(${t.id})" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: #fff; padding: 6px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer;">Yopish</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+async function adminReplyTicketPrompt(ticketId) {
+    const text = prompt("Mijozga javob matnini kiriting:");
+    if (!text) return;
+    try {
+        const res = await fetch(`${API_URL}/api/admin/ticket/reply?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ ticket_id: ticketId, text: text })
+        });
+        if (res.ok) loadAdminTickets();
+    } catch(e) { alert(e.message); }
+}
+
+async function adminCloseTicket(ticketId) {
+    try {
+        const res = await fetch(`${API_URL}/api/admin/ticket/status?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ ticket_id: ticketId, status: "CLOSED" })
+        });
+        if (res.ok) loadAdminTickets();
+    } catch(e) { alert(e.message); }
+}
+
 let searchTimer = null;
 function debounceUserSearch() {
     clearTimeout(searchTimer);
@@ -1290,7 +1540,7 @@ function debounceUserSearch() {
 async function loadAdminUsers() {
     const container = document.getElementById('admUsersList');
     const q = document.getElementById('admUserSearch').value;
-    container.innerHTML = "<p style='color: var(--text-muted);'>Foydalanuvchilar qidirilmoqda...</p>";
+    container.innerHTML = "<p style='color: var(--text-muted);'>A'zolar qidirilmoqda...</p>";
 
     try {
         const res = await fetch(`${API_URL}/api/admin/users?q=${encodeURIComponent(q)}&${getQueryParams()}`, { method: "GET", headers: getHeaders() });
@@ -1305,19 +1555,18 @@ async function loadAdminUsers() {
             users.forEach(u => {
                 const item = document.createElement('div');
                 item.className = "glass-panel";
-                item.style.cssText = "padding: 10px; display: flex; justify-content: space-between; align-items: center;";
+                item.style.cssText = "padding: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;";
                 const isBanned = u.status === 'BANNED';
+                item.onclick = () => openAdminUserDetail(u.id);
                 item.innerHTML = `
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <img src="${u.photo || ''}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;">
                         <div>
                             <h4 style="margin: 0; font-size: 14px;">${u.name || 'Draft'}, ${u.age || '?'}</h4>
-                            <span style="font-size: 11px; color: ${isBanned ? '#ff4747' : 'var(--accent-green)'};">${u.status}</span>
+                            <span style="font-size: 11px; color: ${isBanned ? '#ff4747' : 'var(--accent-green)'};">${u.status} • ${u.city || ''}</span>
                         </div>
                     </div>
-                    <button onclick="adminToggleBan(${u.id}, ${!isBanned})" style="background: ${isBanned ? 'var(--accent-green)' : '#ff4747'}; color: #000; border: none; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 11px; font-weight: bold; cursor: pointer;">
-                        ${isBanned ? 'Faollashtirish' : 'Bloklash'}
-                    </button>
+                    <span style="font-size: 12px; color: var(--primary);">Batafsil ➔</span>
                 `;
                 container.appendChild(item);
             });
@@ -1325,15 +1574,135 @@ async function loadAdminUsers() {
     } catch (e) { container.innerHTML = e.message; }
 }
 
-async function adminToggleBan(userId, isBan) {
+async function openAdminUserDetail(userId) {
+    document.getElementById('adminUserDetailModal').style.display = 'flex';
+    const container = document.getElementById('admDetailContent');
+    container.innerHTML = "<p style='color: var(--text-muted);'>Yuklanmoqda...</p>";
+
     try {
-        const res = await fetch(`${API_URL}/api/admin/user/ban?${getQueryParams()}`, {
+        const res = await fetch(`${API_URL}/api/admin/user/detail?user_id=${userId}&${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const u = data.user;
+            container.innerHTML = `
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <img src="${u.photo || ''}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary);">
+                    <div>
+                        <h3 style="margin: 0;">${u.name || 'Noma`lum'}, ${u.age || '?'}</h3>
+                        <p style="margin: 2px 0; color: var(--text-muted); font-size: 12px;">ID: ${u.id} • TG: ${u.telegram_id || '—'}</p>
+                        <span style="font-size: 11px; color: var(--accent-green); font-weight: bold;">Status: ${u.status}</span>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; font-size: 12px;">
+                    <p style="margin: 0 0 4px 0;"><b>Shahar:</b> ${u.city || '—'}</p>
+                    <p style="margin: 0 0 4px 0;"><b>Bio:</b> ${u.bio || '—'}</p>
+                    <p style="margin: 0;"><b>Balans:</b> ${u.balance} UZS (${u.bonus_points} pts)</p>
+                </div>
+
+                <h4 style="margin: 10px 0 4px 0; color: var(--accent-gold);">Statusni o'zgartirish:</h4>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button onclick="adminChangeUserStatus(${u.id}, 'APPROVED')" style="background: var(--accent-green); color: #000; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">ACTIVE / APPROVED</button>
+                    <button onclick="adminChangeUserStatus(${u.id}, 'SUSPENDED')" style="background: var(--accent-gold); color: #000; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">SUSPEND</button>
+                    <button onclick="adminChangeUserStatus(${u.id}, 'BANNED')" style="background: #ff4747; color: #fff; border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">BAN</button>
+                </div>
+
+                <h4 style="margin: 12px 0 4px 0; color: var(--accent-gold);">Ichki admin izohi (Note):</h4>
+                <div style="display: flex; gap: 6px;">
+                    <input type="text" id="admNewNoteInput" placeholder="Izoh yozing..." style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px; color: #fff; font-size: 12px;">
+                    <button onclick="adminAddUserNote(${u.id})" style="background: var(--primary-gradient); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">Qo'shish</button>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+                    ${data.notes.map(n => `<div style="font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 4px 8px; border-radius: 4px;">• ${n.note} (${new Date(n.created_at).toLocaleDateString()})</div>`).join('')}
+                </div>
+            `;
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeAdminUserDetailModal() { document.getElementById('adminUserDetailModal').style.display = 'none'; }
+
+async function adminChangeUserStatus(userId, status) {
+    const reason = prompt("Sababini kiriting:", "Admin moderatsiyasi");
+    if (!reason) return;
+    try {
+        const res = await fetch(`${API_URL}/api/admin/user/status?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ user_id: userId, is_ban: isBan })
+            body: JSON.stringify({ user_id: userId, status: status, reason: reason })
         });
-        if (res.ok) loadAdminUsers();
-    } catch (e) { alert(e.message); }
+        if (res.ok) openAdminUserDetail(userId);
+    } catch(e) { alert(e.message); }
+}
+
+async function adminAddUserNote(userId) {
+    const input = document.getElementById('admNewNoteInput');
+    const note = input.value.trim();
+    if (!note) return;
+    try {
+        const res = await fetch(`${API_URL}/api/admin/user/note?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ user_id: userId, note: note })
+        });
+        if (res.ok) openAdminUserDetail(userId);
+    } catch(e) { alert(e.message); }
+}
+
+async function sendAdminBroadcast() {
+    const title = document.getElementById('broadcastTitle').value.trim();
+    const body = document.getElementById('broadcastBody').value.trim();
+
+    if (!title || !body) {
+        alert("Sarlavha va matnni kiriting!");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/broadcast?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ title, body })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(`Xabar ${data.sent_count} ta foydalanuvchiga yuborildi!`);
+            document.getElementById('broadcastTitle').value = "";
+            document.getElementById('broadcastBody').value = "";
+        }
+    } catch(e) { alert(e.message); }
+}
+
+async function loadAdminAuditLogs() {
+    const container = document.getElementById('admAuditLogsList');
+    container.innerHTML = "<p style='color: var(--text-muted);'>Loglar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/audit-logs?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const logs = data.logs;
+            if (logs.length === 0) {
+                container.innerHTML = "<p style='color: var(--text-muted); text-align: center;'>Loglar mavjud emas.</p>";
+                return;
+            }
+            container.innerHTML = "";
+            logs.forEach(l => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.padding = "8px 12px";
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                        <b style="color: var(--primary);">${l.action}</b>
+                        <span style="color: var(--text-muted); font-size: 10px;">${new Date(l.created_at).toLocaleTimeString()}</span>
+                    </div>
+                    <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-sub);">${l.target_type} #${l.target_id || ''}: ${l.new_value || ''}</p>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
 }
 
 // ----------------- STARTUP -----------------

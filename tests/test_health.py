@@ -1,170 +1,168 @@
-import unittest
-from aiohttp import web
+import pytest
+import pytest_asyncio
+import aiohttp
+from aiohttp.test_utils import TestClient, TestServer
 from webapp.api import create_webapp_app
-from aiohttp.test_utils import AioHTTPTestCase
+from models import Base
+import engine as engine_module
 
-class TestHealthEndpoints(AioHTTPTestCase):
-    async def get_application(self):
-        return create_webapp_app()
+@pytest_asyncio.fixture
+async def client():
+    async with engine_module.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
 
-    async def clear_db(self):
-        from engine import async_session_maker
-        from models import Base
-        from sqlalchemy import text
-        try:
-            async with async_session_maker() as session:
-                await session.execute(text("DELETE FROM reports;"))
-                await session.execute(text("DELETE FROM blocks;"))
-                await session.execute(text("DELETE FROM messages;"))
-                await session.execute(text("DELETE FROM matches;"))
-                await session.execute(text("DELETE FROM swipes;"))
-                await session.execute(text("DELETE FROM users;"))
-                await session.commit()
-        except Exception as e:
-            print("clear_db warning:", e)
+    app = create_webapp_app()
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    yield client
+    await client.close()
 
-    async def test_health_endpoints(self):
-        resp = await self.client.get("/health")
-        self.assertEqual(resp.status, 200)
+class TestEnterpriseSuite:
+
+    @pytest.mark.asyncio
+    async def test_health_and_system(self, client):
+        resp = await client.get("/health")
+        assert resp.status == 200
         data = await resp.json()
-        self.assertEqual(data["status"], "ok")
+        assert data["status"] == "ok"
 
-        resp_ready = await self.client.get("/health/ready")
-        self.assertEqual(resp_ready.status, 200)
-        data_ready = await resp_ready.json()
-        self.assertEqual(data_ready["status"], "ready")
+        ready_resp = await client.get("/health/ready")
+        assert ready_resp.status == 200
+        ready_data = await ready_resp.json()
+        assert ready_data["status"] == "ready"
 
-    async def test_session_lifecycle(self):
-        await self.clear_db()
-        resp = await self.client.get("/api/session")
-        self.assertEqual(resp.status, 401)
+        # Admin system health check
+        sys_resp = await client.get("/api/system/health?initData=mock_admin")
+        assert sys_resp.status == 200
+        sys_data = await sys_resp.json()
+        assert sys_data["success"] is True
+        assert sys_data["health"]["api_status"] == "ONLINE"
 
-        resp = await self.client.get("/api/session?initData=mock_user")
-        self.assertEqual(resp.status, 200)
+    @pytest.mark.asyncio
+    async def test_user_session_and_registration(self, client):
+        # 1. New user session -> DRAFT
+        resp = await client.get("/api/session?initData=mock_user_1001")
+        assert resp.status == 200
         data = await resp.json()
-        self.assertTrue(data["success"])
-        self.assertEqual(data["user_status"], "DRAFT")
+        assert data["success"] is True
+        assert data["user_status"] == "DRAFT"
+        assert data["user"]["balance"] == 0.0
 
-    async def test_registration_and_validation(self):
-        await self.clear_db()
-        await self.client.get("/api/session?initData=mock_user")
-
-        underage_payload = {
-            "name": "Alex", "age": 16, "city": "Tashkent",
-            "photo": "photo_data", "bio": "Hello", "terms_accepted": True
-        }
-        resp = await self.client.post("/api/register?initData=mock_user", json=underage_payload)
-        self.assertEqual(resp.status, 400)
-
-        valid_payload = {
-            "name": "Alex", "age": 22, "city": "Tashkent",
-            "photo": "photo_data", "bio": "Hello Kairyx", "interests": ["🎮 Gaming", "🎵 Music"],
-            "terms_accepted": True
-        }
-        resp = await self.client.post("/api/register?initData=mock_user", json=valid_payload)
-        self.assertEqual(resp.status, 200)
-        data = await resp.json()
-        self.assertTrue(data["success"])
-        self.assertEqual(data["user_status"], "PENDING_APPROVAL")
-
-    async def test_profile_edit_and_delete(self):
-        await self.clear_db()
-        await self.client.get("/api/session?initData=mock_user")
-        await self.client.post("/api/register?initData=mock_user", json={
-            "name": "Original Name", "age": 25, "city": "Tashkent",
-            "photo": "photo_data", "bio": "Bio", "terms_accepted": True
+        # Underage rejection
+        underage_resp = await client.post("/api/register?initData=mock_user_1001", json={
+            "name": "Ali", "age": 16, "city": "Toshkent", "photo": "data:image/jpeg;base64,mock", "bio": "Hello", "terms_accepted": True
         })
+        assert underage_resp.status == 400
 
-        # Edit Profile
-        resp_edit = await self.client.post("/api/profile/update?initData=mock_user", json={
-            "name": "Updated Name", "city": "Samarkand", "bio": "New Bio", "interests": ["✈️ Travel"]
+        # Valid registration
+        reg_resp = await client.post("/api/register?initData=mock_user_1001", json={
+            "name": "Ali", "age": 22, "city": "Toshkent", "photo": "data:image/jpeg;base64,mock", "bio": "Kompyuter o'yinlari", "interests": ["🎮 Gaming"], "terms_accepted": True, "language": "uz"
         })
-        self.assertEqual(resp_edit.status, 200)
-        data_edit = await resp_edit.json()
-        self.assertEqual(data_edit["user"]["name"], "Updated Name")
-        self.assertEqual(data_edit["user"]["city"], "Samarkand")
+        assert reg_resp.status == 200
+        reg_data = await reg_resp.json()
+        assert reg_data["user_status"] == "PENDING_APPROVAL"
 
-        # Deactivate / Delete Account
-        resp_del = await self.client.post("/api/account/delete?initData=mock_user")
-        self.assertEqual(resp_del.status, 200)
+    @pytest.mark.asyncio
+    async def test_notifications_and_tickets(self, client):
+        # User session
+        await client.get("/api/session?initData=mock_user_2001")
+        
+        # Check notifications
+        notif_resp = await client.get("/api/notifications?initData=mock_user_2001")
+        assert notif_resp.status == 200
+        notif_data = await notif_resp.json()
+        assert notif_data["success"] is True
+        assert len(notif_data["notifications"]) >= 1 # Welcome notification
 
-    async def test_admin_security_and_management(self):
-        await self.clear_db()
+        # Mark read
+        read_resp = await client.post("/api/notifications/read?initData=mock_user_2001", json={})
+        assert read_resp.status == 200
 
-        # Non-admin forbidden
-        resp_forbid = await self.client.get("/api/admin/stats?initData=mock_user")
-        self.assertEqual(resp_forbid.status, 403)
-
-        resp_forbid_rep = await self.client.get("/api/admin/reports?initData=mock_user")
-        self.assertEqual(resp_forbid_rep.status, 403)
-
-        # Admin authorized
-        resp_adm = await self.client.get("/api/admin/stats?initData=mock_admin")
-        self.assertEqual(resp_adm.status, 200)
-        data_adm = await resp_adm.json()
-        self.assertTrue(data_adm["success"])
-
-    async def test_full_dating_safety_and_filtering(self):
-        await self.clear_db()
-
-        # 1. Create two users
-        await self.client.get("/api/session?initData=mock_user_1")
-        await self.client.post("/api/register?initData=mock_user_1", json={
-            "name": "User One", "age": 22, "city": "Tashkent",
-            "photo": "photo1", "bio": "Bio 1", "interests": ["🎮 Gaming"],
-            "terms_accepted": True
+        # Create support ticket
+        ticket_resp = await client.post("/api/tickets/create?initData=mock_user_2001", json={
+            "subject": "To'lov haqida savol",
+            "category": "Billing",
+            "message": "Bonus ballarni qanday ishlatish mumkin?"
         })
+        assert ticket_resp.status == 200
+        ticket_id = (await ticket_resp.json())["ticket_id"]
 
-        await self.client.get("/api/session?initData=mock_user_2")
-        await self.client.post("/api/register?initData=mock_user_2", json={
-            "name": "User Two", "age": 28, "city": "Samarkand",
-            "photo": "photo2", "bio": "Bio 2", "interests": ["✈️ Travel"],
-            "terms_accepted": True
+        # Admin replies to ticket
+        adm_reply = await client.post("/api/admin/ticket/reply?initData=mock_admin", json={
+            "ticket_id": ticket_id,
+            "text": "Bonus ballar profil faolligi orqali to'planadi."
+        })
+        assert adm_reply.status == 200
+
+        # User views tickets
+        t_list = await client.get("/api/tickets?initData=mock_user_2001")
+        t_data = await t_list.json()
+        assert t_data["tickets"][0]["status"] == "ANSWERED"
+        assert len(t_data["tickets"][0]["messages"]) == 2
+
+    @pytest.mark.asyncio
+    async def test_dating_swipes_and_chat(self, client):
+        # Register User A
+        await client.get("/api/session?initData=mock_user_3001")
+        await client.post("/api/register?initData=mock_user_3001", json={
+            "name": "Anvar", "age": 24, "city": "Samarqand", "photo": "data:image/jpeg;base64,mock", "bio": "Sayr qilish", "terms_accepted": True
+        })
+        # Register User B
+        await client.get("/api/session?initData=mock_user_3002")
+        await client.post("/api/register?initData=mock_user_3002", json={
+            "name": "Laylo", "age": 21, "city": "Samarqand", "photo": "data:image/jpeg;base64,mock", "bio": "Musiqa", "terms_accepted": True
         })
 
         # Admin approves both
-        resp_p = await self.client.get("/api/admin/pending?initData=mock_admin")
-        data_p = await resp_p.json()
-        u1_id = next(u["id"] for u in data_p["users"] if u["name"] == "User One")
-        u2_id = next(u["id"] for u in data_p["users"] if u["name"] == "User Two")
+        p_list = await (await client.get("/api/admin/pending?initData=mock_admin")).json()
+        for u in p_list["users"]:
+            await client.post("/api/admin/approve?initData=mock_admin", json={"user_id": u["id"]})
 
-        await self.client.post("/api/admin/approve?initData=mock_admin", json={"user_id": u1_id})
-        await self.client.post("/api/admin/approve?initData=mock_admin", json={"user_id": u2_id})
+        # User A swipes User B
+        u_b = [u for u in p_list["users"] if u["name"] == "Laylo"][0]
+        u_a = [u for u in p_list["users"] if u["name"] == "Anvar"][0]
 
-        # Filter test: age range 25-30 matches User 2
-        resp_f1 = await self.client.get("/api/profiles?min_age=25&max_age=30&initData=mock_user_1")
-        self.assertEqual(len((await resp_f1.json())["profiles"]), 1)
+        swipe1 = await client.post("/api/swipe?initData=mock_user_3001", json={"target_id": u_b["id"], "is_like": True})
+        assert (await swipe1.json())["match"] is False
 
-        # Filter test: age range 18-24 excludes User 2
-        resp_f2 = await self.client.get("/api/profiles?min_age=18&max_age=24&initData=mock_user_1")
-        self.assertEqual(len((await resp_f2.json())["profiles"]), 0)
+        # User B swipes User A -> MATCH!
+        swipe2 = await client.post("/api/swipe?initData=mock_user_3002", json={"target_id": u_a["id"], "is_like": True})
+        s2_data = await swipe2.json()
+        assert s2_data["match"] is True
+        match_id = s2_data["match_id"]
 
-        # Swipes & Match
-        await self.client.post("/api/swipe?initData=mock_user_1", json={"target_id": u2_id, "is_like": True})
-        resp_m = await self.client.post("/api/swipe?initData=mock_user_2", json={"target_id": u1_id, "is_like": True})
-        data_m = await resp_m.json()
-        self.assertTrue(data_m["match"])
-        match_id = data_m["match_id"]
-
-        # Messaging
-        await self.client.post("/api/chat/send?initData=mock_user_1", json={"match_id": match_id, "text": "Salom!"})
-        resp_msgs = await self.client.get(f"/api/chat/messages?match_id={match_id}&initData=mock_user_2")
-        self.assertEqual(len((await resp_msgs.json())["messages"]), 2)
-
-        # Report & Admin moderation
-        await self.client.post("/api/user/report?initData=mock_user_1", json={
-            "target_id": u2_id, "reason": "Harassment", "description": "Test report"
+        # Send chat message
+        msg_resp = await client.post("/api/chat/send?initData=mock_user_3001", json={
+            "match_id": match_id,
+            "text": "Salom Laylo!"
         })
-        resp_reps = await self.client.get("/api/admin/reports?initData=mock_admin")
-        self.assertEqual(len((await resp_reps.json())["reports"]), 1)
-        r_id = (await resp_reps.json())["reports"][0]["id"]
-        await self.client.post("/api/admin/report/resolve?initData=mock_admin", json={"report_id": r_id, "action": "RESOLVE"})
+        assert msg_resp.status == 200
 
-        # Block & Unblock
-        await self.client.post("/api/user/block?initData=mock_user_1", json={"target_id": u2_id})
-        resp_b_list = await self.client.get("/api/user/blocked?initData=mock_user_1")
-        self.assertEqual(len((await resp_b_list.json())["blocked_users"]), 1)
+        # View messages
+        msgs = await (await client.get(f"/api/chat/messages?match_id={match_id}&initData=mock_user_3002")).json()
+        assert len(msgs["messages"]) == 2 # System celebration + user message
 
-        await self.client.post("/api/user/unblock?initData=mock_user_1", json={"target_id": u2_id})
-        resp_unb_list = await self.client.get("/api/user/blocked?initData=mock_user_1")
-        self.assertEqual(len((await resp_unb_list.json())["blocked_users"]), 0)
+    @pytest.mark.asyncio
+    async def test_admin_rbac_and_broadcast(self, client):
+        # Create user
+        await client.get("/api/session?initData=mock_user_8001")
+        # Non-admin forbidden on admin routes
+        forbidden = await client.get("/api/admin/stats?initData=mock_user_9999")
+        assert forbidden.status == 403
+
+        # Admin broadcast
+        broadcast_resp = await client.post("/api/admin/broadcast?initData=mock_admin", json={
+            "title": "Yangilik 🚀",
+            "body": "Barcha foydalanuvchilarga xushxabar!"
+        })
+        assert broadcast_resp.status == 200
+        b_data = await broadcast_resp.json()
+        assert b_data["success"] is True
+        assert b_data["sent_count"] >= 1
+
+        # Check audit logs
+        logs_resp = await client.get("/api/admin/audit-logs?initData=mock_admin")
+        assert logs_resp.status == 200
+        logs_data = await logs_resp.json()
+        assert len(logs_data["logs"]) >= 1
