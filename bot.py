@@ -59,7 +59,7 @@ async def main() -> None:
         )
         dp = Dispatcher()
 
-        # Include all functional routers in proper order
+        # Mount routers
         dp.include_router(common.router)
         dp.include_router(registration.router)
         dp.include_router(menu.router)
