@@ -912,13 +912,9 @@ async function verifySession() {
     }, 15000);
 
     try {
-        const response = await fetch(`${API_URL}/api/session?${getQueryParams()}`, {
+        const response = await fetch(`${API_URL}/api/session?${getQueryParams()}&req_id=${requestId}`, {
             method: "GET",
-            headers: {
-                "Accept": "application/json",
-                ...getHeaders(),
-                "X-Request-ID": requestId
-            },
+            headers: getHeaders(),
             signal: controller.signal
         });
 

@@ -2267,7 +2267,8 @@ def create_webapp_app() -> web.Application:
                     }, status=500)
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-TG-Init-Data"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Access-Control-Max-Age"] = "86400"
             response.headers["X-Request-ID"] = req_id
             return response
         return middleware_handler
