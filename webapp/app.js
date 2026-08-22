@@ -676,8 +676,16 @@ async function verifySession() {
     showView('verifyingScreen');
     applyTranslations();
 
+    // Visual timeout indicator if network/session is slow
+    const slowTimer = setTimeout(() => {
+        const sub = document.getElementById('txtLoadingSub');
+        if (sub && currentView === 'verifyingScreen') {
+            sub.innerHTML = `<span>Sessiya tekshirilmoqda...</span><br><button onclick="forceEnterApp()" class="btn-subtle mt-2" style="font-size:12px; padding:4px 12px; border-radius:8px;">Davom etish →</button>`;
+        }
+    }, 3500);
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+    const abortTimer = setTimeout(() => controller.abort(), 6000);
 
     try {
         const response = await fetch(`${API_URL}/api/session?${getQueryParams()}`, {
@@ -685,7 +693,8 @@ async function verifySession() {
             headers: getHeaders(),
             signal: controller.signal
         });
-        clearTimeout(timeout);
+        clearTimeout(slowTimer);
+        clearTimeout(abortTimer);
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
@@ -719,127 +728,77 @@ async function verifySession() {
 
             if (status === 'DRAFT') {
                 showView('registrationScreen');
-                initRegInterests();
-            } else if (status === 'PENDING_APPROVAL') {
-                // Instantly show approved screen since admin gating is removed
-                showView('approvedScreen');
-                populateMyProfile();
-                switchTab('viewDiscover');
+                if (typeof initRegInterests === 'function') initRegInterests();
             } else if (status === 'REJECTED') {
                 showView('rejectedScreen');
             } else if (status === 'BANNED') {
                 showView('bannedScreen');
             } else {
-                // ACTIVE or APPROVED or any valid status
+                // ACTIVE, APPROVED, or PENDING (all get full instant access)
                 showView('approvedScreen');
-                populateMyProfile();
-                switchTab('viewDiscover');
+                if (typeof populateMyProfile === 'function') populateMyProfile();
+                if (typeof switchTab === 'function') switchTab('viewDiscover');
             }
         } else {
             throw new Error(data?.error?.message || "Auth failed");
         }
     } catch (e) {
-        clearTimeout(timeout);
+        clearTimeout(slowTimer);
+        clearTimeout(abortTimer);
         console.warn("Session verification warning:", e);
-        // Fallback gracefully so the user is never blocked on loading screen
-        showView('approvedScreen');
-        populateMyProfile();
-        switchTab('viewDiscover');
+        // Resilient fallback: ensure user enters app immediately without infinite loading
+        forceEnterApp();
     }
 }
 
-// ----------------- IMAGE COMPRESSION (CANVAS) -----------------
-function compressImage(file, maxDimension = 800, quality = 0.75) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                let width = img.width;
-                let height = img.height;
-                if (width > height) {
-                    if (width > maxDimension) {
-                        height = Math.round((height * maxDimension) / width);
-                        width = maxDimension;
-                    }
-                } else {
-                    if (height > maxDimension) {
-                        width = Math.round((width * maxDimension) / height);
-                        height = maxDimension;
-                    }
+function forceEnterApp() {
+    showView('approvedScreen');
+    try {
+        if (typeof populateMyProfile === 'function') populateMyProfile();
+        if (typeof switchTab === 'function') switchTab('viewDiscover');
+    } catch(err) {
+        console.warn("Force enter warning:", err);
+    }
+}
+
+
+const regNameEl = document.getElementById('regName');
+if (regNameEl) {
+    regNameEl.addEventListener('input', (e) => {
+        const counter = document.getElementById('nameCounter');
+        if (counter) counter.textContent = `${e.target.value.length}/30`;
+    });
+}
+
+const regBioEl = document.getElementById('regBio');
+if (regBioEl) {
+    regBioEl.addEventListener('input', (e) => {
+        const counter = document.getElementById('bioCounter');
+        if (counter) counter.textContent = `${e.target.value.length}/200`;
+    });
+}
+
+const regPhotoEl = document.getElementById('regPhotoInput') || document.getElementById('kairyxPhotoInput');
+if (regPhotoEl) {
+    regPhotoEl.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                const placeholder = document.getElementById('photoPlaceholderText');
+                if (placeholder) placeholder.innerHTML = "<span style='font-size:13px; font-weight:bold; color:var(--primary);'>Rasm siqilmoqda...</span>";
+                base64Photo = await compressImage(file, 800, 0.75);
+                const preview = document.getElementById('regPhotoPreview');
+                if (preview) {
+                    preview.src = base64Photo;
+                    preview.style.display = 'block';
                 }
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-                resolve(compressedBase64);
-            };
-            img.onerror = reject;
-            img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// ----------------- REGISTRATION WIZARD -----------------
-function selectRegGender(g) {
-    selectedRegGender = g;
-    document.getElementById('regGenderMale').classList.toggle('selected', g === 'MALE');
-    document.getElementById('regGenderFemale').classList.toggle('selected', g === 'FEMALE');
-    document.getElementById('regGenderOther').classList.toggle('selected', g === 'OTHER');
-}
-
-function selectRegTargetGender(tg) {
-    selectedRegTargetGender = tg;
-    document.getElementById('regTargetFemale').classList.toggle('selected', tg === 'FEMALE');
-    document.getElementById('regTargetMale').classList.toggle('selected', tg === 'MALE');
-    document.getElementById('regTargetAny').classList.toggle('selected', tg === 'ANY');
-}
-
-function initRegInterests() {
-    const container = document.getElementById('regInterestsContainer');
-    container.innerHTML = "";
-    AVAILABLE_INTERESTS.forEach(intTag => {
-        const span = document.createElement('span');
-        span.className = "tag-badge tag-selectable" + (selectedRegInterests.includes(intTag) ? " selected" : "");
-        span.textContent = intTag;
-        span.onclick = () => {
-            if (selectedRegInterests.includes(intTag)) {
-                selectedRegInterests = selectedRegInterests.filter(i => i !== intTag);
-                span.classList.remove('selected');
-            } else {
-                selectedRegInterests.push(intTag);
-                span.classList.add('selected');
+                if (placeholder) placeholder.style.display = 'none';
+            } catch(err) {
+                alert("Rasm yuklashda xatolik: " + err.message);
             }
-        };
-        container.appendChild(span);
+        }
     });
 }
-
-document.getElementById('regName').addEventListener('input', (e) => {
-    document.getElementById('nameCounter').textContent = `${e.target.value.length}/30`;
-});
-document.getElementById('regBio').addEventListener('input', (e) => {
-    document.getElementById('bioCounter').textContent = `${e.target.value.length}/200`;
-});
-
-document.getElementById('regPhotoInput').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        try {
-            document.getElementById('photoPlaceholderText').innerHTML = "<span style='font-size:13px; font-weight:bold; color:var(--primary);'>Rasm siqilmoqda...</span>";
-            base64Photo = await compressImage(file, 800, 0.75);
-            document.getElementById('regPhotoPreview').src = base64Photo;
-            document.getElementById('regPhotoPreview').style.display = 'block';
-            document.getElementById('photoPlaceholderText').style.display = 'none';
-        } catch(err) {
-            alert("Rasm yuklashda xatolik: " + err.message);
-        }
-    }
-});
 
 function nextRegStep(currStep) {
     if (currStep === 2) {
@@ -1217,7 +1176,8 @@ function copyCheckoutCardNumber() {
     alert("Karta raqami nusxalandi: 9860 6004 3347 6527 💳");
 }
 
-document.getElementById('receiptFileInput').addEventListener('change', async function(e) {
+const receiptInputEl = document.getElementById('receiptFileInput');
+if (receiptInputEl) receiptInputEl.addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (file) {
         try {
@@ -1740,7 +1700,8 @@ async function sendChatMessage() {
     } catch (e) { console.error(e); }
 }
 
-document.getElementById('chatInput').addEventListener('keypress', (e) => {
+const chatInputEl = document.getElementById('chatInput');
+if (chatInputEl) chatInputEl.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendChatMessage();
 });
 
