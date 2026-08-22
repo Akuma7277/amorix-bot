@@ -1931,3 +1931,174 @@ h1, h2, h3, h4, .step-heading, .gradient-text {
     background: rgba(255, 255, 255, 0.15) !important;
     transform: scale(0.97) !important;
 }
+
+
+/* =========================================================================
+   PERFECT MOBILE VIEW BOUNDS, NEAT INTERESTS & PHOTO PREVIEW (v2.30.2)
+   ========================================================================= */
+* {
+    box-sizing: border-box !important;
+}
+
+html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #070919 !important;
+}
+
+.view-container {
+    width: 100% !important;
+    max-width: 480px !important;
+    margin: 0 auto !important;
+    padding: 10px 14px 40px 14px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+
+.wizard-step {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    margin: 0 0 20px 0 !important;
+    padding: 22px 18px !important;
+    background: rgba(15, 18, 42, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 24px !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Neat Interests Flexbox Cloud */
+#regInterestsContainer, .interests-cloud {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    margin-top: 12px !important;
+    width: 100% !important;
+}
+
+.tag-badge, .tag-selectable {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 9px 14px !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    transition: all 0.2s ease !important;
+    user-select: none !important;
+}
+
+.tag-badge.selected, .tag-selectable.selected {
+    background: linear-gradient(135deg, rgba(255, 42, 109, 0.4), rgba(5, 217, 232, 0.4)) !important;
+    border-color: #ff2a6d !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 12px rgba(255, 42, 109, 0.35) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Step 7 Summary Card & Photo Fit */
+.summary-card {
+    background: rgba(12, 14, 34, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    padding: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.summary-avatar-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 100% !important;
+}
+
+.summary-avatar {
+    width: 100% !important;
+    height: 250px !important;
+    max-height: 260px !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    border-radius: 16px !important;
+    border: 1.5px solid rgba(245, 208, 97, 0.4) !important;
+    display: block !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Photo Slots Grid (Step 5) */
+.kairyx-photo-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+    margin-top: 14px !important;
+    width: 100% !important;
+}
+
+.kairyx-photo-slot {
+    aspect-ratio: 1 / 1 !important;
+    width: 100% !important;
+    border-radius: 16px !important;
+    border: 2px dashed rgba(255, 255, 255, 0.2) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+    transition: all 0.25s ease !important;
+}
+
+.kairyx-photo-slot.filled {
+    border: 2px solid rgba(245, 208, 97, 0.6) !important;
+}
+
+.kairyx-photo-slot img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    display: block !important;
+}
+
+.slot-primary-badge {
+    position: absolute !important;
+    bottom: 6px !important;
+    left: 6px !important;
+    background: linear-gradient(135deg, #f5d061, #e5a93b) !important;
+    color: #0b0c22 !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+.slot-del-btn {
+    position: absolute !important;
+    top: 6px !important;
+    right: 6px !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    color: #ff4757 !important;
+    border: 1px solid rgba(255, 71, 87, 0.5) !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+}

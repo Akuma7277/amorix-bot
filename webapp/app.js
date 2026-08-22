@@ -304,6 +304,15 @@ async function onKairyxPhotoSelected(event) {
     }
 }
 
+function setPrimaryPhoto(index, e) {
+    if (e) e.stopPropagation();
+    if (index <= 0 || index >= kairyxPhotos.length) return;
+    const selected = kairyxPhotos.splice(index, 1)[0];
+    kairyxPhotos.unshift(selected);
+    base64Photo = kairyxPhotos[0];
+    renderKairyxPhotoSlots();
+}
+
 function removeKairyxPhoto(index, event) {
     if (event) event.stopPropagation();
     if (index >= 0 && index < kairyxPhotos.length) {
@@ -323,12 +332,14 @@ function renderKairyxPhotoGrid() {
 
         if (i < kairyxPhotos.length) {
             slot.className = 'kairyx-photo-slot filled';
+            slot.onclick = () => setPrimaryPhoto(i);
             slot.innerHTML = `
                 <img src="${kairyxPhotos[i]}" alt="Photo ${i+1}">
                 <button type="button" class="slot-del-btn" onclick="removeKairyxPhoto(${i}, event)">✕</button>
-                ${i === 0 ? '<span class="slot-primary-badge">⭐ Asosiy</span>' : ''}
+                ${i === 0 ? '<span class="slot-primary-badge">⭐ Asosiy</span>' : '<span style="position:absolute; bottom:4px; left:4px; font-size:9px; color:rgba(255,255,255,0.7); background:rgba(0,0,0,0.6); padding:2px 6px; border-radius:4px;">Tanlash 👆</span>'}
             `;
         } else {
+            slot.onclick = () => triggerKairyxPhotoUpload(i);
             slot.className = 'kairyx-photo-slot';
             slot.innerHTML = '<span class="plus-icon">+</span>';
         }
