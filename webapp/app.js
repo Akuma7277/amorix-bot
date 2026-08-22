@@ -951,7 +951,29 @@ async function verifySession() {
         const session = normalizeSession(rawPayload);
 
         window.sessionState = 'READY';
-                isAdminUser = (currentUser?.telegram_id === 7992878834) || !!session.is_admin;
+        currentUser = session.user;
+        const status = session.normalizedStatus;
+        isAdminUser = (currentUser?.telegram_id === 7992878834) || !!session.is_admin;
+
+        if (session.unread_notifications > 0) {
+            const b = document.getElementById('notifBadge');
+            if (b) {
+                b.textContent = session.unread_notifications;
+                b.style.display = 'flex';
+            }
+        }
+
+        if (session.likes_received_count > 0) {
+            const lb = document.getElementById('navLikesBadge');
+            if (lb) {
+                lb.textContent = session.likes_received_count;
+                lb.style.display = 'flex';
+            }
+        }
+
+        const streakEl = document.getElementById('headerStreakCount');
+        if (streakEl) streakEl.textContent = currentUser?.streak_days || 0;
+
         const adminBtn = document.getElementById('btnHeaderAdmin');
         if (adminBtn) {
             adminBtn.style.display = (currentUser?.telegram_id === 7992878834 || isAdminUser) ? 'flex' : 'none';
