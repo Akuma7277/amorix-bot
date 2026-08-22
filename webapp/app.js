@@ -846,20 +846,59 @@ function showView(viewId) {
     if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 }
 
+// ----------------- STANDARDIZED SESSION STATE MACHINE -----------------
+let sessionState = 'IDLE'; // IDLE | LOADING | READY | ERROR
+let isSessionRequestInFlight = false;
+
 async function verifySession() {
+    if (isSessionRequestInFlight) {
+        console.warn("[SESSION] Request already in flight, skipping duplicate.");
+        return;
+    }
+
+    sessionState = 'LOADING';
+    isSessionRequestInFlight = true;
     showView('verifyingScreen');
     applyTranslations();
 
-    // Fast 1.5s auto-transition: Guarantee entry without spinner locking
-    const autoFallbackTimer = setTimeout(() => {
-        if (currentView === 'verifyingScreen') {
-            console.info("Instant transition to application");
-            forceEnterApp();
-        }
-    }, 1500);
+    const requestId = "REQ-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const loadingSub = document.getElementById('txtLoadingSub');
+    if (loadingSub) {
+        loadingSub.innerHTML = `Xavfsiz sessiya tekshirilmoqda...<br><span style="font-size:11px; opacity:0.6;">Ref: ${requestId}</span>`;
+    }
 
+    // Check if Telegram WebApp initData is present
+    const rawInitData = tg?.initData || "";
+    const hasInitData = rawInitData && rawInitData.length > 5;
+
+    // Diagnostic logging without leaking sensitive signature
+    console.info(`[AUTH] Init check - TG Available: ${!!tg}, InitData Present: ${hasInitData} (${rawInitData.length} chars)`);
+
+    // If opened outside Telegram without any session data
+    if (!hasInitData && !isAdminUser && !window.location.search.includes("initData=")) {
+        sessionState = 'ERROR';
+        isSessionRequestInFlight = false;
+        if (loadingSub) {
+            loadingSub.innerHTML = `
+                <div style="background: rgba(255, 71, 87, 0.12); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 12px; padding: 14px; margin-top: 15px;">
+                    <p style="color: #ff6b81; font-size: 13px; margin: 0 0 10px 0; font-weight: 500;">
+                        Telegram sessiyasi topilmadi. Mini App’ni Telegram bot (@Ka1ryx_bot) ichidan qayta oching.
+                    </p>
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <a href="https://t.me/Ka1ryx_bot" class="btn-primary-gradient" style="font-size: 12px; padding: 8px 16px; border-radius: 10px; text-decoration: none;">🤖 Botni ochish</a>
+                        <button onclick="forceEnterApp()" class="btn-subtle" style="font-size: 12px; padding: 8px 14px; border-radius: 10px;">⚡ Demo rejim</button>
+                    </div>
+                </div>
+            `;
+        }
+        return;
+    }
+
+    // Setup 15-second AbortController timeout
     const controller = new AbortController();
-    const abortTimer = setTimeout(() => controller.abort(), 6000);
+    const abortTimeout = setTimeout(() => {
+        controller.abort();
+    }, 15000);
 
     try {
         const response = await fetch(`${API_URL}/api/session?${getQueryParams()}`, {
@@ -867,17 +906,41 @@ async function verifySession() {
             headers: getHeaders(),
             signal: controller.signal
         });
-        clearTimeout(autoFallbackTimer);
-        clearTimeout(abortTimer);
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        clearTimeout(abortTimeout);
+
+        if (response.status === 401) {
+            sessionState = 'ERROR';
+            if (loadingSub) {
+                loadingSub.innerHTML = `
+                    <div style="color: #ff6b81; margin-top: 12px;">
+                        <p style="font-size: 13px; margin: 0 0 10px 0;">⚠️ Sessiya muddati tugagan yoki tasdiqlanmadi.</p>
+                        <button onclick="verifySession()" class="btn-primary-gradient" style="font-size: 12px; padding: 8px 18px; border-radius: 10px;">🔄 Qayta urinish</button>
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        if (response.status === 403) {
+            sessionState = 'ERROR';
+            showView('bannedScreen');
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP_${response.status}`);
+        }
+
         const data = await response.json();
 
         if (data && data.success) {
+            sessionState = 'READY';
             isAdminUser = !!data.is_admin;
             currentUser = data.user;
-            const status = data.user_status || (currentUser && currentUser.status) || 'ACTIVE';
+            const status = data.user_status || (currentUser && currentUser.status) || 'DRAFT';
 
+            // Sync notification badges
             if (data.unread_notifications > 0) {
                 const b = document.getElementById('notifBadge');
                 if (b) {
@@ -886,6 +949,7 @@ async function verifySession() {
                 }
             }
 
+            // Sync likes count
             if (data.likes_received_count > 0) {
                 const lb = document.getElementById('navLikesBadge');
                 if (lb) {
@@ -894,377 +958,58 @@ async function verifySession() {
                 }
             }
 
+            // Sync streak counter
             const streakEl = document.getElementById('headerStreakCount');
             if (streakEl) streakEl.textContent = currentUser?.streak_days || 0;
-            
+
             const adminBtn = document.getElementById('btnHeaderAdmin');
             if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 
+            // Strict user status routing
             if (status === 'DRAFT') {
                 showView('registrationScreen');
                 if (typeof initRegInterests === 'function') initRegInterests();
+            } else if (status === 'PENDING_APPROVAL') {
+                showView('pendingScreen');
             } else if (status === 'REJECTED') {
                 showView('rejectedScreen');
-            } else if (status === 'BANNED') {
+            } else if (status === 'BANNED' || status === 'DELETED') {
                 showView('bannedScreen');
             } else {
+                // APPROVED / ACTIVE
                 showView('approvedScreen');
                 if (typeof populateMyProfile === 'function') populateMyProfile();
                 if (typeof switchTab === 'function') switchTab('viewDiscover');
             }
         } else {
-            forceEnterApp();
+            throw new Error(data?.error?.message || "Sessiyani tasdiqlab bo'lmadi");
         }
-    } catch (e) {
-        clearTimeout(autoFallbackTimer);
-        clearTimeout(abortTimer);
-        console.warn("Session fetch warning:", e);
-        forceEnterApp();
-    }
-}
+    } catch (err) {
+        clearTimeout(abortTimeout);
+        sessionState = 'ERROR';
+        console.error(`[AUTH_ERROR] Request ID: ${requestId}, Reason:`, err);
 
-
-const receiptInputEl = document.getElementById('receiptFileInput');
-if (receiptInputEl) receiptInputEl.addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        try {
-            document.getElementById('receiptPlaceholderText').innerHTML = "<span style='font-size:13px; font-weight:bold; color:var(--primary);'>Chek siqilmoqda...</span>";
-            base64ReceiptPhoto = await compressImage(file, 900, 0.8);
-            document.getElementById('receiptPhotoPreview').src = base64ReceiptPhoto;
-            document.getElementById('receiptPhotoPreview').style.display = 'block';
-            document.getElementById('receiptPlaceholderText').style.display = 'none';
-        } catch(err) {
-            alert("Rasm yuklashda xatolik: " + err.message);
+        if (loadingSub) {
+            loadingSub.innerHTML = `
+                <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px; margin-top: 15px;">
+                    <p style="color: #ff6b81; font-size: 13px; margin: 0 0 6px 0; font-weight: 600;">
+                        Serverga ulanishda muammo yuz berdi.
+                    </p>
+                    <p style="color: var(--text-muted); font-size: 11px; margin: 0 0 12px 0;">
+                        Error ID: ${requestId} (${err.name === 'AbortError' ? 'TIMEOUT_15S' : err.message})
+                    </p>
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <button onclick="verifySession()" class="btn-primary-gradient" style="font-size: 12px; padding: 8px 18px; border-radius: 10px;">🔄 Qayta urinish</button>
+                        <button onclick="forceEnterApp()" class="btn-subtle" style="font-size: 12px; padding: 8px 14px; border-radius: 10px;">⚡ Demo rejim</button>
+                    </div>
+                </div>
+            `;
         }
-    }
-});
-
-async function submitPaymentOrder() {
-    if (!base64ReceiptPhoto) {
-        alert("To'lov chekini (skrinshot) yuklash majburiy!");
-        return;
-    }
-
-    const btn = document.getElementById('btnSubmitPaymentReceipt');
-    btn.disabled = true;
-    btn.textContent = "Yuborilmoqda...";
-
-    try {
-        const res = await fetch(`${API_URL}/api/payment/submit?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({
-                plan_tier: selectedCheckoutPlan,
-                period: currentBillingPeriod,
-                amount: selectedCheckoutAmount,
-                receipt_photo: base64ReceiptPhoto
-            })
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert("🎉 To'lov chekingiz muvaffaqiyatli qabul qilindi! Administrator tasdiqlashi bilan obunangiz avtomatik ishga tushadi.");
-            closePaymentCheckoutModal();
-        } else {
-            alert(data.error?.message || "Xatolik yuz berdi");
-        }
-    } catch(e) {
-        alert(e.message);
     } finally {
-        btn.disabled = false;
-        btn.textContent = "To'lov qildim (Yuborish) 🚀";
+        isSessionRequestInFlight = false;
     }
 }
 
-async function redeemCouponCode() {
-    const input = document.getElementById('couponInput');
-    const code = input.value.trim().toUpperCase();
-    if (!code) {
-        alert("Promo kodni kiriting!");
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_URL}/api/coupons/redeem?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({ code: code })
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert(data.message);
-            input.value = "";
-            currentUser = data.user;
-            populateMyProfile();
-        } else {
-            alert(data.error?.message || "Promo kod xato");
-        }
-    } catch(e) { alert(e.message); }
-}
-
-// ----------------- DISCOVERY & SWIPING (WITH SAFE AVATARS & DETAILS) -----------------
-async function loadDiscoverProfiles() {
-    const container = document.getElementById('cardStackContainer');
-    container.innerHTML = `
-        <div class="glass-panel" style="padding: 60px 20px; text-align: center; margin-top: 40px;">
-            <div class="pulsing-heart" style="font-size: 38px; margin-bottom: 10px;">💖</div>
-            <p style="color: var(--text-muted); font-size: 14px;">Yangi anketalar qidirilmoqda...</p>
-        </div>
-    `;
-
-    const minAge = document.getElementById('filterMinAge')?.value;
-    const maxAge = document.getElementById('filterMaxAge')?.value;
-    const city = document.getElementById('filterCity')?.value;
-    const gender = document.getElementById('filterGender')?.value;
-
-    const q = new URLSearchParams(getQueryParams());
-    if (minAge) q.append("min_age", minAge);
-    if (maxAge) q.append("max_age", maxAge);
-    if (city) q.append("city", city);
-    if (gender && gender !== "ANY") q.append("gender", gender);
-
-    try {
-        const res = await fetch(`${API_URL}/api/profiles?${q.toString()}`, { method: "GET", headers: getHeaders() });
-        const data = await res.json();
-        if (data.success) {
-            discoverProfiles = data.profiles || [];
-            currentDiscoverIndex = 0;
-            renderDiscoverCard();
-        } else {
-            container.innerHTML = `<div class="glass-panel p-4 text-center mt-4"><p class="text-danger">${data.error?.message || "Xatolik"}</p></div>`;
-        }
-    } catch (e) {
-        container.innerHTML = `
-            <div class="glass-panel p-4 text-center mt-4">
-                <p class="text-danger">Aloqa uzildi: ${e.message}</p>
-                <button onclick="loadDiscoverProfiles()" class="btn-primary-gradient mt-2">🔄 Qayta urinish</button>
-            </div>
-        `;
-    }
-}
-
-function renderDiscoverCard() {
-    const t = I18N[currentLang] || I18N.uz;
-    const container = document.getElementById('cardStackContainer');
-    if (!discoverProfiles || discoverProfiles.length === 0 || currentDiscoverIndex >= discoverProfiles.length) {
-        container.innerHTML = `
-            <div class="glass-panel" style="padding: 50px 20px; text-align: center; margin-top: 40px;">
-                <div style="font-size: 46px; margin-bottom: 12px;">💫</div>
-                <h3 style="color: var(--primary); margin-top: 0; font-size: 20px;">${t.noProfiles}</h3>
-                <p style="color: var(--text-muted); font-size: 14px; line-height: 1.5; margin: 8px 0 18px 0;">${t.noProfilesSub}</p>
-                <button onclick="loadDiscoverProfiles()" class="btn-primary-gradient">🔄 ${t.btnRetry}</button>
-            </div>
-        `;
-        return;
-    }
-
-    const p = discoverProfiles[currentDiscoverIndex];
-    if (!p) return;
-
-    activeTargetUser = p;
-    const gIcon = p.gender === 'MALE' ? '👨' : (p.gender === 'FEMALE' ? '👩' : '🌈');
-    const isVip = (p.plan_tier === 'VIP');
-    const isVerified = !!p.is_verified;
-    const displayName = (p.name && typeof p.name === 'string' && p.name.trim().length > 0) ? p.name.trim() : "Foydalanuvchi";
-    const displayAge = p.age || 20;
-    const displayCity = (p.city && typeof p.city === 'string' && p.city.trim().length > 0) ? p.city.trim() : "Toshkent";
-    const displayBio = (p.bio && typeof p.bio === 'string' && p.bio.trim().length > 0) ? p.bio.trim() : "Kairyx a'zosi";
-    const photoSrc = (p.photo && typeof p.photo === 'string' && p.photo.length > 20) ? p.photo : getDefaultAvatar(displayName, p.gender);
-
-    container.innerHTML = `
-        <div class="dating-card">
-            <div class="card-image-wrap" onclick="openProfileDetailModal(${p.id})">
-                <img src="${photoSrc}" onerror="handleImgError(this, '${displayName}', '${p.gender || "OTHER"}')">
-                <div style="position: absolute; top: 12px; left: 12px; display: flex; gap: 6px;">
-                    ${isVip ? `<div style="background: var(--vip-gradient); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-full); box-shadow: 0 0 12px var(--vip-glow);">👑 VIP</div>` : ''}
-                    ${isVerified ? `<div style="background: rgba(5, 217, 232, 0.85); color: #000; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: var(--radius-full);">✓ Verified</div>` : ''}
-                </div>
-                <div class="card-overlay-info">
-                    <h2 style="margin: 0; font-size: 24px; color: #fff; display: flex; align-items: center; gap: 6px;">
-                        ${displayName}, ${displayAge} ${isVerified ? '🔹' : ''}
-                    </h2>
-                    <p style="margin: 4px 0 6px 0; color: var(--primary); font-size: 14px; font-weight: bold;">📍 ${displayCity} • ${gIcon}</p>
-                    <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${displayBio}</p>
-                </div>
-            </div>
-            <div class="card-actions-row">
-                <button class="btn-action-circle btn-pass" title="Dislike" onclick="handleSwipe(${p.id}, false)">👎</button>
-                <button class="btn-action-circle btn-undo" title="Orqaga qaytarish (VIP)" onclick="handleUndoSwipe()">↩️</button>
-                <button class="btn-action-circle btn-report" title="Shikoyat" onclick="openReportModal(${p.id})">⚠️</button>
-                <button class="btn-action-circle btn-info" title="Batafsil" onclick="openProfileDetailModal(${p.id})">ℹ️</button>
-                <button class="btn-action-circle btn-like" title="Like" onclick="handleSwipe(${p.id}, true)">💖</button>
-            </div>
-        </div>
-    `;
-}
-
-async function handleSwipe(targetId, isLike) {
-    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-    previousSwipeProfile = discoverProfiles[currentDiscoverIndex];
-
-    try {
-        const res = await fetch(`${API_URL}/api/swipe?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({ target_id: targetId, is_like: isLike })
-        });
-        const data = await res.json();
-        if (data.success && data.match) {
-            showMatchModal(data.partner, data.match_id);
-        }
-    } catch (e) {
-        console.error("Swipe error:", e);
-    }
-
-    currentDiscoverIndex++;
-    renderDiscoverCard();
-}
-
-function handleUndoSwipe() {
-    if (!currentUser?.is_premium && currentUser?.plan_tier !== 'VIP') {
-        alert("↩️ Svaypni orqaga qaytarish faqat VIP va Premium foydalanuvchilar uchun ochiq!");
-        openPaywallModal();
-        return;
-    }
-    if (currentDiscoverIndex > 0) {
-        currentDiscoverIndex--;
-        renderDiscoverCard();
-        alert("Oldingi anketa qaytarildi ↩️");
-    } else {
-        alert("Qaytarish uchun oldingi anketa yo'q");
-    }
-}
-
-function showMatchModal(partner, matchId) {
-    const partnerName = (partner?.name && partner.name.length > 0) ? partner.name : "Juftlik";
-    document.getElementById('matchPartnerName').textContent = partnerName;
-    document.getElementById('matchPartnerAvatar').src = partner?.photo || getDefaultAvatar(partnerName);
-    document.getElementById('matchMyAvatar').src = currentUser?.photo || getDefaultAvatar(currentUser?.name);
-    document.getElementById('btnMatchChat').onclick = () => {
-        closeMatchModal();
-        openChatWindow(matchId, partner);
-    };
-    document.getElementById('matchModal').style.display = 'flex';
-}
-function closeMatchModal() { document.getElementById('matchModal').style.display = 'none'; }
-
-// ----------------- LIKES RECEIVED -----------------
-async function loadReceivedLikes() {
-    const t = I18N[currentLang] || I18N.uz;
-    const container = document.getElementById('likesList');
-    const promo = document.getElementById('likesPremiumPromo');
-    const badge = document.getElementById('likesReceivedBadge');
-    container.innerHTML = "<p style='color:var(--text-muted); grid-column:span 2; text-align:center;'>Yuklanmoqda...</p>";
-
-    try {
-        const res = await fetch(`${API_URL}/api/likes/received?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
-        const data = await res.json();
-
-        if (data.success) {
-            badge.textContent = data.count || 0;
-            const isPrem = !!data.is_premium;
-            promo.style.display = isPrem ? 'none' : 'flex';
-
-            if (!data.profiles || data.profiles.length === 0) {
-                container.innerHTML = `<p style='color:var(--text-muted); grid-column:span 2; text-align:center; padding:30px 0;'>${t.noLikes}</p>`;
-                return;
-            }
-
-            container.innerHTML = "";
-            data.profiles.forEach(p => {
-                const card = document.createElement('div');
-                card.className = "glass-panel";
-                card.style.cssText = "padding: 12px; text-align: center; position: relative; overflow: hidden;";
-                const pName = p.name || "User";
-                const photoSrc = (p.photo && p.photo.length > 20) ? p.photo : getDefaultAvatar(pName, p.gender);
-
-                if (!isPrem) {
-                    card.innerHTML = `
-                        <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; position: relative;">
-                            <img src="${photoSrc}" class="blurred-photo" style="width: 100%; height: 100%; object-fit: cover;" onerror="handleImgError(this, '${pName}')">
-                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35);">
-                                <span style="font-size: 28px;">⭐</span>
-                            </div>
-                        </div>
-                        <h4 style="margin: 0; font-size: 14px; color: #fff;">${pName}, ${p.age || '?'}</h4>
-                        <p style="margin: 2px 0 8px 0; font-size: 12px; color: var(--text-muted);">${p.city || 'Toshkent'}</p>
-                        <button onclick="openPaywallModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
-                    `;
-                } else {
-                    card.innerHTML = `
-                        <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; cursor: pointer;" onclick="openProfileDetailModal(${p.id})">
-                            <img src="${photoSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="handleImgError(this, '${pName}')">
-                        </div>
-                        <h4 style="margin: 0; font-size: 14px; color: #fff;">${pName}, ${p.age}</h4>
-                        <p style="margin: 2px 0 8px 0; font-size: 12px; color: var(--primary); font-weight: bold;">📍 ${p.city || 'Toshkent'}</p>
-                        <button onclick="handleSwipe(${p.id}, true)" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">💖 Like / Match</button>
-                    `;
-                }
-                container.appendChild(card);
-            });
-        }
-    } catch(e) {
-        container.innerHTML = `<p style='color:var(--primary); grid-column:span 2; text-align:center;'>${e.message}</p>`;
-    }
-}
-
-// ----------------- FILTERS & DETAIL MODALS -----------------
-function openFilterModal() { document.getElementById('filterModal').style.display = 'flex'; }
-function closeFilterModal() { document.getElementById('filterModal').style.display = 'none'; }
-function applyFilters() { closeFilterModal(); loadDiscoverProfiles(); }
-function resetFilters() {
-    document.getElementById('filterMinAge').value = "";
-    document.getElementById('filterMaxAge').value = "";
-    document.getElementById('filterCity').value = "";
-    document.getElementById('filterGender').value = "ANY";
-    closeFilterModal();
-    loadDiscoverProfiles();
-}
-
-function openProfileDetailModal(userId) {
-    const user = discoverProfiles.find(u => u.id === userId) || activeTargetUser;
-    if (!user) return;
-
-    const safeName = user.name || "Foydalanuvchi";
-    document.getElementById('detailPhoto').src = (user.photo && user.photo.length > 20) ? user.photo : getDefaultAvatar(safeName, user.gender);
-    document.getElementById('detailPhoto').onerror = () => { document.getElementById('detailPhoto').src = getDefaultAvatar(safeName, user.gender); };
-    document.getElementById('detailNameAge').textContent = `${safeName}, ${user.age || 20}`;
-    const gName = user.gender === 'MALE' ? '👨 Erkak' : (user.gender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
-    document.getElementById('detailCity').textContent = `📍 ${user.city || 'Toshkent'} • ${gName}`;
-    document.getElementById('detailBio').textContent = user.bio || "O'zi haqida ma'lumot qoldirmagan.";
-
-    const intContainer = document.getElementById('detailInterests');
-    intContainer.innerHTML = "";
-    (user.interests || []).forEach(tag => {
-        const badge = document.createElement('span');
-        badge.className = "tag-badge";
-        badge.textContent = tag;
-        intContainer.appendChild(badge);
-    });
-
-    document.getElementById('btnDetailBlock').onclick = () => blockUser(user.id);
-    document.getElementById('btnDetailReport').onclick = () => openReportModal(user.id);
-
-    document.getElementById('profileDetailModal').style.display = 'flex';
-}
-function closeProfileDetailModal() { document.getElementById('profileDetailModal').style.display = 'none'; }
-
-async function blockUser(targetId) {
-    if (!confirm("Foydalanuvchini bloklamoqchimisiz?")) return;
-    try {
-        const res = await fetch(`${API_URL}/api/user/block?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({ target_id: targetId })
-        });
-        if (res.ok) {
-            alert("Foydalanuvchi bloklandi.");
-            closeProfileDetailModal();
-            loadDiscoverProfiles();
-        }
-    } catch(e) { alert(e.message); }
-}
 
 let reportTargetId = null;
 function openReportModal(targetId) {
