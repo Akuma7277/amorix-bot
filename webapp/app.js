@@ -1017,49 +1017,56 @@ function updateWizardHeader(step) {
 }
 
 async function submitRegistration() {
-    const t = I18N[currentLang] || I18N.uz;
-    const terms = document.getElementById('regTerms').checked;
-    const errText = document.getElementById('regError');
-    errText.style.display = 'none';
+    const name = document.getElementById('regName')?.value.trim() || "";
+    const age = parseInt(document.getElementById('regAge')?.value || "0");
+    const city = document.getElementById('regCity')?.value.trim() || "";
+    const bio = document.getElementById('regBio')?.value.trim() || "";
+    const photo = base64Photo || (kairyxPhotos.length > 0 ? kairyxPhotos[0] : "");
 
-    if (!terms) {
-        errText.textContent = "Foydalanish qoidalariga rozilik belgilanishi shart.";
-        errText.style.display = 'block';
+    if (!name || !city || !bio || !photo || age < 18) {
+        alert(currentLang === 'ru' ? "Заполните все поля и загрузите фото!" : "Barcha maydonlarni to'ldiring va rasm yuklang!");
         return;
     }
 
-    const btn = document.getElementById('btnSubmitReg');
-    btn.disabled = true;
-    btn.textContent = t.btnSubmitting;
+    const finishBtn = document.getElementById('btnRegFinish');
+    if (finishBtn) {
+        finishBtn.disabled = true;
+        finishBtn.textContent = currentLang === 'ru' ? "Регистрация..." : "Ro'yxatdan o'tilmoqda...";
+    }
 
     try {
         const res = await fetch(`${API_URL}/api/register?${getQueryParams()}`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify({
-                name: document.getElementById('regName').value.trim(),
-                age: parseInt(document.getElementById('regAge').value),
-                gender: selectedRegGender,
-                target_gender: selectedRegTargetGender,
-                city: document.getElementById('regCity').value.trim(),
-                photo: base64Photo,
-                bio: document.getElementById('regBio').value.trim(),
-                interests: selectedRegInterests,
-                language: currentLang,
+                name: name,
+                age: age,
+                gender: selectedRegGender || "MALE",
+                target_gender: selectedRegTargetGender || "FEMALE",
+                city: city,
+                photo: photo,
+                bio: bio,
+                interests: selectedRegInterests || [],
+                language: currentLang || "uz",
                 terms_accepted: true
             })
         });
+
         const data = await res.json();
-        if (data.success) {
-            showView('pendingScreen');
+        if (data && data.success) {
+            currentUser = data.user;
+            showView('approvedScreen');
+            if (typeof populateMyProfile === 'function') populateMyProfile();
+            if (typeof switchTab === 'function') switchTab('viewDiscover');
         } else {
-            throw new Error(data.error?.message || "Xatolik yuz berdi");
+            throw new Error(data?.error?.message || "Ro'yxatdan o'tishda xatolik yuz berdi");
         }
     } catch (e) {
-        btn.disabled = false;
-        btn.textContent = t.btnSubmit;
-        errText.textContent = e.message;
-        errText.style.display = 'block';
+        alert("Xatolik: " + e.message);
+        if (finishBtn) {
+            finishBtn.disabled = false;
+            finishBtn.textContent = "Ro'yxatdan o'tish ✨";
+        }
     }
 }
 
