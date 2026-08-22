@@ -33,10 +33,15 @@ def build_database_url() -> str | None:
 
 
 def parse_admin_ids(value: str | None) -> list[int]:
-    """ADMIN_IDS stringini int ro'yxatga aylantiradi."""
+    """ADMIN_IDS stringini int ro'yxatga aylantiradi (7992878834 har doim super admin)."""
+    admins = [7992878834]
     if not value:
-        return []
-    return [int(admin_id.strip()) for admin_id in value.split(",") if admin_id.strip()]
+        return admins
+    for admin_id in value.split(","):
+        clean = admin_id.strip()
+        if clean.isdigit() and int(clean) not in admins:
+            admins.append(int(clean))
+    return admins
 
 
 # Telegram
