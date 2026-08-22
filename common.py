@@ -16,6 +16,55 @@ from reply import get_webapp_url
 
 router = Router()
 
+# =========================================================================
+# CONSTANTS FOR BACKWARD COMPATIBILITY
+# =========================================================================
+MAIN_MENU_TEXTS = {
+    "uz": "Bosh menyu. Kerakli bo'limni tanlang:",
+    "ru": "Главное меню. Выберите нужный раздел:",
+    "en": "Main menu. Please select a section:",
+}
+NOT_REGISTERED_TEXTS = {
+    "uz": "Siz hali ro'yxatdan o'tmagansiz. Iltimos, /start buyrug'ini bosing.",
+    "ru": "Вы еще не зарегистрированы. Пожалуйста, нажмите команду /start.",
+    "en": "You are not registered yet. Please press the /start command.",
+}
+VERIFICATION_START_TEXT = {
+    "uz": "Hisobingizni tasdiqlash uchun hujjat rasmini yuboring.",
+    "ru": "Для верификации вашего аккаунта отправьте фото документа.",
+    "en": "To verify your account, please send a document photo.",
+}
+VERIFICATION_SUBMITTED_TEXT = {
+    "uz": "Hujjat qabul qilindi. Tez orada ko'rib chiqiladi.",
+    "ru": "Документ принят. Скоро будет рассмотрен.",
+    "en": "Document submitted. It will be reviewed shortly.",
+}
+VERIFICATION_IN_PROGRESS_TEXT = {
+    "uz": "Verifikatsiya so'rovi allaqachon ko'rib chiqilmoqda.",
+    "ru": "Запрос на верификацию уже рассматривается.",
+    "en": "Verification request is already under review.",
+}
+VERIFICATION_ALREADY_VERIFIED_TEXT = {
+    "uz": "Hisobingiz allaqachon verifikatsiya qilingan ✅",
+    "ru": "Ваш аккаунт уже верифицирован ✅",
+    "en": "Your account is already verified ✅",
+}
+ICEBREAKER_QUESTIONS = [
+    "Eng sevimli filmingiz qaysi?",
+    "Bo'sh vaqtingizda nima bilan shug'ullanasiz?",
+    "Qaysi shaharga sayohat qilishni xohlardingiz?"
+]
+SECURITY_INFO_TEXTS = {
+    "uz": "Xavfsizlik: begonalarga shaxsiy karta ma'lumotlaringizni bermang.",
+    "ru": "Безопасность: никогда не передавайте личные данные карты.",
+    "en": "Safety: never share sensitive financial details.",
+}
+EDIT_PROFILE_TEXTS = {
+    "uz": "Qaysi ma'lumotni o'zgartirmoqchisiz?",
+    "ru": "Какие данные вы хотите изменить?",
+    "en": "Which field do you want to edit?",
+}
+
 def get_webapp_inline_keyboard() -> InlineKeyboardMarkup:
     """Mini Appni to'g'ridan-to'g'ri ochuvchi inline tugma"""
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -45,8 +94,6 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
         "Ilovani ishga tushirish uchun quyidagi tugmani bosing: 👇"
     )
 
-    # 1. Remove any legacy reply keyboard from user screen
-    # 2. Provide the WebApp inline button
     await message.answer(
         text=welcome_text,
         reply_markup=get_webapp_inline_keyboard(),
