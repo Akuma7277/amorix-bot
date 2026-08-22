@@ -1,5 +1,44 @@
 // ----------------- EARLY TELEGRAM WEBAPP INIT -----------------
 const tg = window.Telegram?.WebApp;
+
+function compressImage(file, maxWidth = 800, quality = 0.75) {
+    return new Promise((resolve, reject) => {
+        if (!file) {
+            return reject(new Error("Fayl topilmadi"));
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+            };
+            img.onerror = function() {
+                reject(new Error("Rasmni yuklab bo'lmadi"));
+            };
+            img.src = e.target.result;
+        };
+        reader.onerror = function() {
+            reject(new Error("Faylni o'qib bo'lmadi"));
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 if (tg) {
     try {
         tg.ready();
