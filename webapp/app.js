@@ -414,7 +414,6 @@ function updateWizardHeader(step) {
 }
 
 
-const tg = window.Telegram?.WebApp;
 const API_URL = (window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1"))
     ? window.location.origin
     : "https://amorix-bot-production.up.railway.app";
@@ -784,7 +783,6 @@ function setAppLanguage(lang) {
 }
 
 // ----------------- GLOBAL STATE & AUTH -----------------
-const AVAILABLE_INTERESTS = [
     "🎮 Gaming", "🎵 Music", "🏋️ Fitness", "✈️ Travel", 
     "📚 Books", "🎬 Movies", "⚽ Sport", "💻 Technology", 
     "🍳 Cooking", "🎨 Art", "📸 Photography", "☕ Coffee"
@@ -796,9 +794,6 @@ let currentView = "";
 let previousViewBeforeAdmin = "approvedScreen";
 let base64Photo = "";
 let base64ReceiptPhoto = "";
-let selectedRegGender = "MALE";
-let selectedRegTargetGender = "FEMALE";
-let selectedRegInterests = [];
 let selectedEditInterests = [];
 let currentBillingPeriod = "monthly";
 let selectedCheckoutPlan = "PREMIUM";
@@ -2888,7 +2883,6 @@ if (tg) {
 }
 
 // Event listener for editProfile photo uploader
-const editPhotoInput = document.getElementById('editPhotoFileInput');
 if (editPhotoInput) {
     editPhotoInput.addEventListener('change', async function(e) {
         const file = e.target.files[0];
