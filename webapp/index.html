@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=2.25.0">
-        <script src="https://telegram.org/js/telegram-web-app.js?v=2.25.0"></script>
+    <link rel="stylesheet" href="style.css?v=2.26.0">
+        <script src="https://telegram.org/js/telegram-web-app.js?v=2.26.0"></script>
     <script>
         try {
             if (window.Telegram && window.Telegram.WebApp) {
@@ -63,10 +63,11 @@
 
         <!-- 1. LOADING / VERIFYING SCREEN -->
         <div id="verifyingScreen" class="view-container text-center">
-            <div class="center-content">
-                <div class="pulsing-heart">💖</div>
-                <h3 id="txtLoadingTitle" class="gradient-text">Kairyx yuklanmoqda...</h3>
-                <p id="txtLoadingSub" class="text-muted">Xavfsiz sessiya tekshirilmoqda</p>
+            <div class="center-content" style="padding-top: 50px;">
+                <div class="pulsing-heart" style="font-size: 52px; margin-bottom: 16px;">💖</div>
+                <h3 id="txtLoadingTitle" class="gradient-text" style="font-size: 22px; font-weight: 800; margin-bottom: 6px;">Kairyx yuklanmoqda...</h3>
+                <p id="txtLoadingSub" class="text-muted" style="font-size: 14px; margin-bottom: 24px;">Xavfsiz sessiya tekshirilmoqda</p>
+                <button onclick="forceEnterApp()" class="btn-subtle" style="font-size: 13px; font-weight: 600; padding: 10px 22px; border-radius: 14px; background: rgba(245, 208, 97, 0.12); color: #f5d061; border: 1px solid rgba(245, 208, 97, 0.35); box-shadow: 0 4px 16px rgba(0,0,0,0.4); cursor: pointer;">Ilovaga kirish ⚡</button>
             </div>
         </div>
 
@@ -1067,7 +1068,7 @@
     </div>
 
     <!-- Application Script -->
-    <script src="app.js?v=2.25.0"></script>
+    <script src="app.js?v=2.26.0"></script>
 
     <!-- Kairyx Date Picker Bottom Sheet (Screenshot 2) -->
     <div id="kairyxDobModal" class="kairyx-picker-backdrop" style="display:none;" onclick="if(event.target===this)closeKairyxDobPicker()">
