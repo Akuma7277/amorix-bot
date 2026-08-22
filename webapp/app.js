@@ -847,7 +847,13 @@ function showView(viewId) {
 }
 
 // ----------------- STANDARDIZED SESSION STATE MACHINE & NORMALIZER -----------------
-window.sessionState = 'IDLE'; // IDLE | LOADING | READY | ERROR
+window.sessionState = 'IDLE';
+
+function forceEnterApp() {
+    showView('approvedScreen');
+    if (typeof populateMyProfile === 'function') populateMyProfile();
+    if (typeof switchTab === 'function') switchTab('viewDiscover');
+} // IDLE | LOADING | READY | ERROR
 let isSessionRequestInFlight = false;
 
 function normalizeSession(payload) {
@@ -1023,6 +1029,913 @@ async function verifySession() {
     }
 }
 
+
+function nextRegStep(currStep) {
+    if (currStep === 2) {
+        const age = parseInt(document.getElementById('regAge').value);
+        if (!age || age < 18) {
+            alert(currentLang === 'ru' ? "Сервис доступен только для 18+!" : "18 yoshdan katta bo'lish shart!");
+            return;
+        }
+    } else if (currStep === 3) {
+        const name = document.getElementById('regName').value.trim();
+        const city = document.getElementById('regCity').value.trim();
+        if (!name || !city) {
+            alert(currentLang === 'ru' ? "Заполните имя и город!" : "Ism va shahringizni to'ldiring!");
+            return;
+        }
+    } else if (currStep === 5) {
+        if (!base64Photo && kairyxPhotos.length === 0) {
+            alert(currentLang === 'ru' ? "Загрузите хотя бы одно фото (0/6)!" : "Kamida bitta fotosurat yuklang (0/6)!");
+            return;
+        }
+        base64Photo = kairyxPhotos[0] || base64Photo;
+    } else if (currStep === 6) {
+        const bio = document.getElementById('regBio').value.trim();
+        if (!bio) {
+            alert(currentLang === 'ru' ? "Напишите о себе!" : "O'zingiz haqingizda yozing!");
+            return;
+        }
+        const nameVal = document.getElementById('regName').value.trim();
+        document.getElementById('summaryPhoto').src = base64Photo || getDefaultAvatar(nameVal, selectedRegGender);
+        document.getElementById('summaryNameAge').textContent = `${nameVal}, ${document.getElementById('regAge').value}`;
+        const gName = selectedRegGender === 'MALE' ? '👨 Erkak' : (selectedRegGender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
+        document.getElementById('summaryDetails').textContent = `${document.getElementById('regCity').value.trim()} • ${gName}`;
+        document.getElementById('summaryBio').textContent = bio;
+    }
+
+    document.getElementById(`regStep${currStep}`).style.display = 'none';
+    document.getElementById(`regStep${currStep + 1}`).style.display = 'block';
+    updateWizardHeader(currStep + 1);
+}
+
+function prevRegStep(currStep) {
+    document.getElementById(`regStep${currStep}`).style.display = 'none';
+    document.getElementById(`regStep${currStep - 1}`).style.display = 'block';
+    updateWizardHeader(currStep - 1);
+}
+
+function updateWizardHeader(step) {
+    const t = I18N[currentLang] || I18N.uz;
+    const titles = [t.step1Title, t.step2Title, t.step3Title, t.step4Title, t.step5Title, t.step6Title, t.step7Title];
+    document.getElementById('wizardStepTitle').textContent = titles[step - 1];
+    document.getElementById('wizardStepCount').textContent = `${step} / 7`;
+    document.getElementById('wizardProgressBar').style.width = `${(step / 7) * 100}%`;
+}
+
+async function submitRegistration() {
+    const name = document.getElementById('regName')?.value.trim() || "";
+    const age = parseInt(document.getElementById('regAge')?.value || "0");
+    const city = document.getElementById('regCity')?.value.trim() || "";
+    const bio = document.getElementById('regBio')?.value.trim() || "";
+    const photo = base64Photo || (kairyxPhotos.length > 0 ? kairyxPhotos[0] : "");
+
+    if (!name || !city || !bio || !photo || age < 18) {
+        alert(currentLang === 'ru' ? "Заполните все поля и загрузите фото!" : "Barcha maydonlarni to'ldiring va rasm yuklang!");
+        return;
+    }
+
+    const finishBtn = document.getElementById('btnRegFinish');
+    if (finishBtn) {
+        finishBtn.disabled = true;
+        finishBtn.textContent = currentLang === 'ru' ? "Регистрация..." : "Ro'yxatdan o'tilmoqda...";
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/register?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({
+                name: name,
+                age: age,
+                gender: selectedRegGender || "MALE",
+                target_gender: selectedRegTargetGender || "FEMALE",
+                city: city,
+                photo: photo,
+                bio: bio,
+                interests: selectedRegInterests || [],
+                language: currentLang || "uz",
+                terms_accepted: true
+            })
+        });
+
+        const data = await res.json();
+        if (data && data.success) {
+            currentUser = data.user;
+            showView('approvedScreen');
+            if (typeof populateMyProfile === 'function') populateMyProfile();
+            if (typeof switchTab === 'function') switchTab('viewDiscover');
+        } else {
+            throw new Error(data?.error?.message || "Ro'yxatdan o'tishda xatolik yuz berdi");
+        }
+    } catch (e) {
+        alert("Xatolik: " + e.message);
+        if (finishBtn) {
+            finishBtn.disabled = false;
+            finishBtn.textContent = "Ro'yxatdan o'tish ✨";
+        }
+    }
+}
+
+// ----------------- TAB NAVIGATION -----------------
+function switchTab(tabId) {
+    const tabs = ['viewDiscover', 'viewLikes', 'viewMatches', 'viewChats', 'viewProfile'];
+    tabs.forEach(t => {
+        const el = document.getElementById(t);
+        if (el) el.style.display = (t === tabId) ? 'block' : 'none';
+    });
+
+    const navBtns = {
+        'viewDiscover': 'btnNavDiscover',
+        'viewLikes': 'btnNavLikes',
+        'viewMatches': 'btnNavMatches',
+        'viewChats': 'btnNavChats',
+        'viewProfile': 'btnNavProfile'
+    };
+
+    Object.keys(navBtns).forEach(k => {
+        const btn = document.getElementById(navBtns[k]);
+        if (btn) {
+            if (k === tabId) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+    });
+
+    if (tabId === 'viewDiscover') loadDiscoverProfiles();
+    if (tabId === 'viewLikes') loadReceivedLikes();
+    if (tabId === 'viewMatches') loadMatchesList();
+    if (tabId === 'viewChats') loadChatsList();
+    if (tabId === 'viewProfile') populateMyProfile();
+}
+
+// ----------------- GAMIFICATION: DAILY REWARDS & STREAKS -----------------
+async function openDailyRewardModal() {
+    document.getElementById('dailyRewardModal').style.display = 'flex';
+    const container = document.getElementById('streakGridContainer');
+    container.innerHTML = "<p style='grid-column:span 7; color:var(--text-muted); font-size:12px; text-align:center;'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/rewards/daily/status?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const table = data.rewards_table;
+            const cycleDay = data.cycle_day;
+            const canClaim = data.can_claim;
+
+            container.innerHTML = "";
+            table.forEach(r => {
+                const dayNum = r.day;
+                const isClaimed = dayNum < cycleDay || (dayNum === cycleDay && !canClaim);
+                const isCurrent = dayNum === cycleDay && canClaim;
+
+                const box = document.createElement('div');
+                box.className = `streak-day-box ${isCurrent ? 'active' : ''} ${isClaimed ? 'claimed' : ''} ${dayNum === 7 ? 'bonus-day' : ''}`;
+                box.innerHTML = `
+                    <div style="font-weight:bold; font-size:10px;">${dayNum}-kun</div>
+                    <div style="font-size:18px; margin:4px 0;">${dayNum === 7 ? '⭐' : '🎁'}</div>
+                    <div style="font-size:9px; font-weight:bold;">${isClaimed ? '✓' : (isCurrent ? 'Olish' : `+${r.xp}XP`)}</div>
+                `;
+                container.appendChild(box);
+            });
+
+            const btn = document.getElementById('btnClaimDailyAction');
+            if (canClaim) {
+                btn.disabled = false;
+                btn.textContent = "🎁 BUGUNGI BONUSNI OLISH";
+                btn.style.opacity = "1";
+            } else {
+                btn.disabled = true;
+                btn.textContent = "✓ Bugungi bonus olingan (Ertaga qayting)";
+                btn.style.opacity = "0.6";
+            }
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeDailyRewardModal() { document.getElementById('dailyRewardModal').style.display = 'none'; }
+
+async function claimDailyRewardNow() {
+    const btn = document.getElementById('btnClaimDailyAction');
+    btn.disabled = true;
+    btn.textContent = "Qabul qilinmoqda...";
+
+    try {
+        const res = await fetch(`${API_URL}/api/rewards/daily/claim?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(`🎉 Tabriklaymiz! +${data.reward_awarded.xp} XP va +${data.reward_awarded.bonus} ball hisobingizga qo'shildi!`);
+            currentUser = data.user;
+            populateMyProfile();
+            openDailyRewardModal();
+        } else {
+            alert(data.error?.message || "Xatolik yuz berdi");
+            btn.disabled = false;
+        }
+    } catch(e) {
+        alert(e.message);
+        btn.disabled = false;
+    }
+}
+
+// ----------------- LEADERBOARD & MISSIONS -----------------
+async function openLeaderboardModal() {
+    document.getElementById('leaderboardModal').style.display = 'flex';
+    const container = document.getElementById('leaderboardList');
+    container.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/leaderboard?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const list = data.leaderboard;
+            container.innerHTML = "";
+            list.forEach(u => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.cssText = "padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;";
+                const medal = u.rank === 1 ? '🥇' : (u.rank === 2 ? '🥈' : (u.rank === 3 ? '🥉' : `#${u.rank}`));
+                const userPhoto = (u.photo && u.photo.length > 20) ? u.photo : getDefaultAvatar(u.name);
+
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-weight:bold; font-size:15px; width:24px; color:var(--accent-gold);">${medal}</span>
+                        <img src="${userPhoto}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1.5px solid var(--primary);" onerror="handleImgError(this, '${u.name || "K"}')">
+                        <div>
+                            <h4 style="margin:0; font-size:14px; color:#fff;">${u.name || 'User'}</h4>
+                            <span style="font-size:11px; color:var(--text-muted);">Level ${u.level} • 🔥 ${u.streak_days}d streak</span>
+                        </div>
+                    </div>
+                    <span style="font-weight:bold; font-size:14px; color:var(--accent-green);">${u.xp} XP</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeLeaderboardModal() { document.getElementById('leaderboardModal').style.display = 'none'; }
+
+async function loadProfileMissions() {
+    const container = document.getElementById('profileMissionsList');
+    container.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>Vazifalar tekshirilmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/missions?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            container.innerHTML = "";
+            data.missions.forEach(m => {
+                const item = document.createElement('div');
+                item.style.cssText = "background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center;";
+                const pct = Math.min(100, Math.round((m.current / m.target) * 100));
+
+                item.innerHTML = `
+                    <div style="flex:1; margin-right:10px;">
+                        <div style="font-size:13px; font-weight:bold; color:#fff;">${m.title}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">${m.desc}</div>
+                        <div class="progress-bar-bg" style="height:5px; margin-top:5px;">
+                            <div class="progress-bar-fill" style="width:${pct}%;"></div>
+                        </div>
+                    </div>
+                    <span style="font-size:12px; font-weight:bold; color:${m.completed ? 'var(--accent-green)' : 'var(--accent-gold)'};">
+                        ${m.completed ? '✓ +'+m.xp+'XP' : `${m.current}/${m.target}`}
+                    </span>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = ""; }
+}
+
+// ----------------- REFERRAL CENTER -----------------
+let globalRefLink = "";
+async function openReferralModal() {
+    document.getElementById('referralModal').style.display = 'flex';
+    const container = document.getElementById('refMilestonesList');
+    container.innerHTML = "<p style='color:var(--text-muted);'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/referral?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            globalRefLink = data.referral_link;
+            document.getElementById('refLinkText').textContent = data.referral_link;
+
+            container.innerHTML = "";
+            data.milestones.forEach(m => {
+                const isUnlocked = (data.referral_count >= m.target);
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.cssText = "padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;";
+                item.innerHTML = `
+                    <div>
+                        <b>${m.target} ta do'st:</b> ${m.label}
+                    </div>
+                    <span style="font-weight:bold; color:${isUnlocked ? 'var(--accent-green)' : 'var(--text-muted)'};">
+                        ${isUnlocked ? '✓ Olingan' : `${data.referral_count}/${m.target}`}
+                    </span>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch(e) { container.innerHTML = e.message; }
+}
+
+function closeReferralModal() { document.getElementById('referralModal').style.display = 'none'; }
+
+function copyReferralLink() {
+    if (globalRefLink) {
+        navigator.clipboard.writeText(globalRefLink);
+        alert("Referral havola nusxalandi! Do'stlaringizga yuboring 👥");
+    }
+}
+
+// ----------------- PAYWALL & RECEIPT PAYMENT CHECKOUT -----------------
+function openPaywallModal() {
+    document.getElementById('paywallModal').style.display = 'flex';
+    updatePaywallPrices();
+}
+function closePaywallModal() { document.getElementById('paywallModal').style.display = 'none'; }
+
+function toggleBillingPeriod(period) {
+    currentBillingPeriod = period;
+    document.getElementById('btnBillingMonthly').style.background = (period === 'monthly') ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.06)';
+    document.getElementById('btnBillingMonthly').style.color = (period === 'monthly') ? '#fff' : 'var(--text-muted)';
+    document.getElementById('btnBillingYearly').style.background = (period === 'yearly') ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.06)';
+    document.getElementById('btnBillingYearly').style.color = (period === 'yearly') ? '#fff' : 'var(--text-muted)';
+    updatePaywallPrices();
+}
+
+function updatePaywallPrices() {
+    if (currentBillingPeriod === 'yearly') {
+        document.getElementById('priceLabelPremium').textContent = "410,000 UZS / yil";
+        document.getElementById('priceLabelVIP').textContent = "710,000 UZS / yil";
+    } else {
+        document.getElementById('priceLabelPremium').textContent = "49,000 UZS / oy";
+        document.getElementById('priceLabelVIP').textContent = "89,000 UZS / oy";
+    }
+}
+
+function openPaymentCheckoutModal(planTier) {
+    closePaywallModal();
+    selectedCheckoutPlan = planTier;
+    
+    if (planTier === "VIP") {
+        selectedCheckoutAmount = (currentBillingPeriod === "yearly") ? 710000 : 89000;
+        document.getElementById('chkPlanBadge').innerHTML = `👑 VIP STATUS (${currentBillingPeriod === 'yearly' ? '1 Yillik' : '1 Oylik'})`;
+        document.getElementById('chkPlanBadge').style.color = "#ff4fbf";
+    } else {
+        selectedCheckoutAmount = (currentBillingPeriod === "yearly") ? 410000 : 49000;
+        document.getElementById('chkPlanBadge').innerHTML = `⭐ PREMIUM (${currentBillingPeriod === 'yearly' ? '1 Yillik' : '1 Oylik'})`;
+        document.getElementById('chkPlanBadge').style.color = "var(--accent-gold)";
+    }
+
+    document.getElementById('chkAmountBadge').textContent = `${selectedCheckoutAmount.toLocaleString()} UZS`;
+    document.getElementById('checkoutCardNumber').textContent = "9860 6004 3347 6527";
+    
+    base64ReceiptPhoto = "";
+    document.getElementById('receiptPhotoPreview').style.display = 'none';
+    document.getElementById('receiptPlaceholderText').style.display = 'block';
+    document.getElementById('receiptFileInput').value = "";
+
+    document.getElementById('paymentCheckoutModal').style.display = 'flex';
+}
+
+function closePaymentCheckoutModal() {
+    document.getElementById('paymentCheckoutModal').style.display = 'none';
+}
+
+function copyCheckoutCardNumber() {
+    navigator.clipboard.writeText("9860600433476527");
+    alert("Karta raqami nusxalandi: 9860 6004 3347 6527 💳");
+}
+
+const receiptInputEl = document.getElementById('receiptFileInput');
+if (receiptInputEl) receiptInputEl.addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        try {
+            document.getElementById('receiptPlaceholderText').innerHTML = "<span style='font-size:13px; font-weight:bold; color:var(--primary);'>Chek siqilmoqda...</span>";
+            base64ReceiptPhoto = await compressImage(file, 900, 0.8);
+            document.getElementById('receiptPhotoPreview').src = base64ReceiptPhoto;
+            document.getElementById('receiptPhotoPreview').style.display = 'block';
+            document.getElementById('receiptPlaceholderText').style.display = 'none';
+        } catch(err) {
+            alert("Rasm yuklashda xatolik: " + err.message);
+        }
+    }
+});
+
+async function submitPaymentOrder() {
+    if (!base64ReceiptPhoto) {
+        alert("To'lov chekini (skrinshot) yuklash majburiy!");
+        return;
+    }
+
+    const btn = document.getElementById('btnSubmitPaymentReceipt');
+    btn.disabled = true;
+    btn.textContent = "Yuborilmoqda...";
+
+    try {
+        const res = await fetch(`${API_URL}/api/payment/submit?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({
+                plan_tier: selectedCheckoutPlan,
+                period: currentBillingPeriod,
+                amount: selectedCheckoutAmount,
+                receipt_photo: base64ReceiptPhoto
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("🎉 To'lov chekingiz muvaffaqiyatli qabul qilindi! Administrator tasdiqlashi bilan obunangiz avtomatik ishga tushadi.");
+            closePaymentCheckoutModal();
+        } else {
+            alert(data.error?.message || "Xatolik yuz berdi");
+        }
+    } catch(e) {
+        alert(e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "To'lov qildim (Yuborish) 🚀";
+    }
+}
+
+async function redeemCouponCode() {
+    const input = document.getElementById('couponInput');
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+        alert("Promo kodni kiriting!");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/coupons/redeem?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ code: code })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            input.value = "";
+            currentUser = data.user;
+            populateMyProfile();
+        } else {
+            alert(data.error?.message || "Promo kod xato");
+        }
+    } catch(e) { alert(e.message); }
+}
+
+// ----------------- DISCOVERY & SWIPING (WITH SAFE AVATARS & DETAILS) -----------------
+async function loadDiscoverProfiles() {
+    const container = document.getElementById('cardStackContainer');
+    container.innerHTML = `
+        <div class="glass-panel" style="padding: 60px 20px; text-align: center; margin-top: 40px;">
+            <div class="pulsing-heart" style="font-size: 38px; margin-bottom: 10px;">💖</div>
+            <p style="color: var(--text-muted); font-size: 14px;">Yangi anketalar qidirilmoqda...</p>
+        </div>
+    `;
+
+    const minAge = document.getElementById('filterMinAge')?.value;
+    const maxAge = document.getElementById('filterMaxAge')?.value;
+    const city = document.getElementById('filterCity')?.value;
+    const gender = document.getElementById('filterGender')?.value;
+
+    const q = new URLSearchParams(getQueryParams());
+    if (minAge) q.append("min_age", minAge);
+    if (maxAge) q.append("max_age", maxAge);
+    if (city) q.append("city", city);
+    if (gender && gender !== "ANY") q.append("gender", gender);
+
+    try {
+        const res = await fetch(`${API_URL}/api/profiles?${q.toString()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            discoverProfiles = data.profiles || [];
+            currentDiscoverIndex = 0;
+            renderDiscoverCard();
+        } else {
+            container.innerHTML = `<div class="glass-panel p-4 text-center mt-4"><p class="text-danger">${data.error?.message || "Xatolik"}</p></div>`;
+        }
+    } catch (e) {
+        container.innerHTML = `
+            <div class="glass-panel p-4 text-center mt-4">
+                <p class="text-danger">Aloqa uzildi: ${e.message}</p>
+                <button onclick="loadDiscoverProfiles()" class="btn-primary-gradient mt-2">🔄 Qayta urinish</button>
+            </div>
+        `;
+    }
+}
+
+function renderDiscoverCard() {
+    const t = I18N[currentLang] || I18N.uz;
+    const container = document.getElementById('cardStackContainer');
+    if (!discoverProfiles || discoverProfiles.length === 0 || currentDiscoverIndex >= discoverProfiles.length) {
+        container.innerHTML = `
+            <div class="glass-panel" style="padding: 50px 20px; text-align: center; margin-top: 40px;">
+                <div style="font-size: 46px; margin-bottom: 12px;">💫</div>
+                <h3 style="color: var(--primary); margin-top: 0; font-size: 20px;">${t.noProfiles}</h3>
+                <p style="color: var(--text-muted); font-size: 14px; line-height: 1.5; margin: 8px 0 18px 0;">${t.noProfilesSub}</p>
+                <button onclick="loadDiscoverProfiles()" class="btn-primary-gradient">🔄 ${t.btnRetry}</button>
+            </div>
+        `;
+        return;
+    }
+
+    const p = discoverProfiles[currentDiscoverIndex];
+    if (!p) return;
+
+    activeTargetUser = p;
+    const gIcon = p.gender === 'MALE' ? '👨' : (p.gender === 'FEMALE' ? '👩' : '🌈');
+    const isVip = (p.plan_tier === 'VIP');
+    const isVerified = !!p.is_verified;
+    const displayName = (p.name && typeof p.name === 'string' && p.name.trim().length > 0) ? p.name.trim() : "Foydalanuvchi";
+    const displayAge = p.age || 20;
+    const displayCity = (p.city && typeof p.city === 'string' && p.city.trim().length > 0) ? p.city.trim() : "Toshkent";
+    const displayBio = (p.bio && typeof p.bio === 'string' && p.bio.trim().length > 0) ? p.bio.trim() : "Kairyx a'zosi";
+    const photoSrc = (p.photo && typeof p.photo === 'string' && p.photo.length > 20) ? p.photo : getDefaultAvatar(displayName, p.gender);
+
+    container.innerHTML = `
+        <div class="dating-card">
+            <div class="card-image-wrap" onclick="openProfileDetailModal(${p.id})">
+                <img src="${photoSrc}" onerror="handleImgError(this, '${displayName}', '${p.gender || "OTHER"}')">
+                <div style="position: absolute; top: 12px; left: 12px; display: flex; gap: 6px;">
+                    ${isVip ? `<div style="background: var(--vip-gradient); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-full); box-shadow: 0 0 12px var(--vip-glow);">👑 VIP</div>` : ''}
+                    ${isVerified ? `<div style="background: rgba(5, 217, 232, 0.85); color: #000; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: var(--radius-full);">✓ Verified</div>` : ''}
+                </div>
+                <div class="card-overlay-info">
+                    <h2 style="margin: 0; font-size: 24px; color: #fff; display: flex; align-items: center; gap: 6px;">
+                        ${displayName}, ${displayAge} ${isVerified ? '🔹' : ''}
+                    </h2>
+                    <p style="margin: 4px 0 6px 0; color: var(--primary); font-size: 14px; font-weight: bold;">📍 ${displayCity} • ${gIcon}</p>
+                    <p style="margin: 0; color: var(--text-sub); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${displayBio}</p>
+                </div>
+            </div>
+            <div class="card-actions-row">
+                <button class="btn-action-circle btn-pass" title="Dislike" onclick="handleSwipe(${p.id}, false)">👎</button>
+                <button class="btn-action-circle btn-undo" title="Orqaga qaytarish (VIP)" onclick="handleUndoSwipe()">↩️</button>
+                <button class="btn-action-circle btn-report" title="Shikoyat" onclick="openReportModal(${p.id})">⚠️</button>
+                <button class="btn-action-circle btn-info" title="Batafsil" onclick="openProfileDetailModal(${p.id})">ℹ️</button>
+                <button class="btn-action-circle btn-like" title="Like" onclick="handleSwipe(${p.id}, true)">💖</button>
+            </div>
+        </div>
+    `;
+}
+
+async function handleSwipe(targetId, isLike) {
+    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+    previousSwipeProfile = discoverProfiles[currentDiscoverIndex];
+
+    try {
+        const res = await fetch(`${API_URL}/api/swipe?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ target_id: targetId, is_like: isLike })
+        });
+        const data = await res.json();
+        if (data.success && data.match) {
+            showMatchModal(data.partner, data.match_id);
+        }
+    } catch (e) {
+        console.error("Swipe error:", e);
+    }
+
+    currentDiscoverIndex++;
+    renderDiscoverCard();
+}
+
+function handleUndoSwipe() {
+    if (!currentUser?.is_premium && currentUser?.plan_tier !== 'VIP') {
+        alert("↩️ Svaypni orqaga qaytarish faqat VIP va Premium foydalanuvchilar uchun ochiq!");
+        openPaywallModal();
+        return;
+    }
+    if (currentDiscoverIndex > 0) {
+        currentDiscoverIndex--;
+        renderDiscoverCard();
+        alert("Oldingi anketa qaytarildi ↩️");
+    } else {
+        alert("Qaytarish uchun oldingi anketa yo'q");
+    }
+}
+
+function showMatchModal(partner, matchId) {
+    const partnerName = (partner?.name && partner.name.length > 0) ? partner.name : "Juftlik";
+    document.getElementById('matchPartnerName').textContent = partnerName;
+    document.getElementById('matchPartnerAvatar').src = partner?.photo || getDefaultAvatar(partnerName);
+    document.getElementById('matchMyAvatar').src = currentUser?.photo || getDefaultAvatar(currentUser?.name);
+    document.getElementById('btnMatchChat').onclick = () => {
+        closeMatchModal();
+        openChatWindow(matchId, partner);
+    };
+    document.getElementById('matchModal').style.display = 'flex';
+}
+function closeMatchModal() { document.getElementById('matchModal').style.display = 'none'; }
+
+// ----------------- LIKES RECEIVED -----------------
+async function loadReceivedLikes() {
+    const t = I18N[currentLang] || I18N.uz;
+    const container = document.getElementById('likesList');
+    const promo = document.getElementById('likesPremiumPromo');
+    const badge = document.getElementById('likesReceivedBadge');
+    container.innerHTML = "<p style='color:var(--text-muted); grid-column:span 2; text-align:center;'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/likes/received?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+
+        if (data.success) {
+            badge.textContent = data.count || 0;
+            const isPrem = !!data.is_premium;
+            promo.style.display = isPrem ? 'none' : 'flex';
+
+            if (!data.profiles || data.profiles.length === 0) {
+                container.innerHTML = `<p style='color:var(--text-muted); grid-column:span 2; text-align:center; padding:30px 0;'>${t.noLikes}</p>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            data.profiles.forEach(p => {
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.cssText = "padding: 12px; text-align: center; position: relative; overflow: hidden;";
+                const pName = p.name || "User";
+                const photoSrc = (p.photo && p.photo.length > 20) ? p.photo : getDefaultAvatar(pName, p.gender);
+
+                if (!isPrem) {
+                    card.innerHTML = `
+                        <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; position: relative;">
+                            <img src="${photoSrc}" class="blurred-photo" style="width: 100%; height: 100%; object-fit: cover;" onerror="handleImgError(this, '${pName}')">
+                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35);">
+                                <span style="font-size: 28px;">⭐</span>
+                            </div>
+                        </div>
+                        <h4 style="margin: 0; font-size: 14px; color: #fff;">${pName}, ${p.age || '?'}</h4>
+                        <p style="margin: 2px 0 8px 0; font-size: 12px; color: var(--text-muted);">${p.city || 'Toshkent'}</p>
+                        <button onclick="openPaywallModal()" style="width: 100%; background: var(--premium-gradient); color: #000; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">Ochish 🔒</button>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div style="width: 100%; height: 130px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 8px; cursor: pointer;" onclick="openProfileDetailModal(${p.id})">
+                            <img src="${photoSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="handleImgError(this, '${pName}')">
+                        </div>
+                        <h4 style="margin: 0; font-size: 14px; color: #fff;">${pName}, ${p.age}</h4>
+                        <p style="margin: 2px 0 8px 0; font-size: 12px; color: var(--primary); font-weight: bold;">📍 ${p.city || 'Toshkent'}</p>
+                        <button onclick="handleSwipe(${p.id}, true)" style="width: 100%; background: var(--primary-gradient); color: #fff; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 12px; font-weight: bold; cursor: pointer;">💖 Like / Match</button>
+                    `;
+                }
+                container.appendChild(card);
+            });
+        }
+    } catch(e) {
+        container.innerHTML = `<p style='color:var(--primary); grid-column:span 2; text-align:center;'>${e.message}</p>`;
+    }
+}
+
+// ----------------- FILTERS & DETAIL MODALS -----------------
+function openFilterModal() { document.getElementById('filterModal').style.display = 'flex'; }
+function closeFilterModal() { document.getElementById('filterModal').style.display = 'none'; }
+function applyFilters() { closeFilterModal(); loadDiscoverProfiles(); }
+function resetFilters() {
+    document.getElementById('filterMinAge').value = "";
+    document.getElementById('filterMaxAge').value = "";
+    document.getElementById('filterCity').value = "";
+    document.getElementById('filterGender').value = "ANY";
+    closeFilterModal();
+    loadDiscoverProfiles();
+}
+
+function openProfileDetailModal(userId) {
+    const user = discoverProfiles.find(u => u.id === userId) || activeTargetUser;
+    if (!user) return;
+
+    const safeName = user.name || "Foydalanuvchi";
+    document.getElementById('detailPhoto').src = (user.photo && user.photo.length > 20) ? user.photo : getDefaultAvatar(safeName, user.gender);
+    document.getElementById('detailPhoto').onerror = () => { document.getElementById('detailPhoto').src = getDefaultAvatar(safeName, user.gender); };
+    document.getElementById('detailNameAge').textContent = `${safeName}, ${user.age || 20}`;
+    const gName = user.gender === 'MALE' ? '👨 Erkak' : (user.gender === 'FEMALE' ? '👩 Ayol' : '🌈 Noma`lum');
+    document.getElementById('detailCity').textContent = `📍 ${user.city || 'Toshkent'} • ${gName}`;
+    document.getElementById('detailBio').textContent = user.bio || "O'zi haqida ma'lumot qoldirmagan.";
+
+    const intContainer = document.getElementById('detailInterests');
+    intContainer.innerHTML = "";
+    (user.interests || []).forEach(tag => {
+        const badge = document.createElement('span');
+        badge.className = "tag-badge";
+        badge.textContent = tag;
+        intContainer.appendChild(badge);
+    });
+
+    document.getElementById('btnDetailBlock').onclick = () => blockUser(user.id);
+    document.getElementById('btnDetailReport').onclick = () => openReportModal(user.id);
+
+    document.getElementById('profileDetailModal').style.display = 'flex';
+}
+function closeProfileDetailModal() { document.getElementById('profileDetailModal').style.display = 'none'; }
+
+async function blockUser(targetId) {
+    if (!confirm("Foydalanuvchini bloklamoqchimisiz?")) return;
+    try {
+        const res = await fetch(`${API_URL}/api/user/block?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ target_id: targetId })
+        });
+        if (res.ok) {
+            alert("Foydalanuvchi bloklandi.");
+            closeProfileDetailModal();
+            loadDiscoverProfiles();
+        }
+    } catch(e) { alert(e.message); }
+}
+
+let reportTargetId = null;
+function openReportModal(targetId) {
+    reportTargetId = targetId;
+    document.getElementById('reportModal').style.display = 'flex';
+}
+function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; }
+
+async function submitUserReport() {
+    if (!reportTargetId) return;
+    const reason = document.getElementById('reportReason').value;
+    const desc = document.getElementById('reportDesc').value;
+
+    try {
+        const res = await fetch(`${API_URL}/api/user/report?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ target_id: reportTargetId, reason: reason, description: desc })
+        });
+        if (res.ok) {
+            alert("Shikoyatingiz qabul qilindi. Moderatorlar ko'rib chiqadi!");
+            closeReportModal();
+            closeProfileDetailModal();
+        }
+    } catch(e) { alert(e.message); }
+}
+
+// ----------------- MATCHES & CHAT -----------------
+async function loadMatchesList() {
+    const t = I18N[currentLang] || I18N.uz;
+    const container = document.getElementById('matchesList');
+    container.innerHTML = "<p style='color: var(--text-muted); grid-column: span 2; text-align: center;'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const matches = data.matches || [];
+            if (matches.length === 0) {
+                container.innerHTML = `<p style='color: var(--text-muted); grid-column: span 2; text-align: center; padding: 40px 0;'>${t.noMatches}</p>`;
+                return;
+            }
+            container.innerHTML = "";
+            matches.forEach(m => {
+                const card = document.createElement('div');
+                card.className = "glass-panel";
+                card.style.cssText = "padding: 14px; text-align: center; cursor: pointer;";
+                card.onclick = () => openChatWindow(m.match_id, m.partner);
+                const pName = m.partner.name || "Juftlik";
+                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(pName, m.partner.gender);
+
+                card.innerHTML = `
+                    <img src="${pPhoto}" style="width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 2.5px solid var(--primary); margin: 0 auto 8px auto; display: block;" onerror="handleImgError(this, '${pName}')">
+                    <h4 style="margin: 0; font-size: 15px; color: #fff;">${pName}</h4>
+                    <span style="font-size: 12px; color: var(--primary); margin-top: 4px; display: inline-block; font-weight: bold;">💬 Suhbat</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+    } catch (e) {
+        container.innerHTML = `<p style='color: var(--primary); grid-column: span 2; text-align: center;'>Xatolik: ${e.message}</p>`;
+    }
+}
+
+async function loadChatsList() {
+    const t = I18N[currentLang] || I18N.uz;
+    const container = document.getElementById('chatsList');
+    container.innerHTML = "<p style='color: var(--text-muted); text-align: center;'>Suhbatlar yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) {
+            const matches = data.matches || [];
+            if (matches.length === 0) {
+                container.innerHTML = `<p style='color: var(--text-muted); text-align: center; padding: 40px 0;'>${t.noChats}</p>`;
+                return;
+            }
+            container.innerHTML = "";
+            matches.forEach(m => {
+                const item = document.createElement('div');
+                item.className = "glass-panel";
+                item.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;";
+                item.onclick = () => openChatWindow(m.match_id, m.partner);
+                const lastTxt = m.last_message ? m.last_message.text : "Yangi juftlik! Suhbatni boshlang.";
+                const pName = m.partner.name || "User";
+                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(pName, m.partner.gender);
+
+                item.innerHTML = `
+                    <img src="${pPhoto}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 1.5px solid var(--primary);" onerror="handleImgError(this, '${pName}')">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h4 style="margin: 0; font-size: 15px; color: #fff;">${pName}</h4>
+                        </div>
+                        <p style="margin: 3px 0 0 0; font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lastTxt}</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+    } catch (e) {
+        container.innerHTML = `<p style='color: var(--primary); text-align: center;'>Xatolik: ${e.message}</p>`;
+    }
+}
+
+function openChatWindow(matchId, partner) {
+    activeMatchId = matchId;
+    activeTargetUser = partner;
+    const partnerName = partner?.name || "Suhbatdosh";
+    const pPhoto = (partner?.photo && partner.photo.length > 20) ? partner.photo : getDefaultAvatar(partnerName);
+    document.getElementById('chatPartnerPhoto').src = pPhoto;
+    document.getElementById('chatPartnerPhoto').onerror = () => { document.getElementById('chatPartnerPhoto').src = getDefaultAvatar(partnerName); };
+    document.getElementById('chatPartnerName').textContent = partnerName;
+    document.getElementById('chatOverlay').style.display = 'flex';
+    document.getElementById('chatMessages').innerHTML = "";
+    loadChatMessages();
+
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(loadChatMessages, 2500);
+}
+
+function closeChatWindow() {
+    document.getElementById('chatOverlay').style.display = 'none';
+    activeMatchId = null;
+    if (chatPollInterval) {
+        clearInterval(chatPollInterval);
+        chatPollInterval = null;
+    }
+    loadChatsList();
+}
+
+async function loadChatMessages() {
+    if (!activeMatchId) return;
+    try {
+        const res = await fetch(`${API_URL}/api/chat/messages?match_id=${activeMatchId}&${getQueryParams()}`, {
+            method: "GET",
+            headers: getHeaders()
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.success) {
+            const msgs = data.messages || [];
+            const container = document.getElementById('chatMessages');
+            if (msgs.length === container.children.length) return;
+
+            container.innerHTML = "";
+            msgs.forEach(m => {
+                const bubble = document.createElement('div');
+                const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                if (m.sender_id === 0) {
+                    bubble.style.cssText = "align-self: center; background: rgba(255,255,255,0.06); color: var(--text-muted); padding: 6px 14px; border-radius: var(--radius-full); font-size: 11px;";
+                    bubble.textContent = m.text;
+                } else if (m.sender_id === currentUser.id) {
+                    bubble.className = "chat-bubble mine";
+                    bubble.innerHTML = `${m.text}<div class="chat-time">${timeStr}</div>`;
+                } else {
+                    bubble.className = "chat-bubble theirs";
+                    bubble.innerHTML = `${m.text}<div class="chat-time">${timeStr}</div>`;
+                }
+                container.appendChild(bubble);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text || !activeMatchId) return;
+
+    input.value = "";
+    try {
+        const res = await fetch(`${API_URL}/api/chat/send?${getQueryParams()}`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ match_id: activeMatchId, text: text })
+        });
+        if (res.ok) loadChatMessages();
+    } catch (e) { console.error(e); }
+}
 
 const chatInputEl = document.getElementById('chatInput');
 if (chatInputEl) chatInputEl.addEventListener('keypress', (e) => {
