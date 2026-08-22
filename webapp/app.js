@@ -21,17 +21,36 @@ let kairyxYear = 2004;
 let kairyxSelectedCity = "Toshkent";
 let kairyxPhotos = [];
 let activeSlotIndex = 0;
+let selectedRegGender = 'MALE';
+let selectedRegTargetGender = 'FEMALE';
+let selectedRegInterests = [];
 
-// --- 1. DATE OF BIRTH WHEEL PICKER ---
+// --- 1. UNIFORM & STABLE DATE OF BIRTH WHEEL PICKER ---
 function openKairyxDobPicker() {
     renderKairyxWheels();
     const modal = document.getElementById('kairyxDobModal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        modal.classList.remove('closing');
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+        // Smooth scroll selected items into center
+        setTimeout(() => {
+            document.querySelector('#kairyxWheelDay .kairyx-wheel-item.selected')?.scrollIntoView({ block: 'center', inline: 'nearest' });
+            document.querySelector('#kairyxWheelMonth .kairyx-wheel-item.selected')?.scrollIntoView({ block: 'center', inline: 'nearest' });
+            document.querySelector('#kairyxWheelYear .kairyx-wheel-item.selected')?.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }, 50);
+    }
 }
 
 function closeKairyxDobPicker() {
     const modal = document.getElementById('kairyxDobModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.add('closing');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.classList.remove('show', 'closing');
+        }, 220);
+    }
 }
 
 function renderKairyxWheels() {
@@ -46,7 +65,10 @@ function renderKairyxWheels() {
             const item = document.createElement('div');
             item.className = `kairyx-wheel-item ${d === kairyxDay ? 'selected' : ''}`;
             item.textContent = d;
-            item.onclick = () => selectKairyxDay(d);
+            item.onclick = () => {
+                selectKairyxDay(d);
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
             dayCol.appendChild(item);
         }
     }
@@ -60,7 +82,10 @@ function renderKairyxWheels() {
             const item = document.createElement('div');
             item.className = `kairyx-wheel-item ${m === kairyxMonth ? 'selected' : ''}`;
             item.textContent = mName;
-            item.onclick = () => selectKairyxMonth(m);
+            item.onclick = () => {
+                selectKairyxMonth(m);
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
             monthCol.appendChild(item);
         });
     }
@@ -75,7 +100,10 @@ function renderKairyxWheels() {
             const item = document.createElement('div');
             item.className = `kairyx-wheel-item ${y === kairyxYear ? 'selected' : ''}`;
             item.textContent = y;
-            item.onclick = () => selectKairyxYear(y);
+            item.onclick = () => {
+                selectKairyxYear(y);
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
             yearCol.appendChild(item);
         }
     }
@@ -83,17 +111,26 @@ function renderKairyxWheels() {
 
 function selectKairyxDay(day) {
     kairyxDay = day;
-    renderKairyxWheels();
+    document.querySelectorAll('#kairyxWheelDay .kairyx-wheel-item').forEach(el => {
+        el.classList.toggle('selected', parseInt(el.textContent) === day);
+    });
 }
 
 function selectKairyxMonth(month) {
     kairyxMonth = month;
-    renderKairyxWheels();
+    const lang = currentLang || 'uz';
+    const months = KAIRYX_MONTHS[lang] || KAIRYX_MONTHS.uz;
+    const chosenName = months[month - 1];
+    document.querySelectorAll('#kairyxWheelMonth .kairyx-wheel-item').forEach(el => {
+        el.classList.toggle('selected', el.textContent === chosenName);
+    });
 }
 
 function selectKairyxYear(year) {
     kairyxYear = year;
-    renderKairyxWheels();
+    document.querySelectorAll('#kairyxWheelYear .kairyx-wheel-item').forEach(el => {
+        el.classList.toggle('selected', parseInt(el.textContent) === year);
+    });
 }
 
 function confirmKairyxDob() {
@@ -151,12 +188,22 @@ function openKairyxCityModal() {
     });
 
     const modal = document.getElementById('kairyxCityModal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        modal.classList.remove('closing');
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+    }
 }
 
 function closeKairyxCityModal() {
     const modal = document.getElementById('kairyxCityModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.add('closing');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.classList.remove('show', 'closing');
+        }, 220);
+    }
 }
 
 function selectKairyxCity(city) {
@@ -174,7 +221,6 @@ function selectKairyxCity(city) {
 function handlePhotoSlotClick(index) {
     activeSlotIndex = index;
     if (index < kairyxPhotos.length) {
-        // Make this photo primary (move to index 0)
         if (index > 0) {
             const chosen = kairyxPhotos.splice(index, 1)[0];
             kairyxPhotos.unshift(chosen);
@@ -182,8 +228,7 @@ function handlePhotoSlotClick(index) {
             renderKairyxPhotoGrid();
         }
     } else {
-        // Trigger file input
-        const fileInput = document.getElementById('kairyxPhotoInput');
+        const fileInput = document.getElementById('kairyxPhotoInput') || document.getElementById('regPhotoInput');
         if (fileInput) {
             fileInput.value = '';
             fileInput.click();
@@ -239,6 +284,124 @@ function renderKairyxPhotoGrid() {
         }
     }
 }
+
+// --- 4. GENDER & TARGET GENDER SELECTION ---
+function selectRegGender(g) {
+    selectedRegGender = g;
+    const m = document.getElementById('regGenderMale');
+    const f = document.getElementById('regGenderFemale');
+    const o = document.getElementById('regGenderOther');
+    if (m) m.classList.toggle('selected', g === 'MALE');
+    if (f) f.classList.toggle('selected', g === 'FEMALE');
+    if (o) o.classList.toggle('selected', g === 'OTHER');
+}
+
+function selectRegTargetGender(tg) {
+    selectedRegTargetGender = tg;
+    const f = document.getElementById('regTargetFemale');
+    const m = document.getElementById('regTargetMale');
+    const a = document.getElementById('regTargetAny');
+    if (f) f.classList.toggle('selected', tg === 'FEMALE');
+    if (m) m.classList.toggle('selected', tg === 'MALE');
+    if (a) a.classList.toggle('selected', tg === 'ANY');
+}
+
+// --- 5. INTERESTS INITIALIZATION ---
+const AVAILABLE_INTERESTS = ["🎵 Musiqa", "🎬 Filmlar", "✈️ Sayohat", "⚽ Sport", "📚 Kitoblar", "🍳 Pazandalik", "🎮 Video o'yinlar", "📸 Fotografiya", "💻 Dasturlash", "🎨 San'at", "🚗 Avtomobillar", "☕ Qahva"];
+
+function initRegInterests() {
+    const container = document.getElementById('regInterestsContainer');
+    if (!container) return;
+    container.innerHTML = "";
+    AVAILABLE_INTERESTS.forEach(intTag => {
+        const span = document.createElement('span');
+        span.className = "tag-badge tag-selectable" + (selectedRegInterests.includes(intTag) ? " selected" : "");
+        span.textContent = intTag;
+        span.onclick = () => {
+            if (selectedRegInterests.includes(intTag)) {
+                selectedRegInterests = selectedRegInterests.filter(i => i !== intTag);
+                span.classList.remove('selected');
+            } else {
+                selectedRegInterests.push(intTag);
+                span.classList.add('selected');
+            }
+        };
+        container.appendChild(span);
+    });
+}
+
+// --- 6. WIZARD STEP NAVIGATION ---
+function nextRegStep(currStep) {
+    if (currStep === 1) {
+        // Step 1 -> Step 2
+    } else if (currStep === 2) {
+        const age = parseInt(document.getElementById('regAge')?.value || "0");
+        if (!age || age < 18) {
+            alert(currentLang === 'ru' ? "Сервис доступен только для 18+!" : "18 yoshdan katta bo'lish shart!");
+            return;
+        }
+    } else if (currStep === 3) {
+        const name = document.getElementById('regName')?.value.trim();
+        const city = document.getElementById('regCity')?.value.trim();
+        if (!name || !city) {
+            alert(currentLang === 'ru' ? "Заполните имя и город!" : "Ism va shahringizni to'ldiring!");
+            return;
+        }
+    } else if (currStep === 4) {
+        // Step 4 -> Step 5
+    } else if (currStep === 5) {
+        if (!base64Photo && kairyxPhotos.length === 0) {
+            alert(currentLang === 'ru' ? "Загрузите хотя бы одно фото (0/6)!" : "Kamida bitta fotosurat yuklang (0/6)!");
+            return;
+        }
+        base64Photo = kairyxPhotos[0] || base64Photo;
+    } else if (currStep === 6) {
+        const bio = document.getElementById('regBio')?.value.trim();
+        if (!bio) {
+            alert(currentLang === 'ru' ? "Напишите о себе!" : "O'zingiz haqingizda yozing!");
+            return;
+        }
+        const nameVal = document.getElementById('regName')?.value.trim() || "Ism";
+        const ageVal = document.getElementById('regAge')?.value || "22";
+        const cityVal = document.getElementById('regCity')?.value.trim() || "Toshkent";
+        const summaryPhoto = document.getElementById('summaryPhoto');
+        if (summaryPhoto) summaryPhoto.src = base64Photo || getDefaultAvatar(nameVal, selectedRegGender);
+        const summaryNameAge = document.getElementById('summaryNameAge');
+        if (summaryNameAge) summaryNameAge.textContent = `${nameVal}, ${ageVal}`;
+        const gName = selectedRegGender === 'MALE' ? '👨 Erkak' : (selectedRegGender === 'FEMALE' ? '👩 Ayol' : '🌈 Boshqa');
+        const summaryDetails = document.getElementById('summaryDetails');
+        if (summaryDetails) summaryDetails.textContent = `${cityVal} • ${gName}`;
+        const summaryBio = document.getElementById('summaryBio');
+        if (summaryBio) summaryBio.textContent = bio;
+    }
+
+    const currentEl = document.getElementById(`regStep${currStep}`);
+    const nextEl = document.getElementById(`regStep${currStep + 1}`);
+    if (currentEl) currentEl.style.display = 'none';
+    if (nextEl) nextEl.style.display = 'block';
+    updateWizardHeader(currStep + 1);
+    if (currStep + 1 === 6) initRegInterests();
+}
+
+function prevRegStep(currStep) {
+    const currentEl = document.getElementById(`regStep${currStep}`);
+    const prevEl = document.getElementById(`regStep${currStep - 1}`);
+    if (currentEl) currentEl.style.display = 'none';
+    if (prevEl) prevEl.style.display = 'block';
+    updateWizardHeader(currStep - 1);
+}
+
+function updateWizardHeader(step) {
+    const t = I18N[currentLang] || I18N.uz;
+    const titles = [t.step1Title, t.step2Title, t.step3Title, t.step4Title, t.step5Title, t.step6Title, t.step7Title];
+    const titleEl = document.getElementById('wizardStepTitle');
+    if (titleEl) titleEl.textContent = titles[step - 1] || `Qadam ${step}`;
+    const countEl = document.getElementById('wizardStepCount');
+    if (countEl) countEl.textContent = `${step} / 7`;
+    const barEl = document.getElementById('wizardProgressBar');
+    if (barEl) barEl.style.width = `${(step / 7) * 100}%`;
+}
+
 
 const tg = window.Telegram?.WebApp;
 const API_URL = (window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1"))

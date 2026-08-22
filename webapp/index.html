@@ -8,8 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=2.21.0">
-    <script src="https://telegram.org/js/telegram-web-app.js?v=2.21.0"></script>
+    <link rel="stylesheet" href="style.css?v=2.22.0">
+    <script src="https://telegram.org/js/telegram-web-app.js?v=2.22.0"></script>
 </head>
 <body>
     <div id="appRoot">
@@ -59,61 +59,64 @@
             </div>
         </div>
 
-        <!-- 2. MULTI-STEP REGISTRATION WIZARD (7 STEPS) -->
+                <!-- 2. MULTI-STEP REGISTRATION WIZARD (7 STEPS) -->
         <div id="registrationScreen" class="view-container" style="display:none;">
             <div class="wizard-header">
                 <div class="wizard-progress-track">
                     <div id="wizardProgressBar" class="wizard-progress-fill" style="width: 14%;"></div>
                 </div>
                 <div class="wizard-step-info">
-                    <span id="wizardStepTitle" class="step-title">Qadam 1: Tilni tanlash</span>
-                    <span id="wizardStepCount" class="step-count">1 / 7</span>
+                    <span id="wizardStepTitle" class="step-badge">Tilni tanlang</span>
+                    <span id="wizardStepCount" class="text-muted font-semibold">1 / 7</span>
                 </div>
             </div>
 
-            <div class="wizard-card-wrap">
-                <!-- STEP 1: LANGUAGE SELECTION -->
-                <div id="regStep1" class="wizard-step active">
-                    <h2 id="txtRegStep1Title" class="step-heading">Tilni tanlang / Select Language 🌐</h2>
-                    <p id="txtRegStep1Sub" class="step-desc">Ilovadan qaysi tilda foydalanmoqchisiz?</p>
+            <div class="wizard-content glass-panel p-4">
+                <!-- Step 1: Language Selection -->
+                <div id="regStep1" class="wizard-step">
+                    <h2 id="txtRegStep1Title" class="step-heading">Xush kelibsiz! 🌐</h2>
+                    <p id="txtRegStep1Sub" class="step-desc">Ilovadan foydalanish uchun qulay tilni tanlang.</p>
                     
-                    <div class="language-selection-grid">
-                        <div class="lang-option selected" id="optLangUz" onclick="selectRegLanguage('uz')">
+                    <div class="language-selection-grid mt-4">
+                        <div class="lang-option selected" id="optLangUz" onclick="selectRegLang('uz')">
                             <span class="lang-flag">🇺🇿</span>
                             <div class="lang-text">
                                 <b>O'zbekcha</b>
-                                <span>Lotin alifbosida</span>
+                                <span>Lotin yozuvida</span>
                             </div>
                             <span class="lang-check" id="langCheckUz">✓</span>
                         </div>
-                        <div class="lang-option" id="optLangRu" onclick="selectRegLanguage('ru')">
+                        <div class="lang-option" id="optLangRu" onclick="selectRegLang('ru')">
                             <span class="lang-flag">🇷🇺</span>
                             <div class="lang-text">
                                 <b>Русский</b>
-                                <span>На русском языке</span>
+                                <span>Интерфейс на русском</span>
                             </div>
                             <span class="lang-check" id="langCheckRu" style="display:none;">✓</span>
                         </div>
-                        <div class="lang-option" id="optLangEn" onclick="selectRegLanguage('en')">
+                        <div class="lang-option" id="optLangEn" onclick="selectRegLang('en')">
                             <span class="lang-flag">🇬🇧</span>
                             <div class="lang-text">
                                 <b>English</b>
-                                <span>International</span>
+                                <span>Global English</span>
                             </div>
                             <span class="lang-check" id="langCheckEn" style="display:none;">✓</span>
                         </div>
                     </div>
 
-                    <button id="btnRegNext1" class="btn-primary-gradient mt-4" onclick="nextRegStep(1)">Davom etish ➔</button>
+                    <div class="wizard-actions mt-4">
+                        <div></div>
+                        <button type="button" id="btnRegNext1" class="btn-primary btn-gold" onclick="nextRegStep(1)">Davom etish →</button>
+                    </div>
                 </div>
 
-                <!-- STEP 2: AGE & 18+ CONFIRMATION -->
+                <!-- Step 2: Date of Birth Picker -->
                 <div id="regStep2" class="wizard-step" style="display:none;">
                     <h2 id="txtRegStep2Title" class="step-heading">Qachon tug'ilgansiz? 🎂</h2>
                     <p id="txtRegStep2Sub" class="step-desc">Yoshingiz anketada ko'rsatiladi, tug'ilgan sana — yo'q.</p>
                     
                     <div class="form-group mt-4">
-                        <label id="lblRegAge" class="form-label">Tug'ilgan sana *</label>
+                        <label id="lblRegAge" class="form-label">🎂 Tug'ilgan sana *</label>
                         <div id="dobTriggerBtn" class="kairyx-date-trigger" onclick="openKairyxDobPicker()">
                             <span id="dobDisplayText" class="font-bold text-amber-400">1 Yanvar 2004 (22 yosh)</span>
                             <span class="date-icon">📅 ▾</span>
@@ -130,9 +133,10 @@
                     </div>
                 </div>
 
-                <!-- Step 3: Identity & City -->
-                <div egStep3" class="wizard-step" style="display:none;">
+                <!-- Step 3: Name & City Selection -->
+                <div id="regStep3" class="wizard-step" style="display:none;">
                     <h2 id="txtRegStep3Title" class="step-heading">O'zingizni tanishtiring ✨</h2>
+                    <p id="txtRegStep3Sub" class="step-desc">Ism va yashash hududingizni belgilang.</p>
                     
                     <div class="form-group mt-3">
                         <label id="lblRegName" class="form-label">Ismingiz *</label>
@@ -140,58 +144,51 @@
                         <span class="input-hint text-right" id="nameCounter">0/30</span>
                     </div>
 
-                    <div class="form-group mt-2">
-                        <label id="lblRegCity" class="form-label">Shahringiz *</label>
-                        <input type="text" id="regCity" class="form-input" maxlength="40" placeholder="Masalan: Toshkent">
+                    <div class="form-group mt-3">
+                        <label id="lblRegCity" class="form-label">📍 Qaysi shahardansiz? *</label>
+                        <div id="cityDropdownBtn" class="kairyx-dropdown-trigger" onclick="openKairyxCityModal()">
+                            <span id="selectedCityText">Toshkent</span>
+                            <span class="kairyx-dropdown-arrow">▾</span>
+                        </div>
+                        <input type="hidden" id="regCity" value="Toshkent">
                     </div>
 
-                    <div class="wizard-btn-row mt-4">
-                        <button id="btnRegBack3" class="btn-secondary" onclick="prevRegStep(3)">Orqaga</button>
-                        <button id="btnRegNext3" class="btn-primary-gradient" onclick="nextRegStep(3)">Davom etish ➔</button>
+                    <div class="wizard-actions mt-4">
+                        <button type="button" id="btnRegBack3" class="btn-subtle" onclick="prevRegStep(3)">Orqaga</button>
+                        <button type="button" id="btnRegNext3" class="btn-primary btn-gold" onclick="nextRegStep(3)">Davom etish →</button>
                     </div>
                 </div>
 
-                <!-- STEP 4: GENDER & TARGET GENDER -->
+                <!-- Step 4: Gender & Target -->
                 <div id="regStep4" class="wizard-step" style="display:none;">
-                    <h2 id="txtRegStep4Title" class="step-heading">Jinsingiz va Qidiruv 🚻</h2>
+                    <h2 id="txtRegStep4Title" class="step-heading">Jins va qidiruv 🚻</h2>
+                    <p id="txtRegStep4Sub" class="step-desc">Mos keladigan nomzodlarni topish uchun ko'rsating.</p>
                     
                     <div class="form-group mt-3">
-                        <label id="lblMyGender" class="form-label">Sizning jinsingiz:</label>
-                        <div class="gender-btn-group">
-                            <button type="button" class="btn-gender selected" id="regGenderMale" onclick="selectRegGender('MALE')">
-                                👨 <span id="txtGenderMale">Erkak</span>
-                            </button>
-                            <button type="button" class="btn-gender" id="regGenderFemale" onclick="selectRegGender('FEMALE')">
-                                👩 <span id="txtGenderFemale">Ayol</span>
-                            </button>
-                            <button type="button" class="btn-gender" id="regGenderOther" onclick="selectRegGender('OTHER')">
-                                🌈 <span id="txtGenderOther">Noma'lum</span>
-                            </button>
+                        <label id="lblRegGender" class="form-label">Jinsingiz *</label>
+                        <div class="choice-grid">
+                            <button type="button" class="choice-btn selected" id="regGenderMale" onclick="selectRegGender('MALE')">👨 Erkak</button>
+                            <button type="button" class="choice-btn" id="regGenderFemale" onclick="selectRegGender('FEMALE')">👩 Ayol</button>
+                            <button type="button" class="choice-btn" id="regGenderOther" onclick="selectRegGender('OTHER')">🌈 Boshqa</button>
                         </div>
                     </div>
 
                     <div class="form-group mt-3">
-                        <label id="lblTargetGender" class="form-label">Kimni qidiryapsiz?</label>
-                        <div class="gender-btn-group">
-                            <button type="button" class="btn-gender selected" id="regTargetFemale" onclick="selectRegTargetGender('FEMALE')">
-                                👩 <span id="txtTargetFemale">Ayol</span>
-                            </button>
-                            <button type="button" class="btn-gender" id="regTargetMale" onclick="selectRegTargetGender('MALE')">
-                                👨 <span id="txtTargetMale">Erkak</span>
-                            </button>
-                            <button type="button" class="btn-gender" id="regTargetAny" onclick="selectRegTargetGender('ANY')">
-                                🌈 <span id="txtTargetAny">Noma'lum</span>
-                            </button>
+                        <label id="lblRegTarget" class="form-label">Kimni qidiryapsiz? *</label>
+                        <div class="choice-grid">
+                            <button type="button" class="choice-btn selected" id="regTargetFemale" onclick="selectRegTargetGender('FEMALE')">👩 Ayollarni</button>
+                            <button type="button" class="choice-btn" id="regTargetMale" onclick="selectRegTargetGender('MALE')">👨 Erkaklarni</button>
+                            <button type="button" class="choice-btn" id="regTargetAny" onclick="selectRegTargetGender('ANY')">✨ Barchani</button>
                         </div>
                     </div>
 
-                    <div class="wizard-btn-row mt-4">
-                        <button id="btnRegBack4" class="btn-secondary" onclick="prevRegStep(4)">Orqaga</button>
-                        <button id="btnRegNext4" class="btn-primary-gradient" onclick="nextRegStep(4)">Davom etish ➔</button>
+                    <div class="wizard-actions mt-4">
+                        <button type="button" id="btnRegBack4" class="btn-subtle" onclick="prevRegStep(4)">Orqaga</button>
+                        <button type="button" id="btnRegNext4" class="btn-primary btn-gold" onclick="nextRegStep(4)">Davom etish →</button>
                     </div>
                 </div>
 
-                <!-- STEP 5: PROFILE PHOTO UPLOAD (CANVAS COMPRESSION) -->
+                <!-- Step 5: 6-Photo Grid -->
                 <div id="regStep5" class="wizard-step" style="display:none;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h2 id="txtRegStep5Title" class="step-heading" style="margin:0;">Rasm qo'shing 📸</h2>
@@ -199,7 +196,6 @@
                     </div>
                     <p id="txtRegStep5Sub" class="step-desc mt-1">Eng yaxshi suratlaringizni qo'shing — shunda juftingizni topish imkoniyati yuqori bo'ladi. Yuzsiz yoki mem suratlar qabul qilinmaydi.</p>
                     
-                    <!-- Kairyx 6-Photo Grid (Screenshot 4) -->
                     <div class="kairyx-photo-grid" id="kairyxPhotoGrid">
                         <div class="kairyx-photo-slot" id="photoSlot0" onclick="handlePhotoSlotClick(0)"><span class="plus-icon">+</span></div>
                         <div class="kairyx-photo-slot" id="photoSlot1" onclick="handlePhotoSlotClick(1)"><span class="plus-icon">+</span></div>
@@ -218,59 +214,51 @@
                 </div>
 
                 <!-- Step 6: Bio & Interests -->
-                <div egStep6" class="wizard-step" style="display:none;">
-                    <h2 id="txtRegStep6Title" class="step-heading">Qiziqishlar va Bio 🎨</h2>
+                <div id="regStep6" class="wizard-step" style="display:none;">
+                    <h2 id="txtRegStep6Title" class="step-heading">O'zingiz haqingizda ✨</h2>
+                    <p id="txtRegStep6Sub" class="step-desc">Qiziqishlaringiz va qisqacha tavsifingizni yozing.</p>
                     
                     <div class="form-group mt-3">
-                        <label id="lblRegBio" class="form-label">O'zingiz haqingizda</label>
-                        <textarea id="regBio" class="form-textarea" maxlength="200" placeholder="Nimaga qiziqasiz, kimni izlayapsiz..."></textarea>
+                        <label id="lblRegBio" class="form-label">Tavsif (Bio) *</label>
+                        <textarea id="regBio" class="form-textarea" rows="3" maxlength="200" placeholder="O'zingiz haqingizda qisqacha yozing..."></textarea>
                         <span class="input-hint text-right" id="bioCounter">0/200</span>
                     </div>
 
-                    <div class="form-group mt-2">
-                        <label id="lblRegInterests" class="form-label">Qiziqishlaringizni tanlang:</label>
-                        <div id="regInterestsContainer" class="tags-cloud"></div>
+                    <div class="form-group mt-3">
+                        <label id="lblRegInterests" class="form-label">Qiziqishlar (kamida 2 ta)</label>
+                        <div class="tags-container" id="regInterestsContainer"></div>
                     </div>
 
-                    <div class="wizard-btn-row mt-4">
-                        <button id="btnRegBack6" class="btn-secondary" onclick="prevRegStep(6)">Orqaga</button>
-                        <button id="btnRegNext6" class="btn-primary-gradient" onclick="nextRegStep(6)">Davom etish ➔</button>
+                    <div class="wizard-actions mt-4">
+                        <button type="button" id="btnRegBack6" class="btn-subtle" onclick="prevRegStep(6)">Orqaga</button>
+                        <button type="button" id="btnRegNext6" class="btn-primary btn-gold" onclick="nextRegStep(6)">Davom etish →</button>
                     </div>
                 </div>
 
-                <!-- STEP 7: REVIEW & SUBMIT -->
+                <!-- Step 7: Summary Review & Finish -->
                 <div id="regStep7" class="wizard-step" style="display:none;">
-                    <h2 id="txtRegStep7Title" class="step-heading">Anketani tasdiqlash 📋</h2>
+                    <h2 id="txtRegStep7Title" class="step-heading">Anketani tasdiqlang 🎉</h2>
+                    <p id="txtRegStep7Sub" class="step-desc">Ma'lumotlaringiz to'g'riligini tekshiring.</p>
                     
-                    <div class="review-card glass-panel mt-3">
-                        <img id="summaryPhoto" class="summary-avatar">
-                        <div class="summary-meta">
-                            <h3 id="summaryNameAge">Ism, 22</h3>
-                            <p id="summaryDetails" class="text-muted">Toshkent • 👨 Erkak</p>
-                            <p id="summaryBio" class="summary-bio-text"></p>
+                    <div class="summary-card glass-panel p-3 mt-3">
+                        <div class="summary-avatar-row">
+                            <img id="summaryPhoto" src="" alt="Avatar" class="summary-avatar" onerror="handleImgError(this)">
+                            <div>
+                                <h3 id="summaryNameAge" class="text-white font-bold" style="margin:0;">Ism, Yosh</h3>
+                                <p id="summaryDetails" class="text-muted text-sm" style="margin:4px 0 0 0;">Shahar • Jins</p>
+                            </div>
                         </div>
+                        <p id="summaryBio" class="summary-bio mt-3 text-sub">Bio matni...</p>
                     </div>
 
-                    <div class="terms-checkbox-wrap mt-3">
-                        <input type="checkbox" id="regTerms" checked>
-                        <label for="regTerms">
-                            <span id="txtTermsAgree">Men</span> 
-                            <a href="#" onclick="openRulesModal()" id="txtTermsLink">Foydalanish Qoidalari</a> 
-                            <span id="txtTermsEnd">ga roziman.</span>
-                        </label>
-                    </div>
-
-                    <p id="regError" class="error-banner" style="display:none;"></p>
-
-                    <div class="wizard-btn-row mt-4">
-                        <button id="btnRegBack7" class="btn-secondary" onclick="prevRegStep(7)">Orqaga</button>
-                        <button id="btnSubmitReg" class="btn-primary-gradient" onclick="submitRegistration()">Arizani yuborish 🚀</button>
+                    <div class="wizard-actions mt-4">
+                        <button type="button" id="btnRegBack7" class="btn-subtle" onclick="prevRegStep(7)">Orqaga</button>
+                        <button type="button" id="btnRegFinish" class="btn-primary-gradient btn-gold" onclick="submitRegistration()">Ro'yxatdan o'tish ✨</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. PENDING APPROVAL SCREEN -->
         <div id="pendingScreen" class="view-container text-center" style="display:none;">
             <div class="center-content glass-panel p-4">
                 <div class="status-icon-animated">⏳</div>
@@ -1068,7 +1056,7 @@
     </div>
 
     <!-- Application Script -->
-    <script src="app.js?v=2.21.0"></script>
+    <script src="app.js?v=2.22.0"></script>
 
     <!-- Kairyx Date Picker Bottom Sheet (Screenshot 2) -->
     <div id="kairyxDobModal" class="kairyx-picker-backdrop" style="display:none;" onclick="if(event.target===this)closeKairyxDobPicker()">
