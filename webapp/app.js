@@ -2167,7 +2167,12 @@ async function confirmDeleteAccount() {
         });
         if (res.ok) {
             alert("Hisobingiz o'chirildi.");
-            // Event listener for editProfile photo uploader
+            window.location.reload();
+        }
+    } catch (e) { alert(e.message); }
+}
+
+// Event listener for editProfile photo uploader
 const editPhotoInput = document.getElementById('editPhotoFileInput');
 if (editPhotoInput) {
     editPhotoInput.addEventListener('change', async function(e) {
@@ -2191,17 +2196,12 @@ if (editPhotoInput) {
             document.getElementById('editPhotoStatus').innerHTML = "<span style='color:var(--primary); font-weight:bold;'>Rasm siqilmoqda...</span>";
             editBase64Photo = await compressImage(file, 800, 0.75);
             document.getElementById('editAvatarPreview').src = editBase64Photo;
-            document.getElementById('editPhotoStatus').innerHTML = "<span style='color:var(--accent-green); font-weight:bold;'>✓ Yangi rasm tanlandi</span>";
+            document.getElementById('editPhotoStatus').innerHTML = "<span style='color:var(--accent-green); font-weight:bold;'>✨ Yangi rasm tanlandi</span>";
         } catch(err) {
             alert("Rasm yuklashda xatolik: " + err.message);
             document.getElementById('editPhotoStatus').textContent = "Xatolik: " + err.message;
         }
     });
-}
-
-verifySession();
-        }
-    } catch (e) { alert(e.message); }
 }
 
 function openRulesModal() {
