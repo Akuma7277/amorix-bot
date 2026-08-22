@@ -762,3 +762,17 @@ async def notify_admins_about_new_profile(bot: Bot, user_id: int, user_data: dic
                 )
         except Exception as exc:
             logging.warning(f"Failed to notify admin {admin_id}: {exc}")
+
+HEIGHT_INVALID_TEXTS = {"uz": "Noto'g'ri bo'y.", "ru": "Неверный рост.", "en": "Invalid height."}
+NAME_INVALID_TEXTS = {"uz": "Noto'g'ri ism.", "ru": "Неверное имя.", "en": "Invalid name."}
+EDIT_PROFILE_TEXTS = {"uz": "Profilni tahrirlash", "ru": "Редактировать профиль", "en": "Edit Profile"}
+AGE_INVALID_TEXTS = {"uz": "Noto'g'ri yosh.", "ru": "Неверный возраст.", "en": "Invalid age."}
+AGE_TOO_YOUNG_TEXTS = {"uz": "Yosh 18 dan kichik bo'lmasligi kerak.", "ru": "Возраст должен быть от 18 лет.", "en": "Must be 18+."}
+BIO_TOO_LONG_TEXTS = {"uz": "Bio juda uzun.", "ru": "Слишком длинное описание.", "en": "Bio too long."}
+AI_BIO_GENERATING_TEXTS = {"uz": "AI yaratmoqda...", "ru": "AI генерирует...", "en": "AI generating..."}
+AI_BIO_RESULT_TEXTS = {"uz": "AI natijasi:", "ru": "Результат AI:", "en": "AI Result:"}
+AI_BIO_ERROR_TEXTS = {"uz": "Xatolik.", "ru": "Ошибка.", "en": "Error."}
+INTERESTS_MIN_ERROR_TEXTS = {"uz": "Kamida 1 ta qiziqish tanlang.", "ru": "Выберите минимум 1 интерес.", "en": "Choose at least 1 interest."}
+PHOTO_LIMIT_EXCEEDED_TEXTS = {"uz": "Maksimal rasm soni yetdi.", "ru": "Достигнут лимит фото.", "en": "Photo limit reached."}
+PHOTO_UPLOAD_SUCCESS_TEXTS = {"uz": "Rasm yuklandi.", "ru": "Фото загружено.", "en": "Photo uploaded."}
+PHOTO_MIN_ERROR_TEXTS = {"uz": "Kamida 1 ta rasm yuklang.", "ru": "Загрузите минимум 1 фото.", "en": "Upload at least 1 photo."}

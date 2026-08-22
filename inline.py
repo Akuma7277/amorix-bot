@@ -305,3 +305,210 @@ def get_settings_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=t("btn_change_language", lang), callback_data="settings_change_lang")],
     ])
+
+def get_moderation_keyboard(photo_id: int, user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Tasdiqlash", callback_data=f"mod_appr_{photo_id}"),
+            InlineKeyboardButton(text="❌ Rad etish", callback_data=f"mod_rej_{photo_id}")
+        ]
+    ])
+
+def get_user_management_keyboard(user_id: int, is_banned: bool = False) -> InlineKeyboardMarkup:
+    ban_btn = InlineKeyboardButton(text="🔓 Bandan chiqarish", callback_data=f"unban_{user_id}") if is_banned else InlineKeyboardButton(text="🔨 Bloklash", callback_data=f"ban_{user_id}")
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [ban_btn],
+        [InlineKeyboardButton(text="🗑 Profilni o'chirish", callback_data=f"del_user_{user_id}")]
+    ])
+
+def get_report_keyboard(report_id: int, reporter_id: int, reported_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Ko'rib chiqildi", callback_data=f"rep_res_{report_id}"),
+            InlineKeyboardButton(text="❌ Asossiz", callback_data=f"rep_dism_{report_id}")
+        ]
+    ])
+
+def get_verification_moderation_keyboard(req_id: int, user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Tasdiqlash (Verify)", callback_data=f"verify_user_{user_id}"),
+            InlineKeyboardButton(text="❌ Rad etish", callback_data=f"unverify_user_{user_id}")
+        ]
+    ])
+
+def get_payment_moderation_keyboard(payment_id: int, user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Tasdiqlash", callback_data=f"pay_appr_{payment_id}"),
+            InlineKeyboardButton(text="❌ Rad etish", callback_data=f"pay_rej_{payment_id}")
+        ]
+    ])
+
+def get_logs_view_keyboard(page: int, total_pages: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="◀️", callback_data=f"logspage_{page-1}"),
+            InlineKeyboardButton(text=f"{page}/{total_pages}", callback_data="noop"),
+            InlineKeyboardButton(text="▶️", callback_data=f"logspage_{page+1}")
+        ]
+    ])
+
+def get_log_filter_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Barchasi", callback_data="filter_all")]
+    ])
+
+def get_log_action_filter_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Barchasi", callback_data="action_all")]
+    ])
+
+def get_profile_approval_keyboard(lang: str, user_id: int) -> InlineKeyboardMarkup:
+    return get_admin_verification_keyboard(user_id, lang)
+
+def get_manage_admins_keyboard(admins: list) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="➕ Admin qo'shish", callback_data="add_admin")]
+    ])
+
+def get_ban_duration_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="1 kun", callback_data=f"bandur_{user_id}_1"),
+            InlineKeyboardButton(text="7 kun", callback_data=f"bandur_{user_id}_7"),
+            InlineKeyboardButton(text="Doimiy", callback_data=f"bandur_{user_id}_perm")
+        ]
+    ])
+
+def get_delete_confirmation_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Ha, o'chirish", callback_data=f"conf_del_{user_id}"),
+            InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel_del")
+        ]
+    ])
+
+def get_search_keyboard(user_id: int, is_super_like: bool = False) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="👎", callback_data=f"pass_{user_id}"),
+            InlineKeyboardButton(text="❤️ Like", callback_data=f"like_{user_id}"),
+            InlineKeyboardButton(text="⭐ Super", callback_data=f"superlike_{user_id}")
+        ]
+    ])
+
+def get_match_keyboard(match_id: int, user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💬 Xabar yozish", callback_data=f"chat_{match_id}")],
+        [InlineKeyboardButton(text="🔍 Qidirishda davom etish", callback_data="skip_profile")]
+    ])
+
+def get_chats_keyboard(chats: list) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_to_menu")]
+    ])
+
+def get_profile_view_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✏️ Tahrirlash", callback_data="edit_profile_menu")],
+        [InlineKeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=f"{WEBAPP_URL}"))]
+    ])
+
+def get_edit_profile_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Ism", callback_data="edit_name"), InlineKeyboardButton(text="Bio", callback_data="edit_bio")],
+        [InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_to_profile")]
+    ])
+
+def get_report_category_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Spam", callback_data=f"repcat_{user_id}_spam")],
+        [InlineKeyboardButton(text="Behayo rasm", callback_data=f"repcat_{user_id}_nsfw")],
+        [InlineKeyboardButton(text="◀️ Bekor qilish", callback_data="cancel_report")]
+    ])
+
+def get_confirm_delete_account_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🗑 Ha, o'chirish", callback_data="confirm_delete_acc")],
+        [InlineKeyboardButton(text="◀️ Bekor qilish", callback_data="cancel_delete_acc")]
+    ])
+
+def get_premium_plans_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⭐ VIP Obuna", callback_data="plan_vip")],
+        [InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_to_menu")]
+    ])
+
+def get_premium_dashboard_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💳 Obuna bo'lish", callback_data="plan_vip")]
+    ])
+
+def get_likes_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="❤️ Like qaytarish", callback_data=f"like_back_{user_id}")],
+        [InlineKeyboardButton(text="➡️ Keyingisi", callback_data="skip_liked_profile")]
+    ])
+
+def get_help_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=f"{WEBAPP_URL}"))]
+    ])
+
+def get_payment_confirmation_keyboard(order_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ To'lov qildim", callback_data=f"paid_{order_id}")],
+        [InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel_pay")]
+    ])
+
+def get_gift_type_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🌹 Gul", callback_data="gift_rose")],
+        [InlineKeyboardButton(text="❤️ Yurak", callback_data="gift_heart")]
+    ])
+
+def get_back_only_keyboard(lang: str = "uz", callback_data: str = "back_to_menu") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="◀️ Orqaga", callback_data=callback_data)]
+    ])
+
+def get_advanced_search_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔍 Qidirish", callback_data="adv_search_start")]
+    ])
+
+def get_region_keyboard() -> InlineKeyboardMarkup:
+    return get_regions_keyboard()
+
+def get_webapp_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📱 Mini App", web_app=WebAppInfo(url=f"{WEBAPP_URL}"))]
+    ])
+
+def get_photo_management_keyboard(photos: list, lang: str = "uz") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="➕ Rasm qo'shish", callback_data="add_photo")],
+        [InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_to_profile")]
+    ])
+
+def get_city_keyboard(region: str, lang: str = "uz") -> InlineKeyboardMarkup:
+    return get_districts_keyboard(region, lang)
+
+def get_district_keyboard(city: str, lang: str = "uz") -> InlineKeyboardMarkup:
+    return get_districts_keyboard(city, lang)
+
+def get_bio_request_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
+    return get_bio_prompt_keyboard(lang)
+
+def get_ai_bio_confirmation_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Qabul qilish", callback_data="ai_bio_accept")],
+        [InlineKeyboardButton(text="🔄 Qayta yaratish", callback_data="generate_bio_ai")]
+    ])
+
+def is_tashkent_city_region(region: str) -> bool:
+    return region == "Toshkent shahri"
+
+def resolve_region_name(region: str) -> str:
+    return region

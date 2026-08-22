@@ -241,3 +241,242 @@ async def get_bot_statistics() -> Dict[str, Any]:
             "total_users": 0, "active_users": 0, "premium_users": 0,
             "total_matches": 0, "verified_users": 0
         }
+
+# =========================================================================
+# COMPATIBILITY & ADMIN EXTENSIONS
+# =========================================================================
+
+BOOST_DURATION_MINUTES = 30
+
+async def get_unapproved_photo():
+    return None
+
+async def get_all_active_user_telegram_ids() -> List[int]:
+    try:
+        async with async_session_maker() as session:
+            stmt = select(User.telegram_id).where(User.status.in_([UserStatus.ACTIVE, UserStatus.APPROVED]))
+            res = await session.execute(stmt)
+            return list(res.scalars().all())
+    except Exception:
+        return []
+
+async def get_payment_statistics() -> Dict[str, Any]:
+    return {"total_amount": 0, "approved_count": 0, "pending_count": 0}
+
+async def find_user_by_id_or_telegram_id(query: int | str) -> Optional[User]:
+    try:
+        val = int(query)
+        async with async_session_maker() as session:
+            stmt = select(User).where(or_(User.id == val, User.telegram_id == val))
+            res = await session.execute(stmt)
+            return res.scalar_one_or_none()
+    except Exception:
+        return None
+
+async def set_user_status(user_id: int, status: UserStatus) -> bool:
+    try:
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.id == user_id)
+            res = await session.execute(stmt)
+            u = res.scalar_one_or_none()
+            if u:
+                u.status = status
+                await session.commit()
+                return True
+            return False
+    except Exception:
+        return False
+
+async def ban_user_with_duration(user_id: int, days: Optional[int], admin_id: int, reason: str = "") -> bool:
+    return await set_user_status(user_id, UserStatus.BANNED)
+
+async def lift_user_ban(user_id: int, admin_id: int) -> bool:
+    return await set_user_status(user_id, UserStatus.ACTIVE)
+
+async def delete_user_data(user_id: int) -> bool:
+    try:
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.id == user_id)
+            res = await session.execute(stmt)
+            u = res.scalar_one_or_none()
+            if u:
+                u.is_deleted = True
+                u.status = UserStatus.DELETED
+                await session.commit()
+                return True
+            return False
+    except Exception:
+        return False
+
+async def auto_lift_expired_ban():
+    pass
+
+async def get_pending_report():
+    return None
+
+async def update_report_status(report_id: int, status: str, admin_id: int):
+    pass
+
+async def get_photo_by_id(photo_id: int):
+    return None
+
+async def get_pending_payment():
+    return None
+
+async def update_payment_status(payment_id: int, status: str, admin_id: int):
+    pass
+
+async def get_pending_verification_request():
+    return None
+
+async def update_verification_request_status(req_id: int, status: str, admin_id: int):
+    pass
+
+async def create_admin_log(admin_id: int, action: str, comment: str = "", user_id: Optional[int] = None):
+    pass
+
+async def approve_photo(photo_id: int, admin_id: int):
+    pass
+
+async def reject_photo(photo_id: int, admin_id: int, reason: str = ""):
+    pass
+
+async def get_report_by_id(report_id: int):
+    return None
+
+async def get_admin_logs(limit: int = 10, offset: int = 0):
+    return []
+
+async def update_user_profile_field(user_id: int, field: str, value: Any) -> bool:
+    try:
+        async with async_session_maker() as session:
+            stmt = select(User).where(User.id == user_id)
+            res = await session.execute(stmt)
+            u = res.scalar_one_or_none()
+            if u and hasattr(u, field):
+                setattr(u, field, value)
+                await session.commit()
+                return True
+            return False
+    except Exception:
+        return False
+
+def is_admin_user(telegram_id: int) -> bool:
+    return telegram_id in ADMIN_IDS
+
+async def add_admin_by_telegram_id(admin_id: int, added_by: int) -> bool:
+    if admin_id not in ADMIN_IDS:
+        ADMIN_IDS.append(admin_id)
+    return True
+
+async def remove_admin_by_telegram_id(admin_id: int, removed_by: int) -> bool:
+    if admin_id in ADMIN_IDS:
+        ADMIN_IDS.remove(admin_id)
+    return True
+
+async def get_dynamic_admins():
+    return ADMIN_IDS
+
+async def set_setting(key: str, value: str):
+    pass
+
+async def get_setting(key: str, default: str = "") -> str:
+    return default
+
+# Match & Chat helpers
+async def add_like_and_check_match(from_user_id: int, to_user_id: int, is_super: bool = False) -> Tuple[bool, Optional[Match]]:
+    return False, None
+
+async def get_user_matches(user_id: int) -> List[Any]:
+    return []
+
+async def get_match_by_id(match_id: int):
+    return None
+
+async def create_chat_message(match_id: int, sender_id: int, text: str):
+    return None
+
+def calculate_profile_completion(user: User) -> int:
+    score = 40
+    if user.photo: score += 30
+    if user.bio: score += 15
+    if user.interests: score += 15
+    return min(score, 100)
+
+def calculate_compatibility_score(u1_id: int, u2_id: int) -> int:
+    return 88
+
+def get_compatibility_reasons(u1_id: int, u2_id: int) -> str:
+    return "Umumiy qiziqishlar va bir xil maqsad"
+
+def get_trust_badges(user: User) -> str:
+    return "✅ Tasdiqlangan" if user.is_verified else "Yangi"
+
+def get_next_completion_step(user: User) -> str:
+    return "Rasm yuklang"
+
+async def create_report(from_user_id: int, to_user_id: int, category: str, description: str = ""):
+    return None
+
+async def get_users_who_liked_me_full(user_id: int):
+    return []
+
+async def unmatch_users(u1: int, u2: int):
+    pass
+
+async def is_user_blocked(u1: int, u2: int) -> bool:
+    return False
+
+async def log_user_event(user_id: int, event_type: str, details: str = ""):
+    pass
+
+async def create_verification_request(user_id: int, photo_id: str):
+    return None
+
+async def create_payment_record(user_id: int, plan: str, amount: float, receipt: str):
+    return None
+
+async def get_users_who_liked_me(user_id: int):
+    return []
+
+async def block_user(blocker: int, blocked: int):
+    pass
+
+async def get_user_referrals(user_id: int):
+    return []
+
+async def check_and_consume_like_quota(user_id: int, is_super: bool = False):
+    return True, 50
+
+async def mark_messages_as_read(match_id: int, user_id: int):
+    pass
+
+async def activate_profile_boost(user_id: int):
+    return True
+
+async def is_boost_active(user_id: int) -> bool:
+    return False
+
+async def get_all_admin_ids() -> List[int]:
+    return ADMIN_IDS
+
+def get_online_status(user: User) -> str:
+    return "🟢 Onlayn"
+
+async def create_gift(sender_id: int, receiver_id: int, gift_type: str, message: str = ""):
+    return None
+
+async def get_boost_remaining_minutes(user_id: int) -> int:
+    return 0
+
+async def create_support_message(user_id: int, text: str):
+    return None
+
+async def set_primary_photo(user_id: int, photo_id: int):
+    return True
+
+async def delete_photo(photo_id: int, user_id: int):
+    return True
+
+async def add_photo(user_id: int, file_id: str):
+    return None

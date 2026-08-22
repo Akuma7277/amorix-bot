@@ -236,3 +236,53 @@ class Report(Base):
     description = Column(Text, nullable=True)
     status = Column(String(32), default="OPEN", nullable=False)
     created_at = Column(DateTime, default=func.now())
+
+class ReportStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    RESOLVED = "RESOLVED"
+    DISMISSED = "DISMISSED"
+
+class ActionType(str, enum.Enum):
+    APPROVE_PROFILE = "APPROVE_PROFILE"
+    REJECT_PROFILE = "REJECT_PROFILE"
+    APPROVE_PHOTO = "APPROVE_PHOTO"
+    REJECT_PHOTO = "REJECT_PHOTO"
+    BAN_USER = "BAN_USER"
+    UNBAN_USER = "UNBAN_USER"
+
+class VerificationStatus(str, enum.Enum):
+    NONE = "NONE"
+    PENDING = "PENDING"
+    VERIFIED = "VERIFIED"
+    REJECTED = "REJECTED"
+
+class PremiumPlan(str, enum.Enum):
+    FREE = "FREE"
+    BASIC = "BASIC"
+    GOLD = "GOLD"
+    PLATINUM = "PLATINUM"
+    VIP = "VIP"
+
+class GiftType(str, enum.Enum):
+    ROSE = "ROSE"
+    HEART = "HEART"
+    DIAMOND = "DIAMOND"
+
+class RelationshipIntent(str, enum.Enum):
+    SERIOUS = "SERIOUS"
+    DATING = "DATING"
+    FRIENDSHIP = "FRIENDSHIP"
+    UNSURE = "UNSURE"
+
+class EventType(str, enum.Enum):
+    SWIPE = "SWIPE"
+    MATCH = "MATCH"
+    MESSAGE = "MESSAGE"
+    VIEW = "VIEW"
+
+class ReportCategory(str, enum.Enum):
+    SPAM = "SPAM"
+    NSFW = "NSFW"
+    FAKE = "FAKE"
+    HARASSMENT = "HARASSMENT"
+    OTHER = "OTHER"
