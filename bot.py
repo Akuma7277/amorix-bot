@@ -16,11 +16,15 @@ import editing
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
-async def main() -> None:
-    if not BOT_TOKEN or BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
-        logger.error("Xatolik: Telegram bot tokeni topilmadi.")
-        return
+async def start_bot_polling(bot: Bot, dp: Dispatcher):
+    try:
+        logger.info("Starting Telegram Bot Polling...")
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dp.start_polling(bot)
+    except Exception as e:
+        logger.error(f"Telegram polling error: {e}")
 
+async def main() -> None:
     from models import Base
     import engine as engine_module
     try:
@@ -37,20 +41,7 @@ async def main() -> None:
         except Exception as fallback_exc:
             logger.warning(f"SQLite fallback setup warning: {fallback_exc}")
 
-    bot = Bot(
-        token=BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
-    dp = Dispatcher()
-
-    # Include all functional routers in proper order
-    dp.include_router(common.router)
-    dp.include_router(registration.router)
-    dp.include_router(menu.router)
-    dp.include_router(admin.router)
-    dp.include_router(editing.router)
-
-    # Start REST API Webapp Server in background
+    # Start REST API Webapp Server first
     from webapp.api import create_webapp_app
     from aiohttp import web
     webapp_app = create_webapp_app()
@@ -61,8 +52,26 @@ async def main() -> None:
     await site.start()
     logger.info(f"REST API server successfully started on port {port}")
 
-    logger.info("Bot polling started with selection-based registration and instant access...")
-    await dp.start_polling(bot)
+    if BOT_TOKEN and BOT_TOKEN != "YOUR_BOT_TOKEN_HERE":
+        bot = Bot(
+            token=BOT_TOKEN,
+            default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        )
+        dp = Dispatcher()
+
+        # Include all functional routers in proper order
+        dp.include_router(common.router)
+        dp.include_router(registration.router)
+        dp.include_router(menu.router)
+        dp.include_router(admin.router)
+        dp.include_router(editing.router)
+
+        polling_task = asyncio.create_task(start_bot_polling(bot, dp))
+        await polling_task
+    else:
+        logger.warning("No BOT_TOKEN found, running API server in standalone mode.")
+        while True:
+            await asyncio.sleep(3600)
 
 if __name__ == "__main__":
     asyncio.run(main())
