@@ -1,3 +1,14 @@
+// ----------------- EARLY TELEGRAM WEBAPP INIT -----------------
+const tg = window.Telegram?.WebApp;
+if (tg) {
+    try {
+        tg.ready();
+        tg.expand();
+    } catch(e) {
+        console.warn("Telegram WebApp init warning:", e);
+    }
+}
+
 
 // =========================================================================
 // KAIRYX INTERACTIVE REGISTRATION: DATE PICKER, CITY DROPDOWN & 6-PHOTO GRID
@@ -839,16 +850,22 @@ async function verifySession() {
     showView('verifyingScreen');
     applyTranslations();
 
-    // Visual timeout indicator if network/session is slow
-    const slowTimer = setTimeout(() => {
+    // Visual timeout state updater
+    let slowTimer = setTimeout(() => {
         const sub = document.getElementById('txtLoadingSub');
         if (sub && currentView === 'verifyingScreen') {
-            sub.innerHTML = `<span>Sessiya tekshirilmoqda...</span><br><button onclick="forceEnterApp()" class="btn-subtle mt-2" style="font-size:12px; padding:4px 12px; border-radius:8px;">Davom etish →</button>`;
+            sub.innerHTML = `
+                <span style="color: #f5d061;">⚠️ Sessiya tekshirilmoqda...</span><br>
+                <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+                    <button onclick="verifySession()" class="btn-subtle" style="font-size:12px; padding:6px 14px; border-radius:10px;">🔄 Qayta urinish</button>
+                    <button onclick="forceEnterApp()" class="btn-primary btn-gold" style="font-size:12px; padding:6px 14px; border-radius:10px;">Davom etish →</button>
+                </div>
+            `;
         }
-    }, 3500);
+    }, 3000);
 
     const controller = new AbortController();
-    const abortTimer = setTimeout(() => controller.abort(), 6000);
+    const abortTimer = setTimeout(() => controller.abort(), 10000);
 
     try {
         const response = await fetch(`${API_URL}/api/session?${getQueryParams()}`, {
@@ -903,35 +920,28 @@ async function verifySession() {
                 if (typeof switchTab === 'function') switchTab('viewDiscover');
             }
         } else {
-            throw new Error(data?.error?.message || "Auth failed");
+            throw new Error(data?.error?.message || "Sessiyani tasdiqlab bo'lmadi");
         }
     } catch (e) {
         clearTimeout(slowTimer);
         clearTimeout(abortTimer);
         console.warn("Session verification warning:", e);
-        // Resilient fallback: ensure user enters app immediately without infinite loading
-        forceEnterApp();
+        
+        const sub = document.getElementById('txtLoadingSub');
+        if (sub && currentView === 'verifyingScreen') {
+            sub.innerHTML = `
+                <span style="color: #ff4757;">⚠️ Ulanishda kechikish yuz berdi (${e.message})</span><br>
+                <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+                    <button onclick="verifySession()" class="btn-subtle" style="font-size:12px; padding:6px 14px; border-radius:10px;">🔄 Qayta urinish</button>
+                    <button onclick="forceEnterApp()" class="btn-primary btn-gold" style="font-size:12px; padding:6px 14px; border-radius:10px;">Ilovaga kirish →</button>
+                </div>
+            `;
+        } else {
+            forceEnterApp();
+        }
     }
 }
 
-function forceEnterApp() {
-    showView('approvedScreen');
-    try {
-        if (typeof populateMyProfile === 'function') populateMyProfile();
-        if (typeof switchTab === 'function') switchTab('viewDiscover');
-    } catch(err) {
-        console.warn("Force enter warning:", err);
-    }
-}
-
-
-const regNameEl = document.getElementById('regName');
-if (regNameEl) {
-    regNameEl.addEventListener('input', (e) => {
-        const counter = document.getElementById('nameCounter');
-        if (counter) counter.textContent = `${e.target.value.length}/30`;
-    });
-}
 
 const regBioEl = document.getElementById('regBio');
 if (regBioEl) {
