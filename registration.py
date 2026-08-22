@@ -652,7 +652,7 @@ async def photos_done(callback: CallbackQuery, state: FSMContext):
         
     await state.set_state(RegistrationStates.reviewing_profile)
     
-    # Format TashDate style profile card
+    # Format Kairyx style profile card
     interest_labels = [ALL_INTERESTS[k].get(lang, k) for k in data.get("interests", []) if k in ALL_INTERESTS]
     district_str = f", {data.get('district')}" if data.get("district") else ""
     height_str = f"{data.get('height')} sm" if data.get("height") else "-"

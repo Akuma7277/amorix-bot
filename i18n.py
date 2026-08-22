@@ -1,6 +1,6 @@
 """
 AMORIX / KAIRYX — Multi-Language Localization System (i18n)
-Supports Uzbek (uz), Russian (ru), English (en) with TashDate-inspired minimalist UX.
+Supports Uzbek (uz), Russian (ru), English (en) with Kairyx minimalist UX.
 """
 
 from typing import Any, Dict

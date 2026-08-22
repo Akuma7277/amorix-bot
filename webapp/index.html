@@ -8,8 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=2.18.0">
-    <script src="https://telegram.org/js/telegram-web-app.js?v=2.18.0"></script>
+    <link rel="stylesheet" href="style.css?v=2.19.0">
+    <script src="https://telegram.org/js/telegram-web-app.js?v=2.19.0"></script>
 </head>
 <body>
     <div id="appRoot">
@@ -114,7 +114,7 @@
                     
                     <div class="form-group mt-4">
                         <label id="lblRegAge" class="form-label">Tug'ilgan sana *</label>
-                        <div id="dobTriggerBtn" class="tashdate-date-trigger" onclick="openTashDateDobPicker()">
+                        <div id="dobTriggerBtn" class="kairyx-date-trigger" onclick="openKairyxDobPicker()">
                             <span id="dobDisplayText" class="font-bold text-amber-400">1 Yanvar 2004 (22 yosh)</span>
                             <span class="date-icon">📅 ▾</span>
                         </div>
@@ -195,21 +195,21 @@
                 <div id="regStep5" class="wizard-step" style="display:none;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h2 id="txtRegStep5Title" class="step-heading" style="margin:0;">Rasm qo'shing 📸</h2>
-                        <span id="photoCountBadge" class="tashdate-photo-counter-badge">0/6</span>
+                        <span id="photoCountBadge" class="kairyx-photo-counter-badge">0/6</span>
                     </div>
                     <p id="txtRegStep5Sub" class="step-desc mt-1">Eng yaxshi suratlaringizni qo'shing — shunda juftingizni topish imkoniyati yuqori bo'ladi. Yuzsiz yoki mem suratlar qabul qilinmaydi.</p>
                     
-                    <!-- TashDate 6-Photo Grid (Screenshot 4) -->
-                    <div class="tashdate-photo-grid" id="tashdatePhotoGrid">
-                        <div class="tashdate-photo-slot" id="photoSlot0" onclick="handlePhotoSlotClick(0)"><span class="plus-icon">+</span></div>
-                        <div class="tashdate-photo-slot" id="photoSlot1" onclick="handlePhotoSlotClick(1)"><span class="plus-icon">+</span></div>
-                        <div class="tashdate-photo-slot" id="photoSlot2" onclick="handlePhotoSlotClick(2)"><span class="plus-icon">+</span></div>
-                        <div class="tashdate-photo-slot" id="photoSlot3" onclick="handlePhotoSlotClick(3)"><span class="plus-icon">+</span></div>
-                        <div class="tashdate-photo-slot" id="photoSlot4" onclick="handlePhotoSlotClick(4)"><span class="plus-icon">+</span></div>
-                        <div class="tashdate-photo-slot" id="photoSlot5" onclick="handlePhotoSlotClick(5)"><span class="plus-icon">+</span></div>
+                    <!-- Kairyx 6-Photo Grid (Screenshot 4) -->
+                    <div class="kairyx-photo-grid" id="kairyxPhotoGrid">
+                        <div class="kairyx-photo-slot" id="photoSlot0" onclick="handlePhotoSlotClick(0)"><span class="plus-icon">+</span></div>
+                        <div class="kairyx-photo-slot" id="photoSlot1" onclick="handlePhotoSlotClick(1)"><span class="plus-icon">+</span></div>
+                        <div class="kairyx-photo-slot" id="photoSlot2" onclick="handlePhotoSlotClick(2)"><span class="plus-icon">+</span></div>
+                        <div class="kairyx-photo-slot" id="photoSlot3" onclick="handlePhotoSlotClick(3)"><span class="plus-icon">+</span></div>
+                        <div class="kairyx-photo-slot" id="photoSlot4" onclick="handlePhotoSlotClick(4)"><span class="plus-icon">+</span></div>
+                        <div class="kairyx-photo-slot" id="photoSlot5" onclick="handlePhotoSlotClick(5)"><span class="plus-icon">+</span></div>
                     </div>
-                    <input type="file" id="tashdatePhotoInput" accept="image/*" style="display:none;" onchange="onTashDatePhotoSelected(event)">
-                    <p class="tashdate-photo-hint">Birinchi rasm — asosiy. Asosiy qilish uchun ustiga bosing.</p>
+                    <input type="file" id="kairyxPhotoInput" accept="image/*" style="display:none;" onchange="onKairyxPhotoSelected(event)">
+                    <p class="kairyx-photo-hint">Birinchi rasm — asosiy. Asosiy qilish uchun ustiga bosing.</p>
 
                     <div class="wizard-actions mt-4">
                         <button type="button" id="btnRegBack5" class="btn-subtle" onclick="prevRegStep(5)">Orqaga</button>
@@ -1068,39 +1068,39 @@
     </div>
 
     <!-- Application Script -->
-    <script src="app.js?v=2.18.0"></script>
+    <script src="app.js?v=2.19.0"></script>
 
-    <!-- TashDate Date Picker Bottom Sheet (Screenshot 2) -->
-    <div id="tashdateDobModal" class="tashdate-picker-backdrop" style="display:none;" onclick="if(event.target===this)closeTashDateDobPicker()">
-        <div class="tashdate-picker-card">
-            <div class="tashdate-handle-bar"></div>
-            <div class="tashdate-picker-header">
-                <button type="button" class="btn-cancel" onclick="closeTashDateDobPicker()">Bekor qilish</button>
+    <!-- Kairyx Date Picker Bottom Sheet (Screenshot 2) -->
+    <div id="kairyxDobModal" class="kairyx-picker-backdrop" style="display:none;" onclick="if(event.target===this)closeKairyxDobPicker()">
+        <div class="kairyx-picker-card">
+            <div class="kairyx-handle-bar"></div>
+            <div class="kairyx-picker-header">
+                <button type="button" class="btn-cancel" onclick="closeKairyxDobPicker()">Bekor qilish</button>
                 <span class="title">Tug'ilgan sana</span>
-                <button type="button" class="btn-done" onclick="confirmTashDateDob()">Tayyor</button>
+                <button type="button" class="btn-done" onclick="confirmKairyxDob()">Tayyor</button>
             </div>
-            <div class="tashdate-picker-wheels-container">
-                <div class="tashdate-wheel-highlight-frame"></div>
+            <div class="kairyx-picker-wheels-container">
+                <div class="kairyx-wheel-highlight-frame"></div>
                 <!-- Day Wheel -->
-                <div class="tashdate-wheel-col" id="tashdateWheelDay"></div>
+                <div class="kairyx-wheel-col" id="kairyxWheelDay"></div>
                 <!-- Month Wheel -->
-                <div class="tashdate-wheel-col" id="tashdateWheelMonth"></div>
+                <div class="kairyx-wheel-col" id="kairyxWheelMonth"></div>
                 <!-- Year Wheel -->
-                <div class="tashdate-wheel-col" id="tashdateWheelYear"></div>
+                <div class="kairyx-wheel-col" id="kairyxWheelYear"></div>
             </div>
         </div>
     </div>
 
-    <!-- TashDate City Dropdown Selection Modal (Screenshot 3) -->
-    <div id="tashdateCityModal" class="tashdate-picker-backdrop" style="display:none;" onclick="if(event.target===this)closeTashDateCityModal()">
-        <div class="tashdate-city-modal-card">
-            <div class="tashdate-handle-bar"></div>
-            <div class="tashdate-picker-header">
-                <button type="button" class="btn-cancel" onclick="closeTashDateCityModal()">Bekor qilish</button>
+    <!-- Kairyx City Dropdown Selection Modal (Screenshot 3) -->
+    <div id="kairyxCityModal" class="kairyx-picker-backdrop" style="display:none;" onclick="if(event.target===this)closeKairyxCityModal()">
+        <div class="kairyx-city-modal-card">
+            <div class="kairyx-handle-bar"></div>
+            <div class="kairyx-picker-header">
+                <button type="button" class="btn-cancel" onclick="closeKairyxCityModal()">Bekor qilish</button>
                 <span class="title">Shaharni tanlang</span>
                 <span style="width:50px;"></span>
             </div>
-            <div class="tashdate-city-list" id="tashdateCityList"></div>
+            <div class="kairyx-city-list" id="kairyxCityList"></div>
         </div>
     </div>
     

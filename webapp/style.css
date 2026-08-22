@@ -3,36 +3,39 @@
    ========================================================================== */
 
 :root {
-    --bg-base: #0a0412;
-    --bg-ambient: radial-gradient(circle at 50% 0%, #2e0938 0%, #170928 45%, #080310 100%);
-    --bg-card: rgba(28, 14, 42, 0.82);
-    --bg-card-hover: rgba(44, 20, 66, 0.9);
+    --bg-base: #06090f;
+    --bg-ambient: radial-gradient(circle at 50% -10%, #0d1e3d 0%, #081024 40%, #050811 100%);
+    --bg-card: rgba(13, 22, 41, 0.85);
+    --bg-card-hover: rgba(19, 32, 58, 0.95);
     --bg-glass: rgba(255, 255, 255, 0.05);
-    --bg-glass-heavy: rgba(22, 10, 36, 0.92);
+    --bg-glass-heavy: rgba(9, 16, 30, 0.95);
     
-    --primary: #ff2a6d;
-    --primary-light: #ff5e91;
-    --primary-dark: #d61453;
-    --primary-gradient: linear-gradient(135deg, #ff2a6d 0%, #9b00e8 100%);
-    --primary-glow: rgba(255, 42, 109, 0.38);
+    --primary: #2563eb;
+    --primary-light: #3b82f6;
+    --primary-dark: #1d4ed8;
+    --primary-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --primary-glow: rgba(37, 99, 235, 0.38);
     
-    --secondary-gradient: linear-gradient(135deg, #9b00e8 0%, #05d9e8 100%);
-    --vip-gradient: linear-gradient(135deg, #ff007a 0%, #7928ca 50%, #ff0080 100%);
-    --vip-glow: rgba(255, 0, 128, 0.45);
-    --premium-gradient: linear-gradient(135deg, #ffd700 0%, #ff8800 100%);
+    --secondary-gradient: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    --vip-gradient: linear-gradient(135deg, #f5d061 0%, #e5b22d 50%, #d49b18 100%);
+    --vip-glow: rgba(245, 208, 97, 0.45);
+    --premium-gradient: linear-gradient(135deg, #f5d061 0%, #e5b22d 100%);
     
     --text-main: #ffffff;
-    --text-sub: #e5dbf0;
-    --text-muted: #a696b8;
+    --text-sub: #cbd5e1;
+    --text-muted: #94a3b8;
     
-    --accent-gold: #ffd700;
-    --accent-green: #00f098;
-    --accent-cyan: #05d9e8;
-    --accent-danger: #ff4757;
+    --accent-gold: #f5d061;
+    --gold-light: #ffea85;
+    --gold-dark: #d49b18;
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-cyan: #38bdf8;
+    --accent-danger: #ef4444;
     
-    --border-subtle: rgba(255, 255, 255, 0.1);
-    --border-glow: rgba(255, 42, 109, 0.35);
-    --border-glass: rgba(255, 255, 255, 0.16);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-glow: rgba(59, 130, 246, 0.35);
+    --border-glass: rgba(255, 255, 255, 0.14);
     
     --radius-xs: 8px;
     --radius-sm: 12px;
@@ -40,8 +43,8 @@
     --radius-lg: 26px;
     --radius-full: 9999px;
     
-    --shadow-card: 0 14px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(155, 0, 232, 0.15);
-    --shadow-glow: 0 0 22px rgba(255, 42, 109, 0.35);
+    --shadow-card: 0 14px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(37, 99, 235, 0.1);
+    --shadow-glow: 0 0 22px rgba(245, 208, 97, 0.3);
 }
 
 * {
@@ -491,7 +494,7 @@ p, span, label, input, textarea {
     position: relative;
     width: 100%;
     height: 410px;
-    background: linear-gradient(180deg, #2e0938 0%, #150826 100%);
+    background: linear-gradient(180deg, #0d1e3d 0%, #150826 100%);
     cursor: pointer;
     overflow: hidden;
     display: flex;
@@ -916,7 +919,7 @@ p, span, label, input, textarea {
 }
 
 .plan-tier-card.vip {
-    border-color: #ff0080;
+    border-color: #e5b22d;
     background: linear-gradient(180deg, rgba(255, 0, 128, 0.1) 0%, rgba(22, 10, 36, 0.75) 100%);
 }
 
@@ -980,7 +983,7 @@ p, span, label, input, textarea {
     object-fit: cover;
     border: 3px solid var(--primary);
     box-shadow: 0 0 20px var(--primary-glow);
-    background: linear-gradient(135deg, #2e0938, #150826);
+    background: linear-gradient(135deg, #0d1e3d, #150826);
 }
 
 .btn-avatar-edit {
@@ -1343,7 +1346,7 @@ p, span, label, input, textarea {
 }
 
 /* =========================================================================
-   TASHDATE UX STYLES: DATE PICKER, CITY DROPDOWN & 6-PHOTO GRID
+   KAIRYX UX STYLES: DATE PICKER, CITY DROPDOWN & 6-PHOTO GRID
    ========================================================================= */
 
 /* Gold Action Button */
@@ -1361,7 +1364,7 @@ p, span, label, input, textarea {
 }
 
 /* Date of Birth Input Trigger */
-.tashdate-date-trigger {
+.kairyx-date-trigger {
     width: 100%;
     min-height: 52px;
     background: rgba(255, 255, 255, 0.05);
@@ -1377,21 +1380,21 @@ p, span, label, input, textarea {
     color: #fff;
     transition: all 0.2s ease;
 }
-.tashdate-date-trigger:hover, .tashdate-date-trigger:focus {
+.kairyx-date-trigger:hover, .kairyx-date-trigger:focus {
     border-color: rgba(245, 208, 97, 0.6);
     background: rgba(255, 255, 255, 0.08);
 }
-.tashdate-date-trigger .placeholder {
+.kairyx-date-trigger .placeholder {
     color: rgba(255, 255, 255, 0.4);
     font-weight: 400;
 }
-.tashdate-date-trigger .date-icon {
+.kairyx-date-trigger .date-icon {
     font-size: 18px;
     color: #f5d061;
 }
 
-/* TashDate iOS Date Picker Bottom Sheet Modal */
-.tashdate-picker-backdrop {
+/* Kairyx iOS Date Picker Bottom Sheet Modal */
+.kairyx-picker-backdrop {
     position: fixed;
     top: 0;
     left: 0;
@@ -1406,7 +1409,7 @@ p, span, label, input, textarea {
     justify-content: flex-end;
     animation: fadeIn 0.2s ease-out;
 }
-.tashdate-picker-card {
+.kairyx-picker-card {
     background: #18181c;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 24px 24px 0 0;
@@ -1417,21 +1420,21 @@ p, span, label, input, textarea {
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
     animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.tashdate-handle-bar {
+.kairyx-handle-bar {
     width: 36px;
     height: 4px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 2px;
     margin: 4px auto 12px;
 }
-.tashdate-picker-header {
+.kairyx-picker-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 6px 12px 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.tashdate-picker-header .btn-cancel {
+.kairyx-picker-header .btn-cancel {
     background: none;
     border: none;
     color: #999;
@@ -1440,12 +1443,12 @@ p, span, label, input, textarea {
     cursor: pointer;
     padding: 6px 10px;
 }
-.tashdate-picker-header .title {
+.kairyx-picker-header .title {
     color: #fff;
     font-size: 16px;
     font-weight: 700;
 }
-.tashdate-picker-header .btn-done {
+.kairyx-picker-header .btn-done {
     background: none;
     border: none;
     color: #f5d061;
@@ -1454,7 +1457,7 @@ p, span, label, input, textarea {
     cursor: pointer;
     padding: 6px 10px;
 }
-.tashdate-picker-wheels-container {
+.kairyx-picker-wheels-container {
     position: relative;
     height: 200px;
     display: grid;
@@ -1463,7 +1466,7 @@ p, span, label, input, textarea {
     margin-top: 10px;
     overflow: hidden;
 }
-.tashdate-wheel-col {
+.kairyx-wheel-col {
     height: 100%;
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
@@ -1471,10 +1474,10 @@ p, span, label, input, textarea {
     padding: 78px 0;
     -webkit-overflow-scrolling: touch;
 }
-.tashdate-wheel-col::-webkit-scrollbar {
+.kairyx-wheel-col::-webkit-scrollbar {
     display: none;
 }
-.tashdate-wheel-item {
+.kairyx-wheel-item {
     height: 44px;
     display: flex;
     align-items: center;
@@ -1486,13 +1489,13 @@ p, span, label, input, textarea {
     transition: all 0.15s ease;
     user-select: none;
 }
-.tashdate-wheel-item.selected {
+.kairyx-wheel-item.selected {
     color: #fff;
     font-weight: 700;
     font-size: 17px;
     transform: scale(1.05);
 }
-.tashdate-wheel-highlight-frame {
+.kairyx-wheel-highlight-frame {
     position: absolute;
     top: 78px;
     left: 8px;
@@ -1505,8 +1508,8 @@ p, span, label, input, textarea {
     box-shadow: inset 0 0 12px rgba(245, 208, 97, 0.08);
 }
 
-/* TashDate City Dropdown Selection */
-.tashdate-dropdown-trigger {
+/* Kairyx City Dropdown Selection */
+.kairyx-dropdown-trigger {
     width: 100%;
     min-height: 52px;
     background: rgba(255, 255, 255, 0.05);
@@ -1522,17 +1525,17 @@ p, span, label, input, textarea {
     color: #fff;
     transition: all 0.2s ease;
 }
-.tashdate-dropdown-trigger:hover, .tashdate-dropdown-trigger:focus {
+.kairyx-dropdown-trigger:hover, .kairyx-dropdown-trigger:focus {
     border-color: rgba(245, 208, 97, 0.6);
     background: rgba(255, 255, 255, 0.08);
 }
-.tashdate-dropdown-arrow {
+.kairyx-dropdown-arrow {
     color: rgba(255, 255, 255, 0.5);
     transition: transform 0.2s ease;
 }
 
-/* TashDate Floating/Modal City List */
-.tashdate-city-modal-card {
+/* Kairyx Floating/Modal City List */
+.kairyx-city-modal-card {
     background: #18181c;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 24px 24px 0 0;
@@ -1546,7 +1549,7 @@ p, span, label, input, textarea {
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
     animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.tashdate-city-list {
+.kairyx-city-list {
     overflow-y: auto;
     max-height: 55vh;
     padding: 8px 0;
@@ -1554,7 +1557,7 @@ p, span, label, input, textarea {
     flex-direction: column;
     gap: 4px;
 }
-.tashdate-city-item {
+.kairyx-city-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1565,22 +1568,22 @@ p, span, label, input, textarea {
     cursor: pointer;
     transition: all 0.15s ease;
 }
-.tashdate-city-item:hover {
+.kairyx-city-item:hover {
     background: rgba(255, 255, 255, 0.06);
 }
-.tashdate-city-item.selected {
+.kairyx-city-item.selected {
     background: rgba(245, 208, 97, 0.1);
     color: #f5d061;
     font-weight: 700;
 }
-.tashdate-city-item .checkmark {
+.kairyx-city-item .checkmark {
     color: #f5d061;
     font-size: 16px;
     font-weight: 900;
 }
 
-/* TashDate 6-Photo Grid (Screenshot 4) */
-.tashdate-photo-counter-badge {
+/* Kairyx 6-Photo Grid (Screenshot 4) */
+.kairyx-photo-counter-badge {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
@@ -1590,14 +1593,14 @@ p, span, label, input, textarea {
     color: #f5d061;
     margin-left: auto;
 }
-.tashdate-photo-grid {
+.kairyx-photo-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     margin-top: 16px;
     margin-bottom: 12px;
 }
-.tashdate-photo-slot {
+.kairyx-photo-slot {
     aspect-ratio: 3 / 4;
     background: rgba(255, 255, 255, 0.03);
     border: 1.5px dashed rgba(255, 255, 255, 0.18);
@@ -1611,29 +1614,29 @@ p, span, label, input, textarea {
     transition: all 0.2s ease;
     overflow: hidden;
 }
-.tashdate-photo-slot:hover {
+.kairyx-photo-slot:hover {
     border-color: rgba(245, 208, 97, 0.5);
     background: rgba(255, 255, 255, 0.06);
 }
-.tashdate-photo-slot .plus-icon {
+.kairyx-photo-slot .plus-icon {
     font-size: 26px;
     color: rgba(255, 255, 255, 0.35);
     transition: transform 0.2s ease, color 0.2s ease;
 }
-.tashdate-photo-slot:hover .plus-icon {
+.kairyx-photo-slot:hover .plus-icon {
     color: #f5d061;
     transform: scale(1.15);
 }
-.tashdate-photo-slot.filled {
+.kairyx-photo-slot.filled {
     border-style: solid;
     border-color: rgba(255, 255, 255, 0.15);
 }
-.tashdate-photo-slot img {
+.kairyx-photo-slot img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
-.tashdate-photo-slot .slot-del-btn {
+.kairyx-photo-slot .slot-del-btn {
     position: absolute;
     top: 6px;
     right: 6px;
@@ -1651,11 +1654,11 @@ p, span, label, input, textarea {
     z-index: 10;
     transition: all 0.15s ease;
 }
-.tashdate-photo-slot .slot-del-btn:hover {
+.kairyx-photo-slot .slot-del-btn:hover {
     background: #ff4757;
     border-color: #ff4757;
 }
-.tashdate-photo-slot .slot-primary-badge {
+.kairyx-photo-slot .slot-primary-badge {
     position: absolute;
     bottom: 6px;
     left: 6px;
@@ -1668,7 +1671,7 @@ p, span, label, input, textarea {
     z-index: 10;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
-.tashdate-photo-hint {
+.kairyx-photo-hint {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.45);
     text-align: center;

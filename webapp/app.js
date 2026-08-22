@@ -1,106 +1,106 @@
 
 // =========================================================================
-// TASHDATE INTERACTIVE REGISTRATION: DATE PICKER, CITY DROPDOWN & 6-PHOTO GRID
+// KAIRYX INTERACTIVE REGISTRATION: DATE PICKER, CITY DROPDOWN & 6-PHOTO GRID
 // =========================================================================
 
-const TASHDATE_MONTHS = {
+const KAIRYX_MONTHS = {
     uz: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'],
     ru: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
     en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 };
 
-const TASHDATE_CITIES = {
+const KAIRYX_CITIES = {
     uz: ["Toshkent", "Qoraqalpog'iston", "Andijon", "Buxoro", "Jizzax", "Qashqadaryo", "Navoiy", "Namangan", "Samarqand", "Surxondaryo", "Sirdaryo", "Toshkent viloyati", "Xorazm"],
     ru: ["Ташкент", "Каракалпакстан", "Андижан", "Бухара", "Джизак", "Кашкадарья", "Навои", "Наманган", "Самарканд", "Сурхандарья", "Сырдарья", "Ташкентская область", "Хорезм"],
     en: ["Tashkent", "Karakalpakstan", "Andijan", "Bukhara", "Jizzakh", "Kashkadarya", "Navoi", "Namangan", "Samarkand", "Surkhandarya", "Syrdarya", "Tashkent Region", "Khorezm"]
 };
 
-let tashdateDay = 1;
-let tashdateMonth = 1;
-let tashdateYear = 2004;
-let tashdateSelectedCity = "Toshkent";
-let tashdatePhotos = [];
+let kairyxDay = 1;
+let kairyxMonth = 1;
+let kairyxYear = 2004;
+let kairyxSelectedCity = "Toshkent";
+let kairyxPhotos = [];
 let activeSlotIndex = 0;
 
 // --- 1. DATE OF BIRTH WHEEL PICKER ---
-function openTashDateDobPicker() {
-    renderTashDateWheels();
-    const modal = document.getElementById('tashdateDobModal');
+function openKairyxDobPicker() {
+    renderKairyxWheels();
+    const modal = document.getElementById('kairyxDobModal');
     if (modal) modal.style.display = 'flex';
 }
 
-function closeTashDateDobPicker() {
-    const modal = document.getElementById('tashdateDobModal');
+function closeKairyxDobPicker() {
+    const modal = document.getElementById('kairyxDobModal');
     if (modal) modal.style.display = 'none';
 }
 
-function renderTashDateWheels() {
+function renderKairyxWheels() {
     const lang = currentLang || 'uz';
-    const months = TASHDATE_MONTHS[lang] || TASHDATE_MONTHS.uz;
+    const months = KAIRYX_MONTHS[lang] || KAIRYX_MONTHS.uz;
 
     // Day column (1..31)
-    const dayCol = document.getElementById('tashdateWheelDay');
+    const dayCol = document.getElementById('kairyxWheelDay');
     if (dayCol) {
         dayCol.innerHTML = '';
         for (let d = 1; d <= 31; d++) {
             const item = document.createElement('div');
-            item.className = `tashdate-wheel-item ${d === tashdateDay ? 'selected' : ''}`;
+            item.className = `kairyx-wheel-item ${d === kairyxDay ? 'selected' : ''}`;
             item.textContent = d;
-            item.onclick = () => selectTashDateDay(d);
+            item.onclick = () => selectKairyxDay(d);
             dayCol.appendChild(item);
         }
     }
 
     // Month column (1..12)
-    const monthCol = document.getElementById('tashdateWheelMonth');
+    const monthCol = document.getElementById('kairyxWheelMonth');
     if (monthCol) {
         monthCol.innerHTML = '';
         months.forEach((mName, idx) => {
             const m = idx + 1;
             const item = document.createElement('div');
-            item.className = `tashdate-wheel-item ${m === tashdateMonth ? 'selected' : ''}`;
+            item.className = `kairyx-wheel-item ${m === kairyxMonth ? 'selected' : ''}`;
             item.textContent = mName;
-            item.onclick = () => selectTashDateMonth(m);
+            item.onclick = () => selectKairyxMonth(m);
             monthCol.appendChild(item);
         });
     }
 
     // Year column (2008..1960)
-    const yearCol = document.getElementById('tashdateWheelYear');
+    const yearCol = document.getElementById('kairyxWheelYear');
     if (yearCol) {
         yearCol.innerHTML = '';
         const currentYear = new Date().getFullYear();
         const maxYear = currentYear - 18; // 2008
         for (let y = maxYear; y >= 1960; y--) {
             const item = document.createElement('div');
-            item.className = `tashdate-wheel-item ${y === tashdateYear ? 'selected' : ''}`;
+            item.className = `kairyx-wheel-item ${y === kairyxYear ? 'selected' : ''}`;
             item.textContent = y;
-            item.onclick = () => selectTashDateYear(y);
+            item.onclick = () => selectKairyxYear(y);
             yearCol.appendChild(item);
         }
     }
 }
 
-function selectTashDateDay(day) {
-    tashdateDay = day;
-    renderTashDateWheels();
+function selectKairyxDay(day) {
+    kairyxDay = day;
+    renderKairyxWheels();
 }
 
-function selectTashDateMonth(month) {
-    tashdateMonth = month;
-    renderTashDateWheels();
+function selectKairyxMonth(month) {
+    kairyxMonth = month;
+    renderKairyxWheels();
 }
 
-function selectTashDateYear(year) {
-    tashdateYear = year;
-    renderTashDateWheels();
+function selectKairyxYear(year) {
+    kairyxYear = year;
+    renderKairyxWheels();
 }
 
-function confirmTashDateDob() {
+function confirmKairyxDob() {
     const today = new Date();
-    let age = today.getFullYear() - tashdateYear;
-    const mDiff = (today.getMonth() + 1) - tashdateMonth;
-    if (mDiff < 0 || (mDiff === 0 && today.getDate() < tashdateDay)) {
+    let age = today.getFullYear() - kairyxYear;
+    const mDiff = (today.getMonth() + 1) - kairyxMonth;
+    if (mDiff < 0 || (mDiff === 0 && today.getDate() < kairyxDay)) {
         age--;
     }
 
@@ -110,80 +110,80 @@ function confirmTashDateDob() {
     }
 
     const lang = currentLang || 'uz';
-    const months = TASHDATE_MONTHS[lang] || TASHDATE_MONTHS.uz;
-    const mName = months[tashdateMonth - 1] || 'Yanvar';
+    const months = KAIRYX_MONTHS[lang] || KAIRYX_MONTHS.uz;
+    const mName = months[kairyxMonth - 1] || 'Yanvar';
 
     const dobDisplay = document.getElementById('dobDisplayText');
     if (dobDisplay) {
-        dobDisplay.textContent = `${tashdateDay} ${mName} ${tashdateYear} (${age} ${lang === 'ru' ? 'лет' : 'yosh'})`;
+        dobDisplay.textContent = `${kairyxDay} ${mName} ${kairyxYear} (${age} ${lang === 'ru' ? 'лет' : 'yosh'})`;
     }
 
     const regAgeInput = document.getElementById('regAge');
     if (regAgeInput) regAgeInput.value = age;
 
     const bDayInput = document.getElementById('regBirthDay');
-    if (bDayInput) bDayInput.value = tashdateDay;
+    if (bDayInput) bDayInput.value = kairyxDay;
 
     const bMonthInput = document.getElementById('regBirthMonth');
-    if (bMonthInput) bMonthInput.value = tashdateMonth;
+    if (bMonthInput) bMonthInput.value = kairyxMonth;
 
     const bYearInput = document.getElementById('regBirthYear');
-    if (bYearInput) bYearInput.value = tashdateYear;
+    if (bYearInput) bYearInput.value = kairyxYear;
 
-    closeTashDateDobPicker();
+    closeKairyxDobPicker();
 }
 
 // --- 2. CITY DROPDOWN SELECTION ---
-function openTashDateCityModal() {
-    const list = document.getElementById('tashdateCityList');
+function openKairyxCityModal() {
+    const list = document.getElementById('kairyxCityList');
     if (!list) return;
     const lang = currentLang || 'uz';
-    const cities = TASHDATE_CITIES[lang] || TASHDATE_CITIES.uz;
+    const cities = KAIRYX_CITIES[lang] || KAIRYX_CITIES.uz;
 
     list.innerHTML = '';
     cities.forEach(city => {
         const item = document.createElement('div');
-        const isSel = (city === tashdateSelectedCity || (tashdateSelectedCity === "Toshkent" && city === "Ташкент"));
-        item.className = `tashdate-city-item ${isSel ? 'selected' : ''}`;
+        const isSel = (city === kairyxSelectedCity || (kairyxSelectedCity === "Toshkent" && city === "Ташкент"));
+        item.className = `kairyx-city-item ${isSel ? 'selected' : ''}`;
         item.innerHTML = `<span>${city}</span> ${isSel ? '<span class="checkmark">✓</span>' : ''}`;
-        item.onclick = () => selectTashDateCity(city);
+        item.onclick = () => selectKairyxCity(city);
         list.appendChild(item);
     });
 
-    const modal = document.getElementById('tashdateCityModal');
+    const modal = document.getElementById('kairyxCityModal');
     if (modal) modal.style.display = 'flex';
 }
 
-function closeTashDateCityModal() {
-    const modal = document.getElementById('tashdateCityModal');
+function closeKairyxCityModal() {
+    const modal = document.getElementById('kairyxCityModal');
     if (modal) modal.style.display = 'none';
 }
 
-function selectTashDateCity(city) {
-    tashdateSelectedCity = city;
+function selectKairyxCity(city) {
+    kairyxSelectedCity = city;
     const txt = document.getElementById('selectedCityText');
     if (txt) txt.textContent = city;
 
     const regCityInput = document.getElementById('regCity');
     if (regCityInput) regCityInput.value = city;
 
-    closeTashDateCityModal();
+    closeKairyxCityModal();
 }
 
 // --- 3. 6-PHOTO GRID LOGIC ---
 function handlePhotoSlotClick(index) {
     activeSlotIndex = index;
-    if (index < tashdatePhotos.length) {
+    if (index < kairyxPhotos.length) {
         // Make this photo primary (move to index 0)
         if (index > 0) {
-            const chosen = tashdatePhotos.splice(index, 1)[0];
-            tashdatePhotos.unshift(chosen);
-            base64Photo = tashdatePhotos[0];
-            renderTashDatePhotoGrid();
+            const chosen = kairyxPhotos.splice(index, 1)[0];
+            kairyxPhotos.unshift(chosen);
+            base64Photo = kairyxPhotos[0];
+            renderKairyxPhotoGrid();
         }
     } else {
         // Trigger file input
-        const fileInput = document.getElementById('tashdatePhotoInput');
+        const fileInput = document.getElementById('kairyxPhotoInput');
         if (fileInput) {
             fileInput.value = '';
             fileInput.click();
@@ -191,50 +191,50 @@ function handlePhotoSlotClick(index) {
     }
 }
 
-async function onTashDatePhotoSelected(event) {
+async function onKairyxPhotoSelected(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     try {
         const compressed = await compressImage(file, 800, 0.75);
-        if (activeSlotIndex < tashdatePhotos.length) {
-            tashdatePhotos[activeSlotIndex] = compressed;
+        if (activeSlotIndex < kairyxPhotos.length) {
+            kairyxPhotos[activeSlotIndex] = compressed;
         } else {
-            tashdatePhotos.push(compressed);
+            kairyxPhotos.push(compressed);
         }
-        base64Photo = tashdatePhotos[0];
-        renderTashDatePhotoGrid();
+        base64Photo = kairyxPhotos[0];
+        renderKairyxPhotoGrid();
     } catch (err) {
         alert("Rasm yuklashda xatolik: " + err.message);
     }
 }
 
-function removeTashDatePhoto(index, event) {
+function removeKairyxPhoto(index, event) {
     if (event) event.stopPropagation();
-    if (index >= 0 && index < tashdatePhotos.length) {
-        tashdatePhotos.splice(index, 1);
-        base64Photo = tashdatePhotos.length > 0 ? tashdatePhotos[0] : "";
-        renderTashDatePhotoGrid();
+    if (index >= 0 && index < kairyxPhotos.length) {
+        kairyxPhotos.splice(index, 1);
+        base64Photo = kairyxPhotos.length > 0 ? kairyxPhotos[0] : "";
+        renderKairyxPhotoGrid();
     }
 }
 
-function renderTashDatePhotoGrid() {
+function renderKairyxPhotoGrid() {
     const badge = document.getElementById('photoCountBadge');
-    if (badge) badge.textContent = `${tashdatePhotos.length}/6`;
+    if (badge) badge.textContent = `${kairyxPhotos.length}/6`;
 
     for (let i = 0; i < 6; i++) {
         const slot = document.getElementById(`photoSlot${i}`);
         if (!slot) continue;
 
-        if (i < tashdatePhotos.length) {
-            slot.className = 'tashdate-photo-slot filled';
+        if (i < kairyxPhotos.length) {
+            slot.className = 'kairyx-photo-slot filled';
             slot.innerHTML = `
-                <img src="${tashdatePhotos[i]}" alt="Photo ${i+1}">
-                <button type="button" class="slot-del-btn" onclick="removeTashDatePhoto(${i}, event)">✕</button>
+                <img src="${kairyxPhotos[i]}" alt="Photo ${i+1}">
+                <button type="button" class="slot-del-btn" onclick="removeKairyxPhoto(${i}, event)">✕</button>
                 ${i === 0 ? '<span class="slot-primary-badge">⭐ Asosiy</span>' : ''}
             `;
         } else {
-            slot.className = 'tashdate-photo-slot';
+            slot.className = 'kairyx-photo-slot';
             slot.innerHTML = '<span class="plus-icon">+</span>';
         }
     }
@@ -845,11 +845,11 @@ function nextRegStep(currStep) {
             return;
         }
     } else if (currStep === 5) {
-        if (!base64Photo && tashdatePhotos.length === 0) {
+        if (!base64Photo && kairyxPhotos.length === 0) {
             alert(currentLang === 'ru' ? "Загрузите хотя бы одно фото (0/6)!" : "Kamida bitta fotosurat yuklang (0/6)!");
             return;
         }
-        base64Photo = tashdatePhotos[0] || base64Photo;
+        base64Photo = kairyxPhotos[0] || base64Photo;
     } else if (currStep === 6) {
         const bio = document.getElementById('regBio').value.trim();
         if (!bio) {
