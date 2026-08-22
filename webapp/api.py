@@ -2246,6 +2246,15 @@ def create_webapp_app() -> web.Application:
             else:
                 try:
                     response = await handler(request)
+                except web.HTTPException as http_exc:
+                    response = web.json_response({
+                        "success": False,
+                        "error": {
+                            "code": f"HTTP_{http_exc.status}",
+                            "message": http_exc.reason or "Not Found",
+                            "request_id": req_id
+                        }
+                    }, status=http_exc.status)
                 except Exception as exc:
                     logger.exception(f"[{req_id}] Unhandled error: {exc}")
                     response = web.json_response({

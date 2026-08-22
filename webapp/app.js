@@ -850,22 +850,16 @@ async function verifySession() {
     showView('verifyingScreen');
     applyTranslations();
 
-    // Visual timeout state updater
-    let slowTimer = setTimeout(() => {
-        const sub = document.getElementById('txtLoadingSub');
-        if (sub && currentView === 'verifyingScreen') {
-            sub.innerHTML = `
-                <span style="color: #f5d061;">⚠️ Sessiya tekshirilmoqda...</span><br>
-                <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
-                    <button onclick="verifySession()" class="btn-subtle" style="font-size:12px; padding:6px 14px; border-radius:10px;">🔄 Qayta urinish</button>
-                    <button onclick="forceEnterApp()" class="btn-primary btn-gold" style="font-size:12px; padding:6px 14px; border-radius:10px;">Davom etish →</button>
-                </div>
-            `;
+    // Auto-fallback timer: Guarantee entry within 2.5s even if network is slow
+    const autoFallbackTimer = setTimeout(() => {
+        if (currentView === 'verifyingScreen') {
+            console.info("Auto-transitioning from loading screen to dashboard");
+            forceEnterApp();
         }
-    }, 3000);
+    }, 2500);
 
     const controller = new AbortController();
-    const abortTimer = setTimeout(() => controller.abort(), 10000);
+    const abortTimer = setTimeout(() => controller.abort(), 8000);
 
     try {
         const response = await fetch(`${API_URL}/api/session?${getQueryParams()}`, {
@@ -873,7 +867,7 @@ async function verifySession() {
             headers: getHeaders(),
             signal: controller.signal
         });
-        clearTimeout(slowTimer);
+        clearTimeout(autoFallbackTimer);
         clearTimeout(abortTimer);
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -923,33 +917,13 @@ async function verifySession() {
             throw new Error(data?.error?.message || "Sessiyani tasdiqlab bo'lmadi");
         }
     } catch (e) {
-        clearTimeout(slowTimer);
+        clearTimeout(autoFallbackTimer);
         clearTimeout(abortTimer);
         console.warn("Session verification warning:", e);
-        
-        const sub = document.getElementById('txtLoadingSub');
-        if (sub && currentView === 'verifyingScreen') {
-            sub.innerHTML = `
-                <span style="color: #ff4757;">⚠️ Ulanishda kechikish yuz berdi (${e.message})</span><br>
-                <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
-                    <button onclick="verifySession()" class="btn-subtle" style="font-size:12px; padding:6px 14px; border-radius:10px;">🔄 Qayta urinish</button>
-                    <button onclick="forceEnterApp()" class="btn-primary btn-gold" style="font-size:12px; padding:6px 14px; border-radius:10px;">Ilovaga kirish →</button>
-                </div>
-            `;
-        } else {
-            forceEnterApp();
-        }
+        forceEnterApp();
     }
 }
 
-
-const regBioEl = document.getElementById('regBio');
-if (regBioEl) {
-    regBioEl.addEventListener('input', (e) => {
-        const counter = document.getElementById('bioCounter');
-        if (counter) counter.textContent = `${e.target.value.length}/200`;
-    });
-}
 
 const regPhotoEl = document.getElementById('regPhotoInput') || document.getElementById('kairyxPhotoInput');
 if (regPhotoEl) {
