@@ -783,10 +783,6 @@ function setAppLanguage(lang) {
 }
 
 // ----------------- GLOBAL STATE & AUTH -----------------
-    "🎮 Gaming", "🎵 Music", "🏋️ Fitness", "✈️ Travel", 
-    "📚 Books", "🎬 Movies", "⚽ Sport", "💻 Technology", 
-    "🍳 Cooking", "🎨 Art", "📸 Photography", "☕ Coffee"
-];
 
 let currentUser = null;
 let isAdminUser = false;
