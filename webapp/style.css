@@ -1713,3 +1713,221 @@ p, span, label, input, textarea {
     margin-top: 4px;
     line-height: 1.4;
 }
+
+
+/* =========================================================================
+   LUXURY WIZARD & MODERN TYPOGRAPHY SYSTEM (v2.30.0)
+   ========================================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+    font-family: var(--font-main) !important;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.2px;
+}
+
+h1, h2, h3, h4, .step-heading, .gradient-text {
+    font-family: var(--font-heading) !important;
+    letter-spacing: -0.3px;
+}
+
+/* Wizard Header & Progress */
+.wizard-header {
+    padding: 16px 20px 8px 20px;
+    margin-bottom: 12px;
+}
+
+.wizard-progress-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.wizard-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff2a6d, #f5d061, #05d9e8);
+    border-radius: 999px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 12px rgba(255, 42, 109, 0.6);
+}
+
+.wizard-step-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.step-badge {
+    color: var(--accent-gold);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Wizard Step Containers */
+.wizard-step {
+    background: rgba(18, 20, 44, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 24px 20px;
+    margin: 10px 14px 24px 14px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+    animation: fadeInStep 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInStep {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.step-heading {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #ffffff;
+    margin: 0 0 8px 0 !important;
+    line-height: 1.25;
+}
+
+.step-desc {
+    font-size: 14px !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    line-height: 1.55;
+    margin-bottom: 20px !important;
+}
+
+/* Wizard Form Elements */
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f5d061;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+}
+
+.kairyx-date-trigger {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid rgba(245, 208, 97, 0.35);
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.kairyx-date-trigger:active {
+    background: rgba(245, 208, 97, 0.1);
+    border-color: #f5d061;
+    transform: scale(0.985);
+}
+
+.kairyx-date-val {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #ffffff;
+}
+
+/* Choice Buttons Grid */
+.choice-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.choice-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    font-family: var(--font-main);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 8px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+}
+
+.choice-btn.selected {
+    background: linear-gradient(135deg, rgba(255, 42, 109, 0.25), rgba(5, 217, 232, 0.25));
+    border-color: #ff2a6d;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(255, 42, 109, 0.3);
+}
+
+/* Wizard Actions Buttons Row */
+.wizard-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    margin-top: 28px !important;
+    width: 100% !important;
+}
+
+.btn-primary, .btn-gold, .btn-primary-gradient {
+    background: linear-gradient(135deg, #ff2a6d 0%, #9d00ff 50%, #05d9e8 100%) !important;
+    color: #ffffff !important;
+    font-family: var(--font-main) !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    letter-spacing: 0.3px !important;
+    padding: 14px 22px !important;
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: 0 6px 22px rgba(255, 42, 109, 0.45) !important;
+    cursor: pointer !important;
+    flex: 1 1 auto !important;
+    text-align: center !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-primary:active, .btn-gold:active, .btn-primary-gradient:active {
+    transform: scale(0.97) !important;
+    box-shadow: 0 2px 10px rgba(255, 42, 109, 0.3) !important;
+}
+
+.btn-subtle, .btn-secondary {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    font-family: var(--font-main) !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding: 14px 20px !important;
+    border-radius: 16px !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+    text-align: center !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+    min-width: 90px !important;
+}
+
+.btn-subtle:active, .btn-secondary:active {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: scale(0.97) !important;
+}
