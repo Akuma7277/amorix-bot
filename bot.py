@@ -2,95 +2,19 @@ import os
 import sys
 import logging
 import asyncio
-from aiogram import Bot, Dispatcher, Router
-from aiogram.types import (
-    Message,
-    WebAppInfo,
-    MenuButtonWebApp,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    ReplyKeyboardRemove
-)
-from aiogram.filters import Command
+from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from config import BOT_TOKEN, WEBAPP_URL, ADMIN_IDS
+import common
+import registration
+import menu
+import admin
+import editing
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
-
-router = Router()
-
-def get_webapp_url() -> str:
-    import time
-    if not WEBAPP_URL:
-        return ""
-    t = int(time.time() // 60)
-    return f"{WEBAPP_URL}&v={t}" if "?" in WEBAPP_URL else f"{WEBAPP_URL}?v={t}"
-
-@router.message(Command("start"))
-async def cmd_start(message: Message, bot: Bot):
-    try:
-        await bot.set_chat_menu_button(
-            chat_id=message.chat.id,
-            menu_button=MenuButtonWebApp(
-                text="Kairyx App",
-                web_app=WebAppInfo(url=get_webapp_url())
-            )
-        )
-    except Exception as e:
-        logger.warning(f"Error setting chat menu button: {e}")
-
-    # Remove any persistent reply keyboard from the Telegram client
-    await message.answer(
-        "👋 Assalomu alaykum!",
-        reply_markup=ReplyKeyboardRemove()
-    )
-
-    welcome_text = (
-        "💖 <b>Kairyx</b> — premium tanishuv ilovasiga xush kelibsiz.\n\n"
-        "Barcha xizmatlar (tanishuv, profil, juftliklar, chat va admin boshqaruvi) to'liq Mini App ichida ishlaydi.\n\n"
-        "Ilovani ishga tushirish uchun quyidagi tugmani bosing: 👇"
-    )
-
-    inline_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📱 Kairyx Mini App ni ochish", web_app=WebAppInfo(url=get_webapp_url()))]
-    ])
-
-    await message.answer(
-        welcome_text,
-        reply_markup=inline_kb,
-        parse_mode=ParseMode.HTML
-    )
-
-@router.message()
-async def all_other_messages(message: Message, bot: Bot):
-    try:
-        await bot.set_chat_menu_button(
-            chat_id=message.chat.id,
-            menu_button=MenuButtonWebApp(
-                text="Kairyx App",
-                web_app=WebAppInfo(url=get_webapp_url())
-            )
-        )
-    except Exception:
-        pass
-
-    inline_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📱 Kairyx Mini App ni ochish", web_app=WebAppInfo(url=get_webapp_url()))]
-    ])
-
-    # Remove reply keyboard if any old button was clicked
-    await message.answer(
-        "Kairyx faqat Mini App orqali ishlaydi. Ilovani ochish uchun quyidagi tugmani bosing: 👇",
-        reply_markup=ReplyKeyboardRemove(),
-        parse_mode=ParseMode.HTML
-    )
-    await message.answer(
-        "✨",
-        reply_markup=inline_kb
-    )
 
 async def main() -> None:
     if not BOT_TOKEN or BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
@@ -118,8 +42,15 @@ async def main() -> None:
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
     dp = Dispatcher()
-    dp.include_router(router)
 
+    # Include all functional routers in proper order
+    dp.include_router(common.router)
+    dp.include_router(registration.router)
+    dp.include_router(menu.router)
+    dp.include_router(admin.router)
+    dp.include_router(editing.router)
+
+    # Start REST API Webapp Server in background
     from webapp.api import create_webapp_app
     from aiohttp import web
     webapp_app = create_webapp_app()
@@ -130,7 +61,7 @@ async def main() -> None:
     await site.start()
     logger.info(f"REST API server successfully started on port {port}")
 
-    logger.info("Bot polling started...")
+    logger.info("Bot polling started with selection-based registration and instant access...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

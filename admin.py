@@ -11,6 +11,7 @@ from reply import (
 from inline import get_moderation_keyboard, get_user_management_keyboard, get_report_keyboard, get_verification_moderation_keyboard, get_payment_moderation_keyboard, get_logs_view_keyboard, get_log_filter_keyboard, get_log_action_filter_keyboard, get_profile_approval_keyboard, get_manage_admins_keyboard, get_ban_duration_keyboard, get_delete_confirmation_keyboard
 from states import AdminStates
 from crud import (
+    verify_user,
     get_bot_statistics, get_user_by_telegram_id, get_unapproved_photo, get_all_active_user_telegram_ids, get_payment_statistics,
     find_user_by_id_or_telegram_id, set_user_status, ban_user_with_duration, lift_user_ban, delete_user_data,
     auto_lift_expired_ban, get_user_photos, get_pending_report, update_report_status, get_photo_by_id,
@@ -1698,3 +1699,68 @@ async def del_admin_command(message: Message):
         comment=f"Telegram ID: {telegram_id}",
     )
     await message.answer(ADMIN_REMOVED_TEXT.get("uz"))
+
+@router.callback_query(F.data.startswith("verify_user_"))
+async def admin_verify_user_callback(callback: CallbackQuery, bot: Bot):
+    user_id = int(callback.data.replace("verify_user_", ""))
+    admin_tg_id = callback.from_user.id
+
+    from crud import verify_user, get_user_by_id
+    from i18n import t
+
+    updated_user = await verify_user(user_id=user_id, admin_telegram_id=admin_tg_id, is_verified=True)
+    if not updated_user:
+        await callback.answer("Foydalanuvchi topilmadi yoki xatolik yuz berdi.", show_alert=True)
+        return
+
+    await callback.answer("✅ Verifikatsiya muvaffaqiyatli berildi!", show_alert=False)
+    
+    # Update caption/text for admin
+    orig_caption = callback.message.caption or callback.message.text or ""
+    new_caption = orig_caption + "\n\n<b>[✅ TASDIQLANDI — Verifikatsiya nishoni berildi]</b>"
+    
+    try:
+        if callback.message.caption:
+            await callback.message.edit_caption(caption=new_caption, reply_markup=None, parse_mode="HTML")
+        else:
+            await callback.message.edit_text(text=new_caption, reply_markup=None, parse_mode="HTML")
+    except Exception:
+        pass
+
+    # Send congratulatory message to the user
+    try:
+        user_lang = updated_user.language or "uz"
+        await bot.send_message(
+            chat_id=updated_user.telegram_id,
+            text=t("user_verified_congrats", user_lang),
+            parse_mode="HTML"
+        )
+    except Exception as exc:
+        logging.warning(f"Could not send verification notice to user {updated_user.telegram_id}: {exc}")
+
+
+@router.callback_query(F.data.startswith("unverify_user_"))
+async def admin_unverify_user_callback(callback: CallbackQuery, bot: Bot):
+    user_id = int(callback.data.replace("unverify_user_", ""))
+    admin_tg_id = callback.from_user.id
+
+    from crud import verify_user, get_user_by_id
+    from i18n import t
+
+    updated_user = await verify_user(user_id=user_id, admin_telegram_id=admin_tg_id, is_verified=False)
+    if not updated_user:
+        await callback.answer("Foydalanuvchi topilmadi.", show_alert=True)
+        return
+
+    await callback.answer("❌ Verifikatsiya rad etildi.", show_alert=False)
+    
+    orig_caption = callback.message.caption or callback.message.text or ""
+    new_caption = orig_caption + "\n\n<b>[❌ RAD ETILDI — Verifikatsiya berilmadi]</b>"
+    
+    try:
+        if callback.message.caption:
+            await callback.message.edit_caption(caption=new_caption, reply_markup=None, parse_mode="HTML")
+        else:
+            await callback.message.edit_text(text=new_caption, reply_markup=None, parse_mode="HTML")
+    except Exception:
+        pass

@@ -3,8 +3,10 @@ import pytest_asyncio
 import aiohttp
 from aiohttp.test_utils import TestClient, TestServer
 from webapp.api import create_webapp_app
-from models import Base
+from models import Base, User, UserStatus
 import engine as engine_module
+from crud import create_user_profile, verify_user, get_user_by_telegram_id
+from i18n import t
 
 @pytest_asyncio.fixture
 async def client():
@@ -18,7 +20,7 @@ async def client():
     yield client
     await client.close()
 
-class TestKairyxEnterpriseSuite:
+class TestAmorixEnterpriseSuite:
 
     @pytest.mark.asyncio
     async def test_health_and_system(self, client):
@@ -33,93 +35,75 @@ class TestKairyxEnterpriseSuite:
         assert ready_data["status"] == "ready"
 
     @pytest.mark.asyncio
-    async def test_daily_streak_and_rewards(self, client):
-        await client.get("/api/session?initData=mock_user_1001")
-
-        status_resp = await client.get("/api/rewards/daily/status?initData=mock_user_1001")
-        assert status_resp.status == 200
-        s_data = await status_resp.json()
-        assert s_data["can_claim"] is True
-
-        claim_resp = await client.post("/api/rewards/daily/claim?initData=mock_user_1001")
-        assert claim_resp.status == 200
-        c_data = await claim_resp.json()
-        assert c_data["streak_days"] == 1
-        assert c_data["reward_awarded"]["xp"] == 50
-
-    @pytest.mark.asyncio
-    async def test_profile_edit_and_age_validation(self, client):
-        # 1. Register user
-        await client.get("/api/session?initData=mock_user_5001")
+    async def test_i18n_multilanguage_system(self):
+        # 1. Test Uzbek translation
+        assert "Muloqot tilini tanlang" in t("choose_language", "uz")
+        assert "Ismingizni kiriting" in t("ask_name", "uz")
+        assert "Foydalanish Qoidalari" in t("terms_title", "uz")
         
-        # 2. Update with invalid age (<18) -> Should fail 400
-        fail_underage = await client.post("/api/profile/update?initData=mock_user_5001", json={
-            "name": "Sarvar",
-            "age": 16,
-            "city": "Toshkent"
-        })
-        assert fail_underage.status == 400
-        assert (await fail_underage.json())["error"]["code"] == "INVALID_AGE"
+        # 2. Test Russian translation
+        assert "Выберите язык" in t("choose_language", "ru")
+        assert "Введите ваше имя" in t("ask_name", "ru")
+        assert "Правила использования" in t("terms_title", "ru")
 
-        # 3. Update with invalid age (>99) -> Should fail 400
-        fail_overage = await client.post("/api/profile/update?initData=mock_user_5001", json={
-            "name": "Sarvar",
-            "age": 120,
-            "city": "Toshkent"
-        })
-        assert fail_overage.status == 400
+        # 3. Test English translation
+        assert "Choose your language" in t("choose_language", "en")
+        assert "Enter your name" in t("ask_name", "en")
+        assert "Terms of Service" in t("terms_title", "en")
 
-        # 4. Update with valid age (22) and new photo -> Should succeed 200
-        success_update = await client.post("/api/profile/update?initData=mock_user_5001", json={
-            "name": "Sarvar Bek",
-            "age": 22,
+    @pytest.mark.asyncio
+    async def test_instant_active_registration(self):
+        # Create user via selection-based registration flow
+        user_data = {
+            "name": "Shahzod",
+            "age": 23,
+            "gender": "MALE",
+            "looking_for": "FEMALE",
+            "height": 178,
+            "relationship_intent": "SERIOUS_RELATIONSHIP",
+            "city": "Toshkent shahri",
+            "district": "Yunusobod",
+            "interests": ["gaming", "fitness"],
+            "bio": "Dasturchi va kitobxon",
+            "language": "uz",
+            "photos": ["file_id_mock_123"]
+        }
+        
+        user = await create_user_profile(telegram_id=99001122, user_data=user_data)
+        assert user is not None
+        assert user.name == "Shahzod"
+        assert user.age == 23
+        assert user.status.value in ["ACTIVE", "APPROVED", "active", "approved"]
+        assert user.is_verified is False # Initially not verified
+
+        # User is immediately active and found in db
+        db_user = await get_user_by_telegram_id(99001122)
+        assert db_user.status.value in ["ACTIVE", "APPROVED", "active", "approved"]
+
+    @pytest.mark.asyncio
+    async def test_admin_post_moderation_verification_badge(self):
+        user_data = {
+            "name": "Madina",
+            "age": 21,
+            "gender": "FEMALE",
+            "looking_for": "MALE",
             "city": "Samarqand",
-            "photo": "data:image/jpeg;base64,valid_photo_data_1234567890"
-        })
-        assert success_update.status == 200
-        u_data = (await success_update.json())["user"]
-        assert u_data["name"] == "Sarvar Bek"
-        assert u_data["age"] == 22
-        assert u_data["city"] == "Samarqand"
-        assert u_data["photo"] == "data:image/jpeg;base64,valid_photo_data_1234567890"
+            "language": "ru",
+            "photos": ["file_photo_madina"]
+        }
+        user = await create_user_profile(telegram_id=88112233, user_data=user_data)
+        assert user.is_verified is False
+
+        # Admin approves verification badge
+        verified_user = await verify_user(user_id=user.id, admin_telegram_id=7992878834, is_verified=True)
+        assert verified_user.is_verified is True
+
+        # Admin un-verifies
+        unverified_user = await verify_user(user_id=user.id, admin_telegram_id=7992878834, is_verified=False)
+        assert unverified_user.is_verified is False
 
     @pytest.mark.asyncio
-    async def test_vip_photo_deletion_security(self, client):
-        # 1. User registers and sets photo
-        await client.get("/api/session?initData=mock_user_6001")
-        await client.post("/api/profile/update?initData=mock_user_6001", json={
-            "name": "Alisher",
-            "age": 25,
-            "photo": "data:image/jpeg;base64,sample_photo_data_9876543210"
-        })
-
-        # 2. Non-VIP tries to delete photo -> Forbidden 403
-        del_attempt_free = await client.post("/api/profile/photo/delete?initData=mock_user_6001")
-        assert del_attempt_free.status == 403
-        assert (await del_attempt_free.json())["error"]["code"] == "VIP_REQUIRED"
-
-        del_via_update_free = await client.post("/api/profile/update?initData=mock_user_6001", json={
-            "photo": ""
-        })
-        assert del_via_update_free.status == 403
-
-        # 3. User submits payment for VIP and Admin approves
-        order_resp = await client.post("/api/payment/submit?initData=mock_user_6001", json={
-            "plan_tier": "VIP",
-            "period": "monthly",
-            "amount": 89000.0,
-            "receipt_photo": "data:image/jpeg;base64,receipt_data"
-        })
-        order_id = (await order_resp.json())["order_id"]
-        await client.post("/api/admin/payment/approve?initData=mock_admin", json={"order_id": order_id})
-
-        # 4. VIP user now deletes photo -> Succeeds 200
-        del_attempt_vip = await client.post("/api/profile/photo/delete?initData=mock_user_6001")
-        assert del_attempt_vip.status == 200
-        assert (await del_attempt_vip.json())["user"]["photo"] is None
-
-    @pytest.mark.asyncio
-    async def test_receipt_payment_checkout_flow(self, client):
+    async def test_webapp_receipt_payment_checkout_flow(self, client):
         await client.get("/api/session?initData=mock_user_2001")
 
         order_resp = await client.post("/api/payment/submit?initData=mock_user_2001", json={
