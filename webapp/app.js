@@ -846,9 +846,26 @@ function showView(viewId) {
     if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 }
 
-// ----------------- STANDARDIZED SESSION STATE MACHINE -----------------
-let sessionState = 'IDLE'; // IDLE | LOADING | READY | ERROR
+// ----------------- STANDARDIZED SESSION STATE MACHINE & NORMALIZER -----------------
+window.sessionState = 'IDLE'; // IDLE | LOADING | READY | ERROR
 let isSessionRequestInFlight = false;
+
+function normalizeSession(payload) {
+    if (!payload || payload.success !== true || !payload.user) {
+        throw new Error("INVALID_SESSION_RESPONSE");
+    }
+    const status = String(
+        payload.user_status ?? payload.user.status ?? ""
+    ).trim().toUpperCase();
+
+    if (!status) throw new Error("SESSION_STATUS_MISSING");
+
+    return {
+        ...payload,
+        normalizedStatus: status,
+        user: payload.user
+    };
+}
 
 async function verifySession() {
     if (isSessionRequestInFlight) {
@@ -856,7 +873,7 @@ async function verifySession() {
         return;
     }
 
-    sessionState = 'LOADING';
+    window.sessionState = 'LOADING';
     isSessionRequestInFlight = true;
     showView('verifyingScreen');
     applyTranslations();
@@ -867,16 +884,14 @@ async function verifySession() {
         loadingSub.innerHTML = `Xavfsiz sessiya tekshirilmoqda...<br><span style="font-size:11px; opacity:0.6;">Ref: ${requestId}</span>`;
     }
 
-    // Check if Telegram WebApp initData is present
     const rawInitData = tg?.initData || "";
     const hasInitData = rawInitData && rawInitData.length > 5;
 
-    // Diagnostic logging without leaking sensitive signature
     console.info(`[AUTH] Init check - TG Available: ${!!tg}, InitData Present: ${hasInitData} (${rawInitData.length} chars)`);
 
-    // If opened outside Telegram without any session data
+    // If outside Telegram and no query initData
     if (!hasInitData && !isAdminUser && !window.location.search.includes("initData=")) {
-        sessionState = 'ERROR';
+        window.sessionState = 'ERROR';
         isSessionRequestInFlight = false;
         if (loadingSub) {
             loadingSub.innerHTML = `
@@ -894,7 +909,6 @@ async function verifySession() {
         return;
     }
 
-    // Setup 15-second AbortController timeout
     const controller = new AbortController();
     const abortTimeout = setTimeout(() => {
         controller.abort();
@@ -903,14 +917,18 @@ async function verifySession() {
     try {
         const response = await fetch(`${API_URL}/api/session?${getQueryParams()}`, {
             method: "GET",
-            headers: getHeaders(),
+            headers: {
+                "Accept": "application/json",
+                ...getHeaders(),
+                "X-Request-ID": requestId
+            },
             signal: controller.signal
         });
 
         clearTimeout(abortTimeout);
 
         if (response.status === 401) {
-            sessionState = 'ERROR';
+            window.sessionState = 'ERROR';
             if (loadingSub) {
                 loadingSub.innerHTML = `
                     <div style="color: #ff6b81; margin-top: 12px;">
@@ -923,7 +941,7 @@ async function verifySession() {
         }
 
         if (response.status === 403) {
-            sessionState = 'ERROR';
+            window.sessionState = 'ERROR';
             showView('bannedScreen');
             return;
         }
@@ -932,61 +950,56 @@ async function verifySession() {
             throw new Error(`HTTP_${response.status}`);
         }
 
-        const data = await response.json();
+        const rawPayload = await response.json();
+        const session = normalizeSession(rawPayload);
 
-        if (data && data.success) {
-            sessionState = 'READY';
-            isAdminUser = !!data.is_admin;
-            currentUser = data.user;
-            const status = data.user_status || (currentUser && currentUser.status) || 'DRAFT';
+        window.sessionState = 'READY';
+        isAdminUser = !!session.is_admin;
+        currentUser = session.user;
+        const status = session.normalizedStatus;
 
-            // Sync notification badges
-            if (data.unread_notifications > 0) {
-                const b = document.getElementById('notifBadge');
-                if (b) {
-                    b.textContent = data.unread_notifications;
-                    b.style.display = 'flex';
-                }
+        if (session.unread_notifications > 0) {
+            const b = document.getElementById('notifBadge');
+            if (b) {
+                b.textContent = session.unread_notifications;
+                b.style.display = 'flex';
             }
+        }
 
-            // Sync likes count
-            if (data.likes_received_count > 0) {
-                const lb = document.getElementById('navLikesBadge');
-                if (lb) {
-                    lb.textContent = data.likes_received_count;
-                    lb.style.display = 'flex';
-                }
+        if (session.likes_received_count > 0) {
+            const lb = document.getElementById('navLikesBadge');
+            if (lb) {
+                lb.textContent = session.likes_received_count;
+                lb.style.display = 'flex';
             }
+        }
 
-            // Sync streak counter
-            const streakEl = document.getElementById('headerStreakCount');
-            if (streakEl) streakEl.textContent = currentUser?.streak_days || 0;
+        const streakEl = document.getElementById('headerStreakCount');
+        if (streakEl) streakEl.textContent = currentUser?.streak_days || 0;
 
-            const adminBtn = document.getElementById('btnHeaderAdmin');
-            if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
+        const adminBtn = document.getElementById('btnHeaderAdmin');
+        if (adminBtn) adminBtn.style.display = isAdminUser ? 'block' : 'none';
 
-            // Strict user status routing
-            if (status === 'DRAFT') {
-                showView('registrationScreen');
-                if (typeof initRegInterests === 'function') initRegInterests();
-            } else if (status === 'PENDING_APPROVAL') {
-                showView('pendingScreen');
-            } else if (status === 'REJECTED') {
-                showView('rejectedScreen');
-            } else if (status === 'BANNED' || status === 'DELETED') {
-                showView('bannedScreen');
-            } else {
-                // APPROVED / ACTIVE
-                showView('approvedScreen');
-                if (typeof populateMyProfile === 'function') populateMyProfile();
-                if (typeof switchTab === 'function') switchTab('viewDiscover');
-            }
+        // Strict routing by normalized status
+        if (status === 'DRAFT') {
+            showView('registrationScreen');
+            if (typeof initRegInterests === 'function') initRegInterests();
+        } else if (status === 'PENDING_APPROVAL') {
+            showView('pendingScreen');
+        } else if (status === 'REJECTED') {
+            showView('rejectedScreen');
+        } else if (status === 'BANNED' || status === 'DELETED') {
+            showView('bannedScreen');
+        } else if (status === 'APPROVED' || status === 'ACTIVE') {
+            showView('approvedScreen');
+            if (typeof populateMyProfile === 'function') populateMyProfile();
+            if (typeof switchTab === 'function') switchTab('viewDiscover');
         } else {
-            throw new Error(data?.error?.message || "Sessiyani tasdiqlab bo'lmadi");
+            throw new Error(`UNKNOWN_STATUS_${status}`);
         }
     } catch (err) {
         clearTimeout(abortTimeout);
-        sessionState = 'ERROR';
+        window.sessionState = 'ERROR';
         console.error(`[AUTH_ERROR] Request ID: ${requestId}, Reason:`, err);
 
         if (loadingSub) {
@@ -1010,188 +1023,6 @@ async function verifySession() {
     }
 }
 
-
-let reportTargetId = null;
-function openReportModal(targetId) {
-    reportTargetId = targetId;
-    document.getElementById('reportModal').style.display = 'flex';
-}
-function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; }
-
-async function submitUserReport() {
-    if (!reportTargetId) return;
-    const reason = document.getElementById('reportReason').value;
-    const desc = document.getElementById('reportDesc').value;
-
-    try {
-        const res = await fetch(`${API_URL}/api/user/report?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({ target_id: reportTargetId, reason: reason, description: desc })
-        });
-        if (res.ok) {
-            alert("Shikoyatingiz qabul qilindi. Moderatorlar ko'rib chiqadi!");
-            closeReportModal();
-            closeProfileDetailModal();
-        }
-    } catch(e) { alert(e.message); }
-}
-
-// ----------------- MATCHES & CHAT -----------------
-async function loadMatchesList() {
-    const t = I18N[currentLang] || I18N.uz;
-    const container = document.getElementById('matchesList');
-    container.innerHTML = "<p style='color: var(--text-muted); grid-column: span 2; text-align: center;'>Yuklanmoqda...</p>";
-
-    try {
-        const res = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
-        const data = await res.json();
-        if (data.success) {
-            const matches = data.matches || [];
-            if (matches.length === 0) {
-                container.innerHTML = `<p style='color: var(--text-muted); grid-column: span 2; text-align: center; padding: 40px 0;'>${t.noMatches}</p>`;
-                return;
-            }
-            container.innerHTML = "";
-            matches.forEach(m => {
-                const card = document.createElement('div');
-                card.className = "glass-panel";
-                card.style.cssText = "padding: 14px; text-align: center; cursor: pointer;";
-                card.onclick = () => openChatWindow(m.match_id, m.partner);
-                const pName = m.partner.name || "Juftlik";
-                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(pName, m.partner.gender);
-
-                card.innerHTML = `
-                    <img src="${pPhoto}" style="width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 2.5px solid var(--primary); margin: 0 auto 8px auto; display: block;" onerror="handleImgError(this, '${pName}')">
-                    <h4 style="margin: 0; font-size: 15px; color: #fff;">${pName}</h4>
-                    <span style="font-size: 12px; color: var(--primary); margin-top: 4px; display: inline-block; font-weight: bold;">💬 Suhbat</span>
-                `;
-                container.appendChild(card);
-            });
-        }
-    } catch (e) {
-        container.innerHTML = `<p style='color: var(--primary); grid-column: span 2; text-align: center;'>Xatolik: ${e.message}</p>`;
-    }
-}
-
-async function loadChatsList() {
-    const t = I18N[currentLang] || I18N.uz;
-    const container = document.getElementById('chatsList');
-    container.innerHTML = "<p style='color: var(--text-muted); text-align: center;'>Suhbatlar yuklanmoqda...</p>";
-
-    try {
-        const res = await fetch(`${API_URL}/api/matches?${getQueryParams()}`, { method: "GET", headers: getHeaders() });
-        const data = await res.json();
-        if (data.success) {
-            const matches = data.matches || [];
-            if (matches.length === 0) {
-                container.innerHTML = `<p style='color: var(--text-muted); text-align: center; padding: 40px 0;'>${t.noChats}</p>`;
-                return;
-            }
-            container.innerHTML = "";
-            matches.forEach(m => {
-                const item = document.createElement('div');
-                item.className = "glass-panel";
-                item.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;";
-                item.onclick = () => openChatWindow(m.match_id, m.partner);
-                const lastTxt = m.last_message ? m.last_message.text : "Yangi juftlik! Suhbatni boshlang.";
-                const pName = m.partner.name || "User";
-                const pPhoto = (m.partner.photo && m.partner.photo.length > 20) ? m.partner.photo : getDefaultAvatar(pName, m.partner.gender);
-
-                item.innerHTML = `
-                    <img src="${pPhoto}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 1.5px solid var(--primary);" onerror="handleImgError(this, '${pName}')">
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <h4 style="margin: 0; font-size: 15px; color: #fff;">${pName}</h4>
-                        </div>
-                        <p style="margin: 3px 0 0 0; font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lastTxt}</p>
-                    </div>
-                `;
-                container.appendChild(item);
-            });
-        }
-    } catch (e) {
-        container.innerHTML = `<p style='color: var(--primary); text-align: center;'>Xatolik: ${e.message}</p>`;
-    }
-}
-
-function openChatWindow(matchId, partner) {
-    activeMatchId = matchId;
-    activeTargetUser = partner;
-    const partnerName = partner?.name || "Suhbatdosh";
-    const pPhoto = (partner?.photo && partner.photo.length > 20) ? partner.photo : getDefaultAvatar(partnerName);
-    document.getElementById('chatPartnerPhoto').src = pPhoto;
-    document.getElementById('chatPartnerPhoto').onerror = () => { document.getElementById('chatPartnerPhoto').src = getDefaultAvatar(partnerName); };
-    document.getElementById('chatPartnerName').textContent = partnerName;
-    document.getElementById('chatOverlay').style.display = 'flex';
-    document.getElementById('chatMessages').innerHTML = "";
-    loadChatMessages();
-
-    if (chatPollInterval) clearInterval(chatPollInterval);
-    chatPollInterval = setInterval(loadChatMessages, 2500);
-}
-
-function closeChatWindow() {
-    document.getElementById('chatOverlay').style.display = 'none';
-    activeMatchId = null;
-    if (chatPollInterval) {
-        clearInterval(chatPollInterval);
-        chatPollInterval = null;
-    }
-    loadChatsList();
-}
-
-async function loadChatMessages() {
-    if (!activeMatchId) return;
-    try {
-        const res = await fetch(`${API_URL}/api/chat/messages?match_id=${activeMatchId}&${getQueryParams()}`, {
-            method: "GET",
-            headers: getHeaders()
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-
-        if (data.success) {
-            const msgs = data.messages || [];
-            const container = document.getElementById('chatMessages');
-            if (msgs.length === container.children.length) return;
-
-            container.innerHTML = "";
-            msgs.forEach(m => {
-                const bubble = document.createElement('div');
-                const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                if (m.sender_id === 0) {
-                    bubble.style.cssText = "align-self: center; background: rgba(255,255,255,0.06); color: var(--text-muted); padding: 6px 14px; border-radius: var(--radius-full); font-size: 11px;";
-                    bubble.textContent = m.text;
-                } else if (m.sender_id === currentUser.id) {
-                    bubble.className = "chat-bubble mine";
-                    bubble.innerHTML = `${m.text}<div class="chat-time">${timeStr}</div>`;
-                } else {
-                    bubble.className = "chat-bubble theirs";
-                    bubble.innerHTML = `${m.text}<div class="chat-time">${timeStr}</div>`;
-                }
-                container.appendChild(bubble);
-            });
-            container.scrollTop = container.scrollHeight;
-        }
-    } catch (e) { console.error(e); }
-}
-
-async function sendChatMessage() {
-    const input = document.getElementById('chatInput');
-    const text = input.value.trim();
-    if (!text || !activeMatchId) return;
-
-    input.value = "";
-    try {
-        const res = await fetch(`${API_URL}/api/chat/send?${getQueryParams()}`, {
-            method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify({ match_id: activeMatchId, text: text })
-        });
-        if (res.ok) loadChatMessages();
-    } catch (e) { console.error(e); }
-}
 
 const chatInputEl = document.getElementById('chatInput');
 if (chatInputEl) chatInputEl.addEventListener('keypress', (e) => {

@@ -63,13 +63,9 @@ AI_API_KEY = os.getenv("AI_API_KEY")
 PAYMENT_CARD_NUMBER = os.getenv("PAYMENT_CARD_NUMBER", "9860 6004 3347 6527")
 
 # Telegram Mini App (WebApp) URL
-# Priority:
-# 1. WEBAPP_URL set in env
-# 2. RAILWAY_PUBLIC_DOMAIN / RAILWAY_STATIC_URL auto-detected from Railway
-# 3. GitHub CDN Fallback URL (100% working live HTTPS URL)
-DEFAULT_FALLBACK = "https://akuma7277.github.io/amorix-bot/webapp/index.html"
-
-WEBAPP_URL = os.getenv("WEBAPP_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN") or os.getenv("RAILWAY_STATIC_URL") or os.getenv("PUBLIC_URL") or DEFAULT_FALLBACK
+# Canonical frontend URL on GitHub Pages
+CANONICAL_FRONTEND_URL = "https://akuma7277.github.io/amorix-bot/webapp/index.html"
+WEBAPP_URL = os.getenv("WEBAPP_URL", CANONICAL_FRONTEND_URL)
 
 if WEBAPP_URL and not WEBAPP_URL.startswith("http"):
     WEBAPP_URL = f"https://{WEBAPP_URL}"
