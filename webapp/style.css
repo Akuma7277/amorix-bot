@@ -1341,3 +1341,337 @@ p, span, label, input, textarea {
     background: rgba(255, 255, 255, 0.08);
     border-color: var(--border-glass);
 }
+
+/* =========================================================================
+   TASHDATE UX STYLES: DATE PICKER, CITY DROPDOWN & 6-PHOTO GRID
+   ========================================================================= */
+
+/* Gold Action Button */
+.btn-gold {
+    background: linear-gradient(135deg, #f5d061 0%, #e5b22d 100%) !important;
+    color: #000 !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 18px rgba(229, 178, 45, 0.3) !important;
+    transition: all 0.25s ease !important;
+}
+.btn-gold:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(229, 178, 45, 0.2) !important;
+}
+
+/* Date of Birth Input Trigger */
+.tashdate-date-trigger {
+    width: 100%;
+    min-height: 52px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    transition: all 0.2s ease;
+}
+.tashdate-date-trigger:hover, .tashdate-date-trigger:focus {
+    border-color: rgba(245, 208, 97, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+}
+.tashdate-date-trigger .placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 400;
+}
+.tashdate-date-trigger .date-icon {
+    font-size: 18px;
+    color: #f5d061;
+}
+
+/* TashDate iOS Date Picker Bottom Sheet Modal */
+.tashdate-picker-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    animation: fadeIn 0.2s ease-out;
+}
+.tashdate-picker-card {
+    background: #18181c;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px 24px 0 0;
+    padding: 12px 16px 28px;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+    animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tashdate-handle-bar {
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 4px auto 12px;
+}
+.tashdate-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.tashdate-picker-header .btn-cancel {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 10px;
+}
+.tashdate-picker-header .title {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+}
+.tashdate-picker-header .btn-done {
+    background: none;
+    border: none;
+    color: #f5d061;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 10px;
+}
+.tashdate-picker-wheels-container {
+    position: relative;
+    height: 200px;
+    display: grid;
+    grid-template-columns: 1fr 1.6fr 1.2fr;
+    gap: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+}
+.tashdate-wheel-col {
+    height: 100%;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    padding: 78px 0;
+    -webkit-overflow-scrolling: touch;
+}
+.tashdate-wheel-col::-webkit-scrollbar {
+    display: none;
+}
+.tashdate-wheel-item {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    scroll-snap-align: center;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+.tashdate-wheel-item.selected {
+    color: #fff;
+    font-weight: 700;
+    font-size: 17px;
+    transform: scale(1.05);
+}
+.tashdate-wheel-highlight-frame {
+    position: absolute;
+    top: 78px;
+    left: 8px;
+    right: 8px;
+    height: 44px;
+    border: 1px solid rgba(245, 208, 97, 0.45);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    pointer-events: none;
+    box-shadow: inset 0 0 12px rgba(245, 208, 97, 0.08);
+}
+
+/* TashDate City Dropdown Selection */
+.tashdate-dropdown-trigger {
+    width: 100%;
+    min-height: 52px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    transition: all 0.2s ease;
+}
+.tashdate-dropdown-trigger:hover, .tashdate-dropdown-trigger:focus {
+    border-color: rgba(245, 208, 97, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+}
+.tashdate-dropdown-arrow {
+    color: rgba(255, 255, 255, 0.5);
+    transition: transform 0.2s ease;
+}
+
+/* TashDate Floating/Modal City List */
+.tashdate-city-modal-card {
+    background: #18181c;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px 24px 0 0;
+    padding: 12px 16px 24px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 75vh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+    animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tashdate-city-list {
+    overflow-y: auto;
+    max-height: 55vh;
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.tashdate-city-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.tashdate-city-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+.tashdate-city-item.selected {
+    background: rgba(245, 208, 97, 0.1);
+    color: #f5d061;
+    font-weight: 700;
+}
+.tashdate-city-item .checkmark {
+    color: #f5d061;
+    font-size: 16px;
+    font-weight: 900;
+}
+
+/* TashDate 6-Photo Grid (Screenshot 4) */
+.tashdate-photo-counter-badge {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #f5d061;
+    margin-left: auto;
+}
+.tashdate-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+    margin-bottom: 12px;
+}
+.tashdate-photo-slot {
+    aspect-ratio: 3 / 4;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+.tashdate-photo-slot:hover {
+    border-color: rgba(245, 208, 97, 0.5);
+    background: rgba(255, 255, 255, 0.06);
+}
+.tashdate-photo-slot .plus-icon {
+    font-size: 26px;
+    color: rgba(255, 255, 255, 0.35);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+.tashdate-photo-slot:hover .plus-icon {
+    color: #f5d061;
+    transform: scale(1.15);
+}
+.tashdate-photo-slot.filled {
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+.tashdate-photo-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.tashdate-photo-slot .slot-del-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.15s ease;
+}
+.tashdate-photo-slot .slot-del-btn:hover {
+    background: #ff4757;
+    border-color: #ff4757;
+}
+.tashdate-photo-slot .slot-primary-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: linear-gradient(135deg, #f5d061 0%, #e5b22d 100%);
+    color: #000;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.tashdate-photo-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+    margin-top: 4px;
+    line-height: 1.4;
+}
