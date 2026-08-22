@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from aiogram import Router, F, Bot
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -9,7 +10,9 @@ from inline import (
     get_language_keyboard,
     get_terms_keyboard,
     get_back_keyboard,
-    get_age_selection_keyboard,
+    get_birth_year_keyboard,
+    get_birth_month_keyboard,
+    get_birth_day_keyboard,
     get_gender_keyboard,
     get_height_selection_keyboard,
     get_looking_for_keyboard,
@@ -25,7 +28,7 @@ from inline import (
     UZBEK_REGIONS,
 )
 from reply import get_main_menu_keyboard
-from i18n import t
+from i18n import t, MONTH_NAMES
 from crud import create_user_profile, get_user_by_telegram_id, get_user_photos
 from config import ADMIN_IDS
 
@@ -115,13 +118,13 @@ async def name_entered(message: Message, state: FSMContext):
     await state.set_state(RegistrationStates.entering_age)
     
     await message.answer(
-        text=t("ask_age", lang),
-        reply_markup=get_age_selection_keyboard(lang, page=0),
+        text=t("ask_birth_year", lang),
+        reply_markup=get_birth_year_keyboard(lang, page=0),
         parse_mode="HTML"
     )
 
 # =========================================================================
-# 5. AGE SELECTION (INLINE BUTTONS)
+# 5. DATE OF BIRTH / AGE SELECTION (YEAR -> MONTH -> DAY INLINE BUTTONS)
 # =========================================================================
 @router.callback_query(RegistrationStates.entering_age, F.data == "reg_back_name")
 async def back_to_name(callback: CallbackQuery, state: FSMContext):
@@ -135,18 +138,106 @@ async def back_to_name(callback: CallbackQuery, state: FSMContext):
     )
     await callback.answer()
 
-@router.callback_query(RegistrationStates.entering_age, F.data.startswith("agepage_"))
-async def age_page_changed(callback: CallbackQuery, state: FSMContext):
+@router.callback_query(RegistrationStates.entering_age, F.data.startswith("byearpage_"))
+async def birth_year_page_changed(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     lang = data.get("language", "uz")
     page = int(callback.data.split("_")[1])
     await callback.message.edit_reply_markup(
-        reply_markup=get_age_selection_keyboard(lang, page=page)
+        reply_markup=get_birth_year_keyboard(lang, page=page)
+    )
+    await callback.answer()
+
+@router.callback_query(RegistrationStates.entering_age, F.data.startswith("byear_"))
+async def birth_year_selected(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lang = data.get("language", "uz")
+    year = int(callback.data.split("_")[1])
+    await state.update_data(birth_year=year)
+    
+    await callback.message.edit_text(
+        text=t("ask_birth_month", lang, year=year),
+        reply_markup=get_birth_month_keyboard(year, lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(RegistrationStates.entering_age, F.data == "reg_back_to_year")
+async def back_to_year(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lang = data.get("language", "uz")
+    await callback.message.edit_text(
+        text=t("ask_birth_year", lang),
+        reply_markup=get_birth_year_keyboard(lang, page=0),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(RegistrationStates.entering_age, F.data.startswith("bmonth_"))
+async def birth_month_selected(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lang = data.get("language", "uz")
+    parts = callback.data.split("_")
+    year = int(parts[1])
+    month = int(parts[2])
+    
+    await state.update_data(birth_year=year, birth_month=month)
+    m_name = MONTH_NAMES[month].get(lang, MONTH_NAMES[month]["uz"])
+    
+    await callback.message.edit_text(
+        text=t("ask_birth_day", lang, month=m_name, year=year),
+        reply_markup=get_birth_day_keyboard(year, month, lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(RegistrationStates.entering_age, F.data.startswith("reg_back_to_month_"))
+async def back_to_month(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lang = data.get("language", "uz")
+    year = int(callback.data.replace("reg_back_to_month_", ""))
+    await callback.message.edit_text(
+        text=t("ask_birth_month", lang, year=year),
+        reply_markup=get_birth_month_keyboard(year, lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(RegistrationStates.entering_age, F.data.startswith("bday_"))
+async def birth_day_selected(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    lang = data.get("language", "uz")
+    parts = callback.data.split("_")
+    year = int(parts[1])
+    month = int(parts[2])
+    day = int(parts[3])
+    
+    # Calculate age
+    today = datetime.now()
+    age = today.year - year - ((today.month, today.day) < (month, day))
+    
+    if age < 18:
+        await callback.answer(t("invalid_age", lang), show_alert=True)
+        return
+        
+    await state.update_data(
+        birth_year=year,
+        birth_month=month,
+        birth_day=day,
+        birth_date=f"{year:04d}-{month:02d}-{day:02d}",
+        age=age
+    )
+    await state.set_state(RegistrationStates.choosing_gender)
+    
+    await callback.message.edit_text(
+        text=t("ask_gender", lang),
+        reply_markup=get_gender_keyboard(lang),
+        parse_mode="HTML"
     )
     await callback.answer()
 
 @router.callback_query(RegistrationStates.entering_age, F.data.startswith("age_"))
-async def age_selected(callback: CallbackQuery, state: FSMContext):
+async def age_direct_selected(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     lang = data.get("language", "uz")
     age = int(callback.data.split("_")[1])
@@ -168,10 +259,10 @@ async def age_text_entered(message: Message, state: FSMContext):
     try:
         age = int(message.text.strip())
         if age < 18 or age > 99:
-            await message.answer(t("invalid_age", lang), reply_markup=get_age_selection_keyboard(lang, 0))
+            await message.answer(t("invalid_age", lang), reply_markup=get_birth_year_keyboard(lang, 0))
             return
     except ValueError:
-        await message.answer(t("invalid_age", lang), reply_markup=get_age_selection_keyboard(lang, 0))
+        await message.answer(t("invalid_age", lang), reply_markup=get_birth_year_keyboard(lang, 0))
         return
 
     await state.update_data(age=age)
@@ -191,8 +282,8 @@ async def back_to_age(callback: CallbackQuery, state: FSMContext):
     lang = data.get("language", "uz")
     await state.set_state(RegistrationStates.entering_age)
     await callback.message.edit_text(
-        text=t("ask_age", lang),
-        reply_markup=get_age_selection_keyboard(lang, page=0),
+        text=t("ask_birth_year", lang),
+        reply_markup=get_birth_year_keyboard(lang, page=0),
         parse_mode="HTML"
     )
     await callback.answer()

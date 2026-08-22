@@ -1,6 +1,8 @@
+import calendar
+from datetime import datetime
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from typing import List, Optional
-from i18n import t
+from i18n import t, MONTH_NAMES
 
 # 14 Administrative Regions of Uzbekistan
 UZBEK_REGIONS = {
@@ -99,30 +101,74 @@ def get_back_keyboard(callback_data: str, lang: str = "uz") -> InlineKeyboardMar
         [InlineKeyboardButton(text=t("btn_back", lang), callback_data=callback_data)],
     ])
 
-def get_age_selection_keyboard(lang: str = "uz", page: int = 0) -> InlineKeyboardMarkup:
-    """Yoshni tanlash uchun inline klaviatura (18 yoshdan 65+ gacha)"""
-    # 12 ta yosh har bir sahifada
-    base_age = 18 + (page * 12)
-    ages = [base_age + i for i in range(12) if (base_age + i) <= 70]
+# =========================================================================
+# DATE OF BIRTH (YEAR -> MONTH -> DAY) STEP-BY-STEP CALENDAR SELECTOR
+# =========================================================================
+
+def get_birth_year_keyboard(lang: str = "uz", page: int = 0) -> InlineKeyboardMarkup:
+    """Tug'ilgan yilni tanlash klaviaturasi (18 yoshdan katta bo'lgan yillar)"""
+    current_year = datetime.now().year
+    max_year = current_year - 18 # Masalan 2026 - 18 = 2008
+    
+    # 12 yillik sahifalar
+    start_year = max_year - (page * 12)
+    years = [start_year - i for i in range(12) if (start_year - i) >= 1960]
     
     rows = []
-    # 3 tadan joylashtirish
-    for i in range(0, len(ages), 3):
-        chunk = ages[i:i+3]
+    for i in range(0, len(years), 3):
+        chunk = years[i:i+3]
         rows.append([
-            InlineKeyboardButton(text=f"🎂 {age}", callback_data=f"age_{age}") for age in chunk
+            InlineKeyboardButton(text=f"🎂 {y}", callback_data=f"byear_{y}") for y in chunk
         ])
-    
+        
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton(text="⬅️ 18-29", callback_data=f"agepage_{page-1}"))
-    if (base_age + 12) <= 70:
-        nav_row.append(InlineKeyboardButton(text="30+ ➡️", callback_data=f"agepage_{page+1}"))
+        nav_row.append(InlineKeyboardButton(text="⬅️ Keyingiroq", callback_data=f"byearpage_{page-1}"))
+    if (start_year - 12) >= 1960:
+        nav_row.append(InlineKeyboardButton(text="Oldingiroq ➡️", callback_data=f"byearpage_{page+1}"))
     if nav_row:
         rows.append(nav_row)
         
     rows.append([InlineKeyboardButton(text=t("btn_back", lang), callback_data="reg_back_name")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def get_birth_month_keyboard(year: int, lang: str = "uz") -> InlineKeyboardMarkup:
+    """Tug'ilgan oyni tanlash klaviaturasi (1-12 oylar)"""
+    rows = []
+    months = list(range(1, 13))
+    for i in range(0, 12, 3):
+        chunk = months[i:i+3]
+        row = []
+        for m in chunk:
+            m_name = MONTH_NAMES[m].get(lang, MONTH_NAMES[m]["uz"])
+            row.append(InlineKeyboardButton(text=m_name, callback_data=f"bmonth_{year}_{m}"))
+        rows.append(row)
+        
+    rows.append([InlineKeyboardButton(text=t("btn_back", lang), callback_data="reg_back_to_year")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def get_birth_day_keyboard(year: int, month: int, lang: str = "uz") -> InlineKeyboardMarkup:
+    """Tug'ilgan kunni tanlash klaviaturasi (1..28/30/31 kunlar jadvali)"""
+    _, num_days = calendar.monthrange(year, month)
+    days = list(range(1, num_days + 1))
+    
+    rows = []
+    for i in range(0, len(days), 7):
+        chunk = days[i:i+7]
+        rows.append([
+            InlineKeyboardButton(text=str(d), callback_data=f"bday_{year}_{month}_{d}") for d in chunk
+        ])
+        
+    rows.append([InlineKeyboardButton(text=t("btn_back", lang), callback_data=f"reg_back_to_month_{year}")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def get_age_selection_keyboard(lang: str = "uz", page: int = 0) -> InlineKeyboardMarkup:
+    """Tezkor yosh tanlash muqobili"""
+    return get_birth_year_keyboard(lang=lang, page=page)
+
+# =========================================================================
+# GENDER, HEIGHT, LOOKING FOR & INTENT
+# =========================================================================
 
 def get_gender_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
     """Jinsni tanlash klaviaturasi"""
@@ -252,4 +298,10 @@ def get_admin_verification_keyboard(user_id: int, lang: str = "uz") -> InlineKey
             InlineKeyboardButton(text=t("btn_admin_verify", lang), callback_data=f"verify_user_{user_id}"),
             InlineKeyboardButton(text=t("btn_admin_reject_verify", lang), callback_data=f"unverify_user_{user_id}"),
         ]
+    ])
+
+def get_settings_keyboard(lang: str = "uz") -> InlineKeyboardMarkup:
+    """Sozlamalar klaviaturasi"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=t("btn_change_language", lang), callback_data="settings_change_lang")],
     ])

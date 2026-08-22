@@ -12,6 +12,11 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "ru": "🌐 <b>Выберите язык общения:</b>",
         "en": "🌐 <b>Choose your language:</b>",
     },
+    "lang_changed": {
+        "uz": "✅ Muloqot tili o'zbek tiliga o'zgartirildi.",
+        "ru": "✅ Язык общения успешно изменён на русский.",
+        "en": "✅ Language successfully changed to English.",
+    },
     
     # ------------------ TERMS & CONDITIONS ------------------
     "terms_title": {
@@ -74,13 +79,23 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "ru": "🎂 <b>Выберите год рождения:</b>",
         "en": "🎂 <b>Select your birth year:</b>",
     },
+    "ask_birth_month": {
+        "uz": "📅 <b>Tug'ilgan oyingizni tanlang ({year}):</b>",
+        "ru": "📅 <b>Выберите месяц рождения ({year}):</b>",
+        "en": "📅 <b>Select your birth month ({year}):</b>",
+    },
+    "ask_birth_day": {
+        "uz": "🗓️ <b>Tug'ilgan kuningizni tanlang ({month}/{year}):</b>",
+        "ru": "🗓️ <b>Выберите день рождения ({month}/{year}):</b>",
+        "en": "🗓️ <b>Select your birth day ({month}/{year}):</b>",
+    },
     "ask_age": {
-        "uz": "🎂 <b>Yoshingizni tanlang:</b>",
-        "ru": "🎂 <b>Выберите ваш возраст:</b>",
-        "en": "🎂 <b>Select your age:</b>",
+        "uz": "🎂 <b>Tug'ilgan yilingiz / yoshingizni tanlang:</b>",
+        "ru": "🎂 <b>Выберите год рождения / ваш возраст:</b>",
+        "en": "🎂 <b>Select your birth year / age:</b>",
     },
     "invalid_age": {
-        "uz": "⚠️ Siz 18 yoshdan oshgan bo'lishingiz kerak.",
+        "uz": "⚠️ Siz kamida 18 yoshda bo'lishingiz kerak.",
         "ru": "⚠️ Вам должно быть не менее 18 лет.",
         "en": "⚠️ You must be at least 18 years old.",
     },
@@ -226,6 +241,32 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "ru": "📋 <b>Ваша анкета:</b>",
         "en": "📋 <b>Your profile preview:</b>",
     },
+    "profile_card": {
+        "uz": (
+            "<b>{name}</b>{badge}, {age}\n"
+            "📍 {city}{district_text}\n"
+            "📏 {height_text}\n"
+            "🎯 {intent_text}\n"
+            "🎨 {interests_text}\n\n"
+            "📝 <i>\"{bio}\"</i>"
+        ),
+        "ru": (
+            "<b>{name}</b>{badge}, {age}\n"
+            "📍 {city}{district_text}\n"
+            "📏 {height_text}\n"
+            "🎯 {intent_text}\n"
+            "🎨 {interests_text}\n\n"
+            "📝 <i>\"{bio}\"</i>"
+        ),
+        "en": (
+            "<b>{name}</b>{badge}, {age}\n"
+            "📍 {city}{district_text}\n"
+            "📏 {height_text}\n"
+            "🎯 {intent_text}\n"
+            "🎨 {interests_text}\n\n"
+            "📝 <i>\"{bio}\"</i>"
+        ),
+    },
     "btn_confirm_profile": {
         "uz": "✅ Tasdiqlash va Boshlash",
         "ru": "✅ Подтвердить и Начать",
@@ -298,6 +339,45 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "ℹ️ Rules & Help",
     },
 
+    # ------------------ SETTINGS & MENU RESPONSES ------------------
+    "settings_title": {
+        "uz": "⚙️ <b>Sozlamalar bo'limi:</b>",
+        "ru": "⚙️ <b>Раздел настроек:</b>",
+        "en": "⚙️ <b>Settings:</b>",
+    },
+    "btn_change_language": {
+        "uz": "🌐 Tilni o'zgartirish",
+        "ru": "🌐 Сменить язык",
+        "en": "🌐 Change Language",
+    },
+    "no_profiles_found": {
+        "uz": "🔍 <b>Hozircha yangi anketalar topilmadi.</b>\nBirozdan so'ng qayta urinib ko'ring yoki Mini App orqali qidiring.",
+        "ru": "🔍 <b>Новых анкет пока нет.</b>\nПопробуйте позже или воспользуйтесь Mini App.",
+        "en": "🔍 <b>No new profiles found at the moment.</b>\nPlease check back later or use the Mini App.",
+    },
+    "help_text": {
+        "uz": (
+            "ℹ️ <b>AMORIX / KAIRYX Qoidalari va Yordam</b>\n\n"
+            "• Anketalarni ko'rish uchun 🔍 <b>Qidirish</b> tugmasini bosing.\n"
+            "• O'zaro like bo'lganda sizga bildirishnoma va chat ochiladi.\n"
+            "• Barcha qulayliklar uchun 📱 <b>Mini App</b>dan foydalanishingiz mumkin.\n\n"
+            "Savollar yoki takliflar bo'lsa, adminga murojaat qiling."
+        ),
+        "ru": (
+            "ℹ️ <b>Правила и помощь AMORIX / KAIRYX</b>\n\n"
+            "• Нажмите 🔍 <b>Поиск</b>, чтобы смотреть анкеты.\n"
+            "• При взаимном лайке вы получите уведомление и откроется диалог.\n"
+            "• Для максимального удобства открывайте 📱 <b>Mini App</b>.\n\n"
+            "По вопросам обращайтесь к администрации."
+        ),
+        "en": (
+            "ℹ️ <b>AMORIX / KAIRYX Rules & Help</b>\n\n"
+            "• Tap 🔍 <b>Search</b> to browse profiles.\n"
+            "• When mutual likes happen, you'll receive a match alert and chat.\n"
+            "• For the richest experience, use the 📱 <b>Mini App</b>."
+        ),
+    },
+
     # ------------------ ADMIN NOTIFICATION & VERIFICATION ------------------
     "admin_new_profile_notice": {
         "uz": (
@@ -352,11 +432,21 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "ru": "🎉 <b>Поздравляем!</b>\nВаш профиль был успешно верифицирован администратором и получил знак подлинности ✅!",
         "en": "🎉 <b>Congratulations!</b>\nYour profile has been verified by an admin and received the verified badge ✅!",
     },
-    "user_unverified_notice": {
-        "uz": "ℹ️ Profilingiz verifikatsiyasi bekor qilindi.",
-        "ru": "ℹ️ Верификация вашего профиля была отменена.",
-        "en": "ℹ️ Verification badge removed from your profile.",
-    },
+}
+
+MONTH_NAMES = {
+    1: {"uz": "Yanvar", "ru": "Январь", "en": "January"},
+    2: {"uz": "Fevral", "ru": "Февраль", "en": "February"},
+    3: {"uz": "Mart", "ru": "Март", "en": "March"},
+    4: {"uz": "Aprel", "ru": "Апрель", "en": "April"},
+    5: {"uz": "May", "ru": "Май", "en": "May"},
+    6: {"uz": "Iyun", "ru": "Июнь", "en": "June"},
+    7: {"uz": "Iyul", "ru": "Июль", "en": "July"},
+    8: {"uz": "Avgust", "ru": "Август", "en": "August"},
+    9: {"uz": "Sentyabr", "ru": "Сентябрь", "en": "September"},
+    10: {"uz": "Oktyabr", "ru": "Октябрь", "en": "October"},
+    11: {"uz": "Noyabr", "ru": "Ноябрь", "en": "November"},
+    12: {"uz": "Dekabr", "ru": "Декабрь", "en": "December"},
 }
 
 def t(key: str, lang: str = "uz", **kwargs: Any) -> str:

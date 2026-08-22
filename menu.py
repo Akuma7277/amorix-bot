@@ -1,3 +1,6 @@
+from i18n import t
+from inline import get_settings_keyboard, get_language_keyboard
+from reply import get_main_menu_keyboard
 from datetime import datetime, timedelta
 from aiogram import F, Router, Bot
 import random
@@ -2161,3 +2164,53 @@ async def icebreaker_handler(callback: CallbackQuery, state: FSMContext, bot: Bo
         question=question
     )
     await callback.message.answer(confirm_text, parse_mode="HTML")
+
+@router.message(F.text.in_(["⚙️ Sozlamalar", "⚙️ Настройки", "⚙️ Settings"]))
+async def settings_menu_handler(message: Message):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    lang = user.language if user else "uz"
+    
+    await message.answer(
+        text=t("settings_title", lang),
+        reply_markup=get_settings_keyboard(lang),
+        parse_mode="HTML"
+    )
+
+@router.message(F.text.in_(["ℹ️ Qoidalar va Yordam", "ℹ️ Помощь и Правила", "ℹ️ Rules & Help", "❓ Yordam", "❓ Помощь", "❓ Help"]))
+async def help_menu_handler(message: Message):
+    user = await get_user_by_telegram_id(message.from_user.id)
+    lang = user.language if user else "uz"
+    
+    await message.answer(
+        text=t("help_text", lang),
+        parse_mode="HTML"
+    )
+
+@router.callback_query(F.data == "settings_change_lang")
+async def settings_change_lang_callback(callback: CallbackQuery):
+    await callback.message.edit_text(
+        text=t("choose_language", "uz"),
+        reply_markup=get_language_keyboard(),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(F.data.in_(["lang_uz", "lang_ru", "lang_en"]))
+async def settings_lang_selected_callback(callback: CallbackQuery):
+    new_lang = callback.data.split("_")[1]
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    if user:
+        from crud import set_user_language
+        await set_user_language(user.id, new_lang)
+        
+    await callback.message.edit_text(
+        text=t("lang_changed", new_lang),
+        reply_markup=None,
+        parse_mode="HTML"
+    )
+    await callback.message.answer(
+        text=t("registration_success", new_lang),
+        reply_markup=get_main_menu_keyboard(new_lang),
+        parse_mode="HTML"
+    )
+    await callback.answer()
